@@ -481,6 +481,11 @@ struct engine {
 
   /* Has there been an stf this timestep? */
   char stf_this_timestep;
+
+#ifdef SWIFT_GRAVITY_FORCE_CHECKS
+  /* Keeps track of which timesteps we perform brute force gravity checks */
+  int brute_force_gravity_flag;
+#endif
 };
 
 /* Function prototypes, engine.c. */
