@@ -505,6 +505,7 @@ void engine_print_stats(struct engine *e);
 void engine_check_for_dumps(struct engine *e);
 void engine_check_for_index_dump(struct engine *e);
 void engine_collect_end_of_step(struct engine *e, int apply);
+int engine_all_gparts_active(const struct engine *e);
 void engine_dump_snapshot(struct engine *e);
 void engine_init_output_lists(struct engine *e, struct swift_params *params);
 void engine_init(struct engine *e, struct space *s, struct swift_params *params,
