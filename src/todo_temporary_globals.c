@@ -7,7 +7,7 @@
 
 
 
-#define SKIP_MLADEN_STUFF
+/* #define SKIP_MLADEN_STUFF */
 
 struct mladen_globals mladen_globs;
 
@@ -216,36 +216,6 @@ void mladen_dump_after_timestep(void){
 
 
 
-  /* for (int ind=0; ind<2; ind++){ */
-  /*   struct gizmo_debug_dump * d = &(mladen_globs.data[ind]); */
-  /*   printf("Particle index %3d: ID: %8lld; Pos: %8g %8g ; h: %8g\n", ind, d->id, d->pos[0], d->pos[1], d->h); */
-  /*   printf("V: %8g; Omega: %8g; Gradsum: %8g %8g\n", d->volume_store, d->omega, d->wgrads_store[0], d->wgrads_store[1]); */
-  /*  */
-  /*   printf("Aij: "); */
-  /*   for (int i=0; i<d->nneigh; i++){ */
-  /*     printf("%5lld - %8g %8g |", d->neighbour_ids[i], d->Aij[2*i], d->Aij[2*i+1]); */
-  /*   } */
-  /*   printf("\n"); */
-  /*  */
-  /*   printf("Gradient Contributions: "); */
-  /*   for (int i=0; i<d->nneigh_grads; i++){ */
-  /*     printf("%5lld - %8g %8g |", d->neighbour_ids_grad[i], d->grads_sum_contrib[2*i], d->grads_sum_contrib[2*i+1]); */
-  /*   } */
-  /*   printf("\n"); */
-  /*  */
-  /*   printf("Gradient Sum dx: "); */
-  /*   for (int i=0; i<d->nneigh_grads; i++){ */
-  /*     printf("%5lld - %8g %8g |", d->neighbour_ids_grad[i], d->grads_sum_dx[2*i], d->grads_sum_dx[2*i+1]); */
-  /*   } */
-  /*   printf("\n"); */
-  /*  */
-  /*   printf("dxdr, r: "); */
-  /*   for (int i=0; i<d->nneigh_grads; i++){ */
-  /*     printf("%5lld - %8g %8g |", d->neighbour_ids_grad[i], d->dwdr[i], d->r[i]); */
-  /*   } */
-  /*   printf("\n"); */
-  /* } */
-
   /* increase dump index */
   mladen_globs.dump_nr += 1;
   /* reset values */
@@ -381,6 +351,8 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
 /* ================================================================================== */
 
   /* written to be called from runner_iact_fluxes_common */
+  /* grad_final_x: \del psi_j (x_i) / \del x: The gradient of psi which will
+   * be multiplied by V_i in the A_ij */
 
 
 #ifndef SKIP_MLADEN_STUFF

@@ -32,11 +32,10 @@
 #include "atomic.h"
 // #include "active.h"
 
-#define GIZMO_ZERO_TOLERANCE 1.e-10
 
 
 
-#define GIZMO_VOLUME_CORRECTION
+// #define GIZMO_VOLUME_CORRECTION
 
 void runner_iact_density(
     float r2, const float *dx, float hi, float hj, struct part *restrict pi,
@@ -244,8 +243,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
 #endif
   for (int k = 0; k < 3; k++) {
     /* we add a minus sign since dx is pi->x - pj->x */
-    A[k] = Xi * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
-           Xj * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
+    A[k] = Xj * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
+           Xi * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
     Anorm2 += A[k] * A[k];
 
   }
