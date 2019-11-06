@@ -37,13 +37,175 @@
 
 // #define GIZMO_VOLUME_CORRECTION
 
-void runner_iact_density(
+/**
+ * @brief Calculate the volume interaction between particle i and particle j
+ *
+ * The volume is in essence the same as the weighted number of neighbours in a
+ * classical SPH density calculation.
+ *
+ * We also calculate the components of the matrix E, which is used for second
+ * order accurate gradient calculations and for the calculation of the interface
+ * surface areas.
+ *
+ * @param r2 Comoving squared distance between particle i and particle j.
+ * @param dx Comoving distance vector between the particles (dx = pi->x -
+ * pj->x).
+ * @param hi Comoving smoothing-length of particle i.
+ * @param hj Comoving smoothing-length of particle j.
+ * @param pi Particle i.
+ * @param pj Particle j.
+ * @param a Current scale factor.
+ * @param H Current Hubble parameter.
+ */
+__attribute__((always_inline)) INLINE static void runner_iact_density(
     float r2, const float *dx, float hi, float hj, struct part *restrict pi,
-    struct part *restrict pj, float a, float H);
+    struct part *restrict pj, float a, float H) {
 
-void runner_iact_nonsym_density(
+  float wi, wj, wi_dx, wj_dx;
+
+  /* Get r and h inverse. */
+  const float r = sqrtf(r2);
+
+  /* Compute density of pi. */
+  const float hi_inv = 1.f / hi;
+  const float xi = r * hi_inv;
+  kernel_deval(xi, &wi, &wi_dx);
+
+  pi->density.wcount += wi;
+  pi->density.wcount_dh -= (hydro_dimension * wi + xi * wi_dx);
+#ifdef WITH_IVANOVA
+  /* TODO: don't forget about the nonsym part! */
+  const float hidp1 = pow_dimension_plus_one(hi_inv);
+  pi->density.wgrads[0] += hidp1 * wi_dx * dx[0] / r;
+  pi->density.wgrads[1] += hidp1 * wi_dx * dx[1] / r;
+  pi->density.wgrads[2] += hidp1 * wi_dx * dx[2] / r;
+
+  // TODO: temporary
+  mladen_store_neighbour_data(
+        /* pi    */ pi,
+        /* pj ID */ pj->id,
+        /* GSCX= */ hidp1 * wi_dx * dx[0]/r,
+        /* GSCY= */ hidp1 * wi_dx * dx[1]/r,
+        /* GSDX= */ dx[0],
+        /* GSDY= */ dx[1],
+        /* dwdr= */ hidp1 * wi_dx,
+        /* r=    */ r,
+        /* hi =  */ hi );
+#endif
+
+  /* these are eqns. (1) and (2) in the summary */
+  pi->geometry.volume += wi;
+  for (int k = 0; k < 3; k++)
+    for (int l = 0; l < 3; l++)
+      pi->geometry.matrix_E[k][l] += dx[k] * dx[l] * wi;
+
+  pi->geometry.centroid[0] -= dx[0] * wi;
+  pi->geometry.centroid[1] -= dx[1] * wi;
+  pi->geometry.centroid[2] -= dx[2] * wi;
+
+  /* Compute density of pj. */
+  const float hj_inv = 1.f / hj;
+  const float xj = r * hj_inv;
+  kernel_deval(xj, &wj, &wj_dx);
+
+  pj->density.wcount += wj;
+  pj->density.wcount_dh -= (hydro_dimension * wj + xj * wj_dx);
+#ifdef WITH_IVANOVA
+  const float hjdp1 = pow_dimension_plus_one(hj_inv);
+  pj->density.wgrads[0] -= hjdp1 * wj_dx * dx[0] / r;
+  pj->density.wgrads[1] -= hjdp1 * wj_dx * dx[1] / r;
+  pj->density.wgrads[2] -= hjdp1 * wj_dx * dx[2] / r;
+
+  // TODO: temporary
+  mladen_store_neighbour_data(pj, pi->id,
+        /* GSCX= */ -hjdp1 * wj_dx * dx[0]/r,
+        /* GSCY= */ -hjdp1 * wj_dx * dx[1]/r,
+        /* GSDX= */ -dx[0],
+        /* GSDY= */ -dx[1],
+        /* dwdr= */ hjdp1 * wj_dx,
+        /* r= */ r, hj );
+#endif
+
+  /* these are eqns. (1) and (2) in the summary */
+  pj->geometry.volume += wj;
+  for (int k = 0; k < 3; k++)
+    for (int l = 0; l < 3; l++)
+      pj->geometry.matrix_E[k][l] += dx[k] * dx[l] * wj;
+
+  pj->geometry.centroid[0] += dx[0] * wj;
+  pj->geometry.centroid[1] += dx[1] * wj;
+  pj->geometry.centroid[2] += dx[2] * wj;
+}
+
+
+
+
+
+/**
+ * @brief Calculate the volume interaction between particle i and particle j:
+ * non-symmetric version
+ *
+ * The volume is in essence the same as the weighted number of neighbours in a
+ * classical SPH density calculation.
+ *
+ * We also calculate the components of the matrix E, which is used for second
+ * order accurate gradient calculations and for the calculation of the interface
+ * surface areas.
+ *
+ * @param r2 Comoving squared distance between particle i and particle j.
+ * @param dx Comoving distance vector between the particles (dx = pi->x -
+ * pj->x).
+ * @param hi Comoving smoothing-length of particle i.
+ * @param hj Comoving smoothing-length of particle j.
+ * @param pi Particle i.
+ * @param pj Particle j.
+ * @param a Current scale factor.
+ * @param H Current Hubble parameter.
+ */
+__attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
     float r2, const float *dx, float hi, float hj, struct part *restrict pi,
-    const struct part *restrict pj, float a, float H);
+    const struct part *restrict pj, float a, float H) {
+
+  float wi, wi_dx;
+
+  /* Get r and h inverse. */
+  const float r = sqrtf(r2);
+
+  const float hi_inv = 1.f / hi;
+  const float xi = r * hi_inv;
+  kernel_deval(xi, &wi, &wi_dx);
+
+  pi->density.wcount += wi;
+  pi->density.wcount_dh -= (hydro_dimension * wi + xi * wi_dx);
+#ifdef WITH_IVANOVA
+  /* TODO: don't forget about the sym part! */
+  const float hidp1 = pow_dimension_plus_one(hi_inv);
+  pi->density.wgrads[0] += hidp1 * wi_dx * dx[0] / r;
+  pi->density.wgrads[1] += hidp1 * wi_dx * dx[1] / r;
+  pi->density.wgrads[2] += hidp1 * wi_dx * dx[2] / r;
+    
+  // TODO: temporary
+  mladen_store_neighbour_data(
+        /* pi    */ pi,
+        /* pj ID */ pj->id,
+        /* GSCX= */ hidp1 * wi_dx * dx[0]/r,
+        /* GSCY= */ hidp1 * wi_dx * dx[1]/r,
+        /* GSDX= */ dx[0],
+        /* GSDY= */ dx[1],
+        /* dwdr= */ hidp1 * wi_dx,
+        /* r=    */ r,
+        /* hi =  */ hi );
+#endif
+
+  pi->geometry.volume += wi;
+  for (int k = 0; k < 3; k++)
+    for (int l = 0; l < 3; l++)
+      pi->geometry.matrix_E[k][l] += dx[k] * dx[l] * wi;
+
+  pi->geometry.centroid[0] -= dx[0] * wi;
+  pi->geometry.centroid[1] -= dx[1] * wi;
+  pi->geometry.centroid[2] -= dx[2] * wi;
+}
 /**
  * @brief Calculate the gradient interaction between particle i and particle j
  *
@@ -232,41 +394,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   float Anorm2 = 0.0f;
   float A[3];
 
-#ifdef WITH_IVANOVA
-  float Xi = Vi;
-  float Xj = Vj;
-#ifdef GIZMO_VOLUME_CORRECTION
-  if (fabsf(Vi - Vj) / min(Vi, Vj) > 1.5f * hydro_dimension) {
-    Xi = (Vi * hj + Vj * hi) / (hi + hj);
-    Xj = Xi;
-  }
-#endif
-  for (int k = 0; k < 3; k++) {
-    /* we add a minus sign since dx is pi->x - pj->x */
-    A[k] = Xj * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
-           Xi * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
-    Anorm2 += A[k] * A[k];
-
-  }
-
-  // TODO: temporary 
-  mladen_store_Aij(pi, pj, hi, A, 
-    /* grad_final_x=*/ Xi * wi_dr * dx[0] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[0], 
-    /* grad_final_y=*/ Xi * wi_dr * dx[1] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[1], 
-    /*negative=*/0);
-  mladen_store_Aij(pj, pi, hj, A, 
-    /* grad_final_x=*/ -Xj * wj_dr * dx[0] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[0], 
-    /* grad_final_y=*/ -Xj * wj_dr * dx[1] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[1], 
-    /*negative=*/1);
-
-  // if (pi->id == 400){
-  //   printf("Writing pi=%4lld, pj=%4lld; case=positive\n", pi->id, pj->id);
-  // }
-  // if (pj->id == 400){
-  //   printf("Writing pi=%4lld, pj=%4lld; case=negative\n", pj->id, pi->id);
-  // }
-
-#else
   if (pi->density.wcorr > const_gizmo_min_wcorr &&
       pj->density.wcorr > const_gizmo_min_wcorr) {
     /* 
@@ -283,6 +410,26 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
       Xj = Xi;
     }
 #endif
+#ifdef WITH_IVANOVA
+    for (int k = 0; k < 3; k++) {
+      /* we add a minus sign since dx is pi->x - pj->x */
+      A[k] = Xj * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
+             Xi * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
+      Anorm2 += A[k] * A[k];
+    }
+
+    // TODO: temporary 
+    mladen_store_Aij(pi, pj, hi, A, 
+      /* grad_final_x=*/ Xi * wi_dr * dx[0] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[0], 
+      /* grad_final_y=*/ Xi * wi_dr * dx[1] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[1], 
+      /*negative=*/0);
+    mladen_store_Aij(pj, pi, hj, A, 
+      /* grad_final_x=*/ -Xj * wj_dr * dx[0] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[0], 
+      /* grad_final_y=*/ -Xj * wj_dr * dx[1] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[1], 
+      /*negative=*/1);
+
+#else
+
     for (int k = 0; k < 3; k++) {
       /* we add a minus sign since dx is pi->x - pj->x */
       A[k] = -Xi * (Bi[k][0] * dx[0] + Bi[k][1] * dx[1] + Bi[k][2] * dx[2]) *
@@ -292,6 +439,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
       Anorm2 += A[k] * A[k];
     }
 
+#endif
   } else {
     /* ill condition gradient matrix: revert to SPH face area */
     const float Anorm =
@@ -301,7 +449,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
     A[2] = -Anorm * dx[2];
     Anorm2 = Anorm * Anorm * r2;
   }
-#endif
 
 
   /* if the interface has no area, nothing happens and we return */
@@ -313,19 +460,19 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   const float Anorm = Anorm2 * Anorm_inv;
 
 #ifdef SWIFT_DEBUG_CHECKS
-  // [> For stability reasons, we do require A and dx to have opposite
-  //    directions (basically meaning that the surface normal for the surface
-  //    always points from particle i to particle j, as it would in a real
-  //    moving-mesh code). If not, our scheme is no longer upwind and hence can
-  //    become unstable. */
-  // const float dA_dot_dx = A[0] * dx[0] + A[1] * dx[1] + A[2] * dx[2];
-  // [> In GIZMO, Phil Hopkins reverts to an SPH integration scheme if this
-  //    happens. We curently just ignore this case and display a message. */
-  // const float rdim = pow_dimension(r);
-  // if (dA_dot_dx > 1.e-6f * rdim) {
-  //   message("Ill conditioned gradient matrix (%g %g %g %g %g)!", dA_dot_dx,
-  //           Anorm, Vi, Vj, r);
-  // }
+  /* For stability reasons, we do require A and dx to have opposite
+     directions (basically meaning that the surface normal for the surface
+     always points from particle i to particle j, as it would in a real
+     moving-mesh code). If not, our scheme is no longer upwind and hence can
+     become unstable. */
+  const float dA_dot_dx = A[0] * dx[0] + A[1] * dx[1] + A[2] * dx[2];
+  /* In GIZMO, Phil Hopkins reverts to an SPH integration scheme if this
+     happens. We curently just ignore this case and display a message. */
+  const float rdim = pow_dimension(r);
+  if (dA_dot_dx > 1.e-6f * rdim) {
+    message("Ill conditioned gradient matrix (%g %g %g %g %g)!", dA_dot_dx,
+            Anorm, Vi, Vj, r);
+  }
 #endif
 
   /* compute the normal vector of the interface */
