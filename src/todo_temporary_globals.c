@@ -159,65 +159,69 @@ void mladen_dump_after_timestep(void){
     */
 
 #ifndef SKIP_MLADEN_STUFF
-
-  printf("Dumping mladen debugging data %d after timestep\n", mladen_globs.dump_nr);
-
-  /* get filename */
-  char filename[200] = "swift-gizmo-debug-dump_";
-  char dumpstring[5];
-  sprintf(dumpstring, "%04d", mladen_globs.dump_nr);
-  strcat(filename, dumpstring);
-  strcat(filename, ".dat");
-
-
-  FILE *fp;
-  fp = fopen(filename, "wb");
   
-  long long np = mladen_globs.npart;
-  
-  /* first dump nparts */
-  fwrite(&np, sizeof(long long), 1, fp);
-  int maxneigh_guess = MLADENASSN;
-  fwrite(&maxneigh_guess, sizeof(int), 1, fp);
+  if (mladen_globs.e->updates==mladen_globs.npart-1){ /* npart = npart+1 in setup*/
 
-  /* now dump particle after particle */
+    printf("Dumping mladen debugging data %d after timestep\n", mladen_globs.dump_nr);
 
-  for (int p=1; p<np; p++){
-    struct gizmo_debug_dump * d = &(mladen_globs.data[p]);
-    fwrite(&(d->id), sizeof(long long), 1, fp);
-    fwrite(&(d->h), sizeof(float), 1, fp);
-    fwrite(&(d->omega), sizeof(float), 1, fp);
-    fwrite(&(d->volume_store), sizeof(float), 1, fp);
-    fwrite(&(d->wgrads_store), sizeof(float), 3, fp);
-    fwrite(&(d->pos), sizeof(float), 3, fp);
+    /* get filename */
+    char filename[200] = "swift-gizmo-debug-dump_";
+    char dumpstring[5];
+    sprintf(dumpstring, "%04d", mladen_globs.dump_nr);
+    strcat(filename, dumpstring);
+    strcat(filename, ".dat");
 
 
-    fwrite(&(d->nneigh_grads), sizeof(int), 1, fp);
-    fwrite(&(d->neighbour_ids_grad), sizeof(long long), MLADENASSN, fp);
-    fwrite(&(d->grads_sum_contrib), sizeof(float), 2*MLADENASSN, fp);
-    fwrite(&(d->dwdr), sizeof(float), MLADENASSN, fp);
-    fwrite(&(d->grads_sum_dx), sizeof(float), 2*MLADENASSN, fp);
-    fwrite(&(d->r), sizeof(float), MLADENASSN, fp);
+    FILE *fp;
+    fp = fopen(filename, "wb");
+    
+    long long np = mladen_globs.npart;
+    
+    /* first dump nparts */
+    fwrite(&np, sizeof(long long), 1, fp);
+    int maxneigh_guess = MLADENASSN;
+    fwrite(&maxneigh_guess, sizeof(int), 1, fp);
 
-    fwrite(&(d->nneigh), sizeof(int), 1, fp);
-    fwrite(&(d->neighbour_ids), sizeof(long long), MLADENASSN, fp);
-    fwrite(&(d->Aij), sizeof(float), 2*MLADENASSN, fp);
-    fwrite(&(d->grads_final), sizeof(float), 2*MLADENASSN, fp);
+    /* now dump particle after particle */
+
+    for (int p=1; p<np; p++){
+      struct gizmo_debug_dump * d = &(mladen_globs.data[p]);
+      fwrite(&(d->id), sizeof(long long), 1, fp);
+      fwrite(&(d->h), sizeof(float), 1, fp);
+      fwrite(&(d->omega), sizeof(float), 1, fp);
+      fwrite(&(d->volume_store), sizeof(float), 1, fp);
+      fwrite(&(d->wgrads_store), sizeof(float), 3, fp);
+      fwrite(&(d->pos), sizeof(float), 3, fp);
 
 
-    /* to check whether you're writing the correct stuff: you need to have read in 'teststring' as well */
-    /* char teststring[11] = "teststring"; */
-    /* fwrite(&teststring, sizeof(char), 11, fp); */
+      fwrite(&(d->nneigh_grads), sizeof(int), 1, fp);
+      fwrite(&(d->neighbour_ids_grad), sizeof(long long), MLADENASSN, fp);
+      fwrite(&(d->grads_sum_contrib), sizeof(float), 2*MLADENASSN, fp);
+      fwrite(&(d->dwdr), sizeof(float), MLADENASSN, fp);
+      fwrite(&(d->grads_sum_dx), sizeof(float), 2*MLADENASSN, fp);
+      fwrite(&(d->r), sizeof(float), MLADENASSN, fp);
+
+      fwrite(&(d->nneigh), sizeof(int), 1, fp);
+      fwrite(&(d->neighbour_ids), sizeof(long long), MLADENASSN, fp);
+      fwrite(&(d->Aij), sizeof(float), 2*MLADENASSN, fp);
+      fwrite(&(d->grads_final), sizeof(float), 2*MLADENASSN, fp);
+
+
+      /* to check whether you're writing the correct stuff: you need to have read in 'teststring' as well */
+      /* char teststring[11] = "teststring"; */
+      /* fwrite(&teststring, sizeof(char), 11, fp); */
+
+    }
+
+
+    fclose(fp);
+
+
+
+    /* increase dump index */
+    mladen_globs.dump_nr += 1;
 
   }
-
-
-  fclose(fp);
-
-
-
-  /* increase dump index */
-  mladen_globs.dump_nr += 1;
   /* reset values */
   mladen_reset_dump_data();
 

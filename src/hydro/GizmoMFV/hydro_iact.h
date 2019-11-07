@@ -197,6 +197,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
         /* hi =  */ hi );
 #endif
 
+  /* these are eqns. (1) and (2) in the summary */
   pi->geometry.volume += wi;
   for (int k = 0; k < 3; k++)
     for (int l = 0; l < 3; l++)
@@ -396,8 +397,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
 
   if (pi->density.wcorr > const_gizmo_min_wcorr &&
       pj->density.wcorr > const_gizmo_min_wcorr) {
-    /* 
-     * in principle, we use Vi and Vj as weights for the left and right
+    /* in principle, we use Vi and Vj as weights for the left and right
        contributions to the generalized surface vector.
        However, if Vi and Vj are very different (because they have very
        different
@@ -413,8 +413,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
 #ifdef WITH_IVANOVA
     for (int k = 0; k < 3; k++) {
       /* we add a minus sign since dx is pi->x - pj->x */
-      A[k] = Xj * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
-             Xi * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
+      A[k] = Xi * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
+             Xj * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
       Anorm2 += A[k] * A[k];
     }
 
