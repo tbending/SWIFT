@@ -27,7 +27,9 @@
 
 #include "./hydro_parameters.h"
 
-#define GIZMO_VOLUME_CORRECTION
+
+
+// #define GIZMO_VOLUME_CORRECTION
 
 /**
  * @brief Calculate the volume interaction between particle i and particle j
@@ -107,6 +109,10 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   pj->geometry.centroid[2] += dx[2] * wj;
 }
 
+
+
+
+
 /**
  * @brief Calculate the volume interaction between particle i and particle j:
  * non-symmetric version
@@ -150,6 +156,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->density.wgrads[2] += hidp1 * wi_dx * dx[2] / r;
 #endif
 
+  /* these are eqns. (1) and (2) in the summary */
   pi->geometry.volume += wi;
   for (int k = 0; k < 3; k++)
     for (int l = 0; l < 3; l++)
@@ -159,7 +166,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->geometry.centroid[1] -= dx[1] * wi;
   pi->geometry.centroid[2] -= dx[2] * wi;
 }
-
 /**
  * @brief Calculate the gradient interaction between particle i and particle j
  *
@@ -242,8 +248,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   const float r_inv = 1.f / sqrtf(r2);
   const float r = r2 * r_inv;
 
-#ifndef WITH_IVANOVA
   /* Initialize local variables */
+#ifndef WITH_IVANOVA
   float Bi[3][3];
   float Bj[3][3];
   float vi[3], vj[3];
@@ -344,23 +350,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   float Anorm2 = 0.0f;
   float A[3];
 
-#ifdef WITH_IVANOVA
-  float Xi = Vi;
-  float Xj = Vj;
-#ifdef GIZMO_VOLUME_CORRECTION
-  if (fabsf(Vi - Vj) / min(Vi, Vj) > 1.5f * hydro_dimension) {
-    Xi = (Vi * hj + Vj * hi) / (hi + hj);
-    Xj = Xi;
-  }
-#endif
-  for (int k = 0; k < 3; k++) {
-    /* we add a minus sign since dx is pi->x - pj->x */
-    A[k] = Xi * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
-           Xj * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
-    Anorm2 += A[k] * A[k];
-
-  }
-#else
   if (pi->density.wcorr > const_gizmo_min_wcorr &&
       pj->density.wcorr > const_gizmo_min_wcorr) {
     /* in principle, we use Vi and Vj as weights for the left and right
@@ -376,6 +365,16 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
       Xj = Xi;
     }
 #endif
+#ifdef WITH_IVANOVA
+    for (int k = 0; k < 3; k++) {
+      /* we add a minus sign since dx is pi->x - pj->x */
+      A[k] = Xi * Xi * (wi_dr * dx[k] / r - Xi * wi * hi_inv_dim * dwidx_sum[k]) +
+             Xj * Xj * (wj_dr * dx[k] / r + Xj * wj * hj_inv_dim * dwjdx_sum[k]);
+      Anorm2 += A[k] * A[k];
+    }
+
+#else
+
     for (int k = 0; k < 3; k++) {
       /* we add a minus sign since dx is pi->x - pj->x */
       A[k] = -Xi * (Bi[k][0] * dx[0] + Bi[k][1] * dx[1] + Bi[k][2] * dx[2]) *
@@ -385,6 +384,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
       Anorm2 += A[k] * A[k];
     }
 
+#endif
   } else {
     /* ill condition gradient matrix: revert to SPH face area */
     const float Anorm =
@@ -394,7 +394,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
     A[2] = -Anorm * dx[2];
     Anorm2 = Anorm * Anorm * r2;
   }
-#endif
 
 
   /* if the interface has no area, nothing happens and we return */
