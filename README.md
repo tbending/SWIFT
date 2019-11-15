@@ -1,6 +1,8 @@
 SWIFT: SPH WIth Fine-grained inter-dependent Tasking
 ====================================================
 
+
+
 [![Build Status](https://gitlab.cosma.dur.ac.uk/jenkins/job/GNU%20SWIFT%20build/badge/icon)](https://gitlab.cosma.dur.ac.uk/jenkins/job/GNU%20SWIFT%20build/)
 
 SWIFT is a gravity and SPH solver designed to run cosmological simulations
