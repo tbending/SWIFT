@@ -121,7 +121,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
 
   // TODO: temporary
   mladen_store_neighbour_data(
-        /* pi =  */ pj, 
+        /* pi =  */ pj,
         /* pj ID */ pi->id,
         /* Wj(xi)*/ wj * hj_inv * hj_inv,
         /* GSCX= */ -hjdp1 * wj_dx * dx[0]/r,
@@ -129,7 +129,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
         /* GSDX= */ -dx[0],
         /* GSDY= */ -dx[1],
         /* dwdr= */ hjdp1 * wj_dx,
-        /* r=    */ r, 
+        /* r=    */ r,
         /* h_j=  */ hj );
 #endif
 
@@ -194,7 +194,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->density.wgrads[0] += hidp1 * wi_dx * dx[0] / r;
   pi->density.wgrads[1] += hidp1 * wi_dx * dx[1] / r;
   pi->density.wgrads[2] += hidp1 * wi_dx * dx[2] / r;
-    
+
   // TODO: temporary
   mladen_store_neighbour_data(
         /* pi    */ pi,
@@ -430,14 +430,14 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
       Anorm2 += A[k] * A[k];
     }
 
-    // TODO: temporary 
-    mladen_store_Aij(pi, pj, hi, A, 
-      /* grad_final_x=*/ Xi * wi_dr * dx[0] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[0], 
-      /* grad_final_y=*/ Xi * wi_dr * dx[1] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[1], 
+    // TODO: temporary
+    mladen_store_Aij(pi, pj, hi, A,
+      /* grad_final_x=*/ Xi * wi_dr * dx[0] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[0],
+      /* grad_final_y=*/ Xi * wi_dr * dx[1] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[1],
       /*negative=*/0);
-    mladen_store_Aij(pj, pi, hj, A, 
-      /* grad_final_x=*/ -Xj * wj_dr * dx[0] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[0], 
-      /* grad_final_y=*/ -Xj * wj_dr * dx[1] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[1], 
+    mladen_store_Aij(pj, pi, hj, A,
+      /* grad_final_x=*/ -Xj * wj_dr * dx[0] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[0],
+      /* grad_final_y=*/ -Xj * wj_dr * dx[1] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[1],
       /*negative=*/1);
 
 #else

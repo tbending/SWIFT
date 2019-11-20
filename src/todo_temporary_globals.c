@@ -26,7 +26,7 @@ void mladen_setup(struct engine* e){
 
   /* mladen_globs.outfilep = fopen("mladen_outputfile_all.txt", "w");   */
   /* mladen_globs.oneTimeFlagFilep = fopen("mladen_flags_all.txt", "w");   */
-  
+
   mladen_globs.called_fluxes = 1;
   mladen_globs.e = e;
 
@@ -73,7 +73,7 @@ void mladen_setup_data_dump(long long npart){
 
   /* allocate data dump array, set up necessary stuff.
    * call in main after you established all the necessary
-   * parameters necessary. 
+   * parameters necessary.
    * Call somewhere in main.c before sim loop starts*/
 
 #ifndef SKIP_MLADEN_STUFF
@@ -163,7 +163,7 @@ void mladen_dump_after_timestep(void){
 #ifdef MAXDEBUGDUMPS
   if (mladen_globs.dump_nr == MAXDEBUGDUMPS) return;
 #endif
-  
+
   if (mladen_globs.e->updates==mladen_globs.npart-1){ /* npart = npart+1 in setup*/
 
     printf("Dumping Mladen debugging data %d after timestep\n", mladen_globs.dump_nr);
@@ -178,9 +178,9 @@ void mladen_dump_after_timestep(void){
 
     FILE *fp;
     fp = fopen(filename, "wb");
-    
+
     long long np = mladen_globs.npart;
-    
+
     /* first dump nparts */
     fwrite(&np, sizeof(long long), 1, fp);
     int maxneigh_guess = MLADENASSN;
@@ -223,7 +223,7 @@ void mladen_dump_after_timestep(void){
     /* increase dump index */
     mladen_globs.dump_nr += 1;
   }
-  
+
   /* reset values */
   mladen_reset_dump_data();
 
@@ -241,7 +241,7 @@ void mladen_dump_after_timestep(void){
 void mladen_store_particle_data(struct part *p, float h){
 /* ======================================================== */
 
-  /* store default particle data 
+  /* store default particle data
    * Gets called whenever a mladen_store* routine is called
    * */
 
@@ -267,9 +267,9 @@ void mladen_store_particle_data(struct part *p, float h){
 
 
 /* ======================================================== */
-void mladen_store_neighbour_data(struct part *restrict pi, 
-    long long pjid, float wi, float GSCX, float GSCY, 
-    float GSDX, float GSDY, float dwdr, const float r, 
+void mladen_store_neighbour_data(struct part *restrict pi,
+    long long pjid, float wi, float GSCX, float GSCY,
+    float GSDX, float GSDY, float dwdr, const float r,
     float hi){
 /* ======================================================== */
   /* pi: particle i
@@ -338,7 +338,7 @@ void mladen_store_neighbour_data(struct part *restrict pi,
 
 
 /* ======================================================== */
-void mladen_store_density_data(struct part *restrict pi, 
+void mladen_store_density_data(struct part *restrict pi,
     float hi, float Vi){
 /* ======================================================== */
 
@@ -348,7 +348,7 @@ void mladen_store_density_data(struct part *restrict pi,
   mladen_store_particle_data(pi, hi);
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
-  
+
   dumploc->wgrads_store[0] = pi->density.wgrads[0];
   dumploc->wgrads_store[1] = pi->density.wgrads[1];
   dumploc->wgrads_store[2] = pi->density.wgrads[2];
@@ -368,7 +368,7 @@ void mladen_store_density_data(struct part *restrict pi,
 
 
 /* ================================================================================== */
-void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float hi, 
+void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float hi,
   float* A, float grad_final_x, float grad_final_y, int negative){
 /* ================================================================================== */
 
