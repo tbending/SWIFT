@@ -27,6 +27,7 @@ struct gizmo_debug_dump {
   long long neighbour_ids_grad[MLADENASSN];     /* IDs of neighbour for individual gradient contributions */
   float grads_sum_contrib[2*MLADENASSN];        /* contributions to the gradient sum from each neighbour */
   float dwdr[MLADENASSN];                       /* radial derivative of the kernel */
+  float wjxi[MLADENASSN];                       /* Wj(xi) */
   float grads_final[2*MLADENASSN];              /* Actual analytical gradient */
 
   float grads_sum_dx[2*MLADENASSN];        /* pi.x - pj.x*/
@@ -68,7 +69,7 @@ void mladen_reset_dump_data(void);
 void mladen_store_particle_data(struct part *p, float h);
 
 void mladen_store_neighbour_data(struct part *restrict pi,
-    long long pjid, float GSCX, float GSCY, float GSDX, float GSDY,
+    long long pjid, float wi, float GSCX, float GSCY, float GSDX, float GSDY,
     float dwdr, const float r, float hi);
 
 void mladen_store_density_data(struct part *restrict pi, 
@@ -78,6 +79,7 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
     float* A, float grad_final_x, float grad_final_y, int negative);
 
 
+void mladen_track_volume(const struct part *restrict pi, const struct part *restrict pj);
 
 
 #endif /* todo_temporary_globals.h */

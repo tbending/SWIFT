@@ -9,6 +9,9 @@
 
 /* #define SKIP_MLADEN_STUFF */
 
+#define MAXDEBUGDUMPS 10
+
+
 struct mladen_globals mladen_globs;
 
 /* ========================================= */
@@ -101,8 +104,8 @@ void mladen_reset_dump_data(){
   struct mladen_globals m = mladen_globs;
   for (int i = 0; i < m.npart; i++){
     struct gizmo_debug_dump *d = &m.data[i];
-    d->nneigh = -1;
-    d->nneigh_grads = -1;
+    d->nneigh = 0;
+    d->nneigh_grads = 0;
     d->volume_store = 0;
     d->omega = 0;
     d->wgrads_store[0] = 0;
@@ -118,6 +121,7 @@ void mladen_reset_dump_data(){
       d->neighbour_ids[j] = 0;
       d->neighbour_ids_grad[j] = 0;
       d->dwdr[j] = 0;
+      d->wjxi[j] = 0;
       d->r[j] = 0;
     }
     for (int j = 0; j < 2*MLADENASSN; j++){
@@ -127,10 +131,6 @@ void mladen_reset_dump_data(){
       d->grads_final[j] = 0;
     }
   }
-
-  /* for (int i = 0; i<10; i++){ */
-  /*   printf("Nneigh in data dump is %d\n", mladen_globs.data[i].nneigh); */
-  /* } */
 
 #endif
 
@@ -159,10 +159,14 @@ void mladen_dump_after_timestep(void){
     */
 
 #ifndef SKIP_MLADEN_STUFF
+
+#ifdef MAXDEBUGDUMPS
+  if (mladen_globs.dump_nr == MAXDEBUGDUMPS) return;
+#endif
   
   if (mladen_globs.e->updates==mladen_globs.npart-1){ /* npart = npart+1 in setup*/
 
-    printf("Dumping mladen debugging data %d after timestep\n", mladen_globs.dump_nr);
+    printf("Dumping Mladen debugging data %d after timestep\n", mladen_globs.dump_nr);
 
     /* get filename */
     char filename[200] = "swift-gizmo-debug-dump_";
@@ -198,6 +202,7 @@ void mladen_dump_after_timestep(void){
       fwrite(&(d->neighbour_ids_grad), sizeof(long long), MLADENASSN, fp);
       fwrite(&(d->grads_sum_contrib), sizeof(float), 2*MLADENASSN, fp);
       fwrite(&(d->dwdr), sizeof(float), MLADENASSN, fp);
+      fwrite(&(d->wjxi), sizeof(float), MLADENASSN, fp);
       fwrite(&(d->grads_sum_dx), sizeof(float), 2*MLADENASSN, fp);
       fwrite(&(d->r), sizeof(float), MLADENASSN, fp);
 
@@ -213,15 +218,12 @@ void mladen_dump_after_timestep(void){
 
     }
 
-
     fclose(fp);
-
-
 
     /* increase dump index */
     mladen_globs.dump_nr += 1;
-
   }
+  
   /* reset values */
   mladen_reset_dump_data();
 
@@ -266,17 +268,13 @@ void mladen_store_particle_data(struct part *p, float h){
 
 /* ======================================================== */
 void mladen_store_neighbour_data(struct part *restrict pi, 
-    long long pjid, 
-    float GSCX, 
-    float GSCY, 
-    float GSDX, 
-    float GSDY, 
-    float dwdr, 
-    const float r, 
+    long long pjid, float wi, float GSCX, float GSCY, 
+    float GSDX, float GSDY, float dwdr, const float r, 
     float hi){
 /* ======================================================== */
   /* pi: particle i
    * pjid: id of particle j
+   * wi:  Wj(xi)
    * GSCX, GSCY: Gradient Sum Contribution in x, y direction
    * GSDX, GSDY: Gradient sum dx, dy
    * dwdr: dwdr
@@ -296,16 +294,36 @@ void mladen_store_neighbour_data(struct part *restrict pi,
   mladen_store_particle_data(pi, hi);
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
-  dumploc->nneigh_grads += 1;
+
   int ng = dumploc->nneigh_grads;
+  int new =  1;
+
+  /* first check whether the neighbour is already in there */
+  for (int i = 0; i<ng; i++){
+    if (dumploc->neighbour_ids_grad[i] == pjid){
+      ng = i;
+      new = 0;
+      break;
+    }
+  }
+
+  /* if new, add neighbours */
+  if (new){
+    ng = dumploc->nneigh_grads;
+    dumploc->nneigh_grads += 1;
+  }
+
+  /* check to not make segfaults */
   if (dumploc->nneigh_grads == MLADENASSN) error("Particle %lld has > %d neighbours\n", pi->id, MLADENASSN);
 
+  /* store stuff */
   dumploc->neighbour_ids_grad[ng] = pjid;
   dumploc->grads_sum_contrib[2*ng] = GSCX;
   dumploc->grads_sum_contrib[2*ng+1] = GSCY;
   dumploc->grads_sum_dx[2*ng] = GSDX;
   dumploc->grads_sum_dx[2*ng+1] = GSDY;
   dumploc->dwdr[ng] = dwdr;
+  dumploc->wjxi[ng] = wi;
   dumploc->r[ng] = r;
 
 #endif
@@ -364,8 +382,25 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
 
-  dumploc->nneigh += 1;
   int n = dumploc->nneigh;
+  int new =  1;
+
+  /* first check whether the neighbour is already in there */
+  for (int i = 0; i<n; i++){
+    if (dumploc->neighbour_ids[i] == pj->id){
+      n = i;
+      new = 0;
+      break;
+    }
+  }
+
+  /* if new, add neighbours */
+  if (new){
+    n = dumploc->nneigh;
+    dumploc->nneigh+= 1;
+  }
+
+  /* now store stuff */
   if (negative){
     dumploc->Aij[2*n] = -A[0];
     dumploc->Aij[2*n+1] = -A[1];
@@ -383,3 +418,48 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
 }
 
 
+
+
+/*============================================================================================================*/
+void mladen_track_volume(const struct part *restrict pi, const struct part *restrict pj){
+/*============================================================================================================*/
+  /* Track what particle adds what contribution to the volume and print information */
+  /* to be called at the start of runner_iact_density and runner_iact_nonsym density*/
+  /* call it twice with pi, pj inversed in symmetric one                            */
+
+#ifndef SKIP_MLADEN_STUFF
+/* which particle to look for */
+#define MLADEN_PART_I 2066
+
+
+  if (pi->id != MLADEN_PART_I) return;
+
+
+  float wi, wi_dx;
+
+  double dx[3];
+
+  for (int i = 0; i<3; i++){
+    dx[i] = pi->x[i] - pj->x[i];
+  }
+
+  float r2 = (float) dx[0]*dx[0] + dx[1]*dx[1];
+  float hi = pi->h;
+
+  const float r = sqrtf(r2);
+  const float hi_inv = 1.f / hi;
+  const float xi = r * hi_inv;
+  kernel_deval(xi, &wi, &wi_dx);
+
+  wi = wi * hi_inv * hi_inv;
+
+  float gamma = 1.778002;
+
+  printf("Adding to i=%6lld from j=%6lld \n", pi->id, pj->id);
+  printf("wcount is now: %14.7e || adding %14.7e \n", pi->density.wcount*hi_inv*hi_inv, wi);
+  printf("r:   %14.7e \nH:   %14.7e \nr/H: %14.7e \n", r, hi*gamma, r/hi/gamma);
+  printf("\n");
+
+#endif
+
+}

@@ -62,6 +62,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
     struct part *restrict pj, float a, float H) {
 
   float wi, wj, wi_dx, wj_dx;
+  // TODO: temporary
+  mladen_track_volume(pi, pj);
 
   /* Get r and h inverse. */
   const float r = sqrtf(r2);
@@ -84,6 +86,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   mladen_store_neighbour_data(
         /* pi    */ pi,
         /* pj ID */ pj->id,
+        /* Wj(xi)*/ wi*hi_inv*hi_inv,
         /* GSCX= */ hidp1 * wi_dx * dx[0]/r,
         /* GSCY= */ hidp1 * wi_dx * dx[1]/r,
         /* GSDX= */ dx[0],
@@ -117,13 +120,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   pj->density.wgrads[2] -= hjdp1 * wj_dx * dx[2] / r;
 
   // TODO: temporary
-  mladen_store_neighbour_data(pj, pi->id,
+  mladen_store_neighbour_data(
+        /* pi =  */ pj, 
+        /* pj ID */ pi->id,
+        /* Wj(xi)*/ wj * hj_inv * hj_inv,
         /* GSCX= */ -hjdp1 * wj_dx * dx[0]/r,
         /* GSCY= */ -hjdp1 * wj_dx * dx[1]/r,
         /* GSDX= */ -dx[0],
         /* GSDY= */ -dx[1],
         /* dwdr= */ hjdp1 * wj_dx,
-        /* r= */ r, hj );
+        /* r=    */ r, 
+        /* h_j=  */ hj );
 #endif
 
   /* these are eqns. (1) and (2) in the summary */
@@ -166,6 +173,10 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
     float r2, const float *dx, float hi, float hj, struct part *restrict pi,
     const struct part *restrict pj, float a, float H) {
 
+  // TODO: temporary
+  mladen_track_volume(pi, pj);
+  mladen_track_volume(pj, pi);
+
   float wi, wi_dx;
 
   /* Get r and h inverse. */
@@ -188,6 +199,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   mladen_store_neighbour_data(
         /* pi    */ pi,
         /* pj ID */ pj->id,
+        /* Wj(xi)*/ wi*hi_inv*hi_inv,
         /* GSCX= */ hidp1 * wi_dx * dx[0]/r,
         /* GSCY= */ hidp1 * wi_dx * dx[1]/r,
         /* GSDX= */ dx[0],
