@@ -2,7 +2,8 @@
 \section{Explicit Computations}
 %=========================================
 
-
+Main purpose of this section is to have the explicit computations written down clearly somewhere.
+Implicitly swallowing indices in the formulae can make programming life a nightmare, so here we go.
 
 
 
@@ -173,11 +174,14 @@ $\frac{\del w(q_{ij})}{\del q_{ij}}$ is given by \verb|wij_dx| of \verb|kernel_d
 
 
 Finally, inserting \ref{grad_kernel_final} in \ref{grad_psi} we get
-\begin{equation}
-	\deldx \psi_j (\x_i) = 
-		\frac{1}{\omega(\x_i)} \frac{1}{h_i^{\nu + 1}} \mathtt{wij\_dx}  \frac{\x_i - \x_j}{r_{ij}} 	 -
-		\frac{1}{\omega(\x_i)^2} W(r_{ij}, h_i) \sum_k \frac{1}{h_i^{\nu + 1}} \mathtt{wik\_dx}  \frac{\x_i - \x_k}{r_{ik}}
-\end{equation}
+\begin{align}
+	\deldx \psi_j (\x_i) &= 
+		\frac{1}{\omega(\x_i)} \frac{1}{h_i^{\nu + 1}} \deldr{w}(r_{ij}, h_i)  \frac{\x_i - \x_j}{r_{ij}} 	 -
+		\frac{1}{\omega(\x_i)^2} W(r_{ij}, h_i) \sum_k \frac{1}{h_i^{\nu + 1}} \deldr{w}(r_{ik}, h_i)  \frac{\x_i - \x_k}{r_{ik}} \nonumber \\
+   	 &= 
+   		\frac{1}{\omega(\x_i)} \frac{1}{h_i^{\nu + 1}} \mathtt{wij\_dx}  \frac{\x_i - \x_j}{r_{ij}} 	 -
+   		\frac{1}{\omega(\x_i)^2} W(r_{ij}, h_i) \frac{1}{h_i^{\nu + 1}} \sum_k \mathtt{wik\_dx}  \frac{\x_i - \x_k}{r_{ik}}
+\end{align}
 
 
 
