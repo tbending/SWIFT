@@ -292,6 +292,10 @@ void mladen_store_neighbour_data(struct part *restrict pi,
 
   /* first store particle data to be safe */
   mladen_store_particle_data(pi, hi);
+
+  /* quit if you're outside the compact support radius */
+  if (r > hi*1.778002) return;
+
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
 
@@ -367,18 +371,21 @@ void mladen_store_density_data(struct part *restrict pi,
 
 
 
-/* ================================================================================== */
-void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float hi,
+/* ========================================================================================== */
+void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float r, float hi,
   float* A, float grad_final_x, float grad_final_y, int negative){
-/* ================================================================================== */
+/* ========================================================================================== */
 
   /* written to be called from runner_iact_fluxes_common */
   /* grad_final_x: \del psi_j (x_i) / \del x: The gradient of psi which will
    * be multiplied by V_i in the A_ij */
 
-
 #ifndef SKIP_MLADEN_STUFF
   mladen_store_particle_data(pi, hi);
+
+  /* quit if you're outside the compact support radius */
+  if (r > hi*1.778002) return;
+
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
 

@@ -75,7 +75,7 @@ void mladen_store_neighbour_data(struct part *restrict pi,
 void mladen_store_density_data(struct part *restrict pi,
     float hi, float Vi);
 
-void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float hi,
+void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float r, float hi,
     float* A, float grad_final_x, float grad_final_y, int negative);
 
 

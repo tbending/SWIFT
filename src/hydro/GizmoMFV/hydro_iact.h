@@ -63,7 +63,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
 
   float wi, wj, wi_dx, wj_dx;
   // TODO: temporary
-  mladen_track_volume(pi, pj);
+  // mladen_track_volume(pi, pj);
 
   /* Get r and h inverse. */
   const float r = sqrtf(r2);
@@ -174,8 +174,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
     const struct part *restrict pj, float a, float H) {
 
   // TODO: temporary
-  mladen_track_volume(pi, pj);
-  mladen_track_volume(pj, pi);
+  // mladen_track_volume(pi, pj);
+  // mladen_track_volume(pj, pi);
 
   float wi, wi_dx;
 
@@ -431,11 +431,11 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
     }
 
     // TODO: temporary
-    mladen_store_Aij(pi, pj, hi, A,
+    mladen_store_Aij(pi, pj, r, hi, A,
       /* grad_final_x=*/ Xi * wi_dr * dx[0] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[0],
       /* grad_final_y=*/ Xi * wi_dr * dx[1] / r - Xi * Xi * wi * hi_inv_dim * dwidx_sum[1],
       /*negative=*/0);
-    mladen_store_Aij(pj, pi, hj, A,
+    mladen_store_Aij(pj, pi, r, hj, A,
       /* grad_final_x=*/ -Xj * wj_dr * dx[0] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[0],
       /* grad_final_y=*/ -Xj * wj_dr * dx[1] / r - Xj * Xj * wj * hj_inv_dim * dwjdx_sum[1],
       /*negative=*/1);
