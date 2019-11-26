@@ -68,10 +68,11 @@ void runner_do_stars_resort(struct runner *r, struct cell *c, const int timer) {
  * @param N The number of entries.
  */
 void runner_do_sort_ascending(struct sort_entry *sort, int N) {
+  const int stack_size = 10;
 
   struct {
     short int lo, hi;
-  } qstack[10];
+  } qstack[stack_size];
   int qpos, i, j, lo, hi, imin;
   struct sort_entry temp;
   float pivot;
@@ -81,6 +82,10 @@ void runner_do_sort_ascending(struct sort_entry *sort, int N) {
   qstack[0].hi = N - 1;
   qpos = 0;
   while (qpos >= 0) {
+    if (qpos >= stack_size) {
+      error("The stack size for sorting is too small."
+            "Either increase it or reduce the number of parts per cell.");
+    }
     lo = qstack[qpos].lo;
     hi = qstack[qpos].hi;
     qpos -= 1;
