@@ -2558,7 +2558,7 @@ void engine_check_for_dumps(struct engine *e) {
  * @param e The #engine.
  */
 void engine_check_for_index_dump(struct engine *e) {
-
+#ifdef WITH_LOGGER
   /* Get a few variables */
   struct logger_writer *log = e->logger;
   const size_t dump_size = log->dump.count;
@@ -2577,6 +2577,9 @@ void engine_check_for_index_dump(struct engine *e) {
     /* Update the dump size for last output */
     log->index.dump_size_last_output = dump_size;
   }
+#else
+  error("This function should not be called without the logger.");
+#endif
 
 }
 
