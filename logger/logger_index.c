@@ -133,8 +133,10 @@ void logger_index_map_file(struct logger_index *index, const char *filename,
                                /* read_only */ 0);
     /* Sort the file */
     for (int i = 0; i < swift_type_count; i++) {
-      struct index_data *data = logger_index_get_data(index, i);
-      quick_sort(data, index->nparts[i]);
+      if (index->nparts[i] != 0) {
+        struct index_data *data = logger_index_get_data(index, i);
+        quick_sort(data, index->nparts[i]);
+      }
     }
 
     /* Write that the file is sorted */

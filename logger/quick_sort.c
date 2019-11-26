@@ -23,17 +23,22 @@
 /* Include local headers */
 #include "logger_index.h"
 
+struct qstack {
+  int64_t lo;
+  int64_t hi;
+};
+
 /**
  * @brief Sort the data with the quicksort according to the ids.
  */
 void quick_sort(struct index_data *data, size_t N) {
-  const int stack_size = 100;
-
-  struct {
-    int64_t lo, hi;
-  } qstack[stack_size];
   int64_t qpos, i, j, lo, hi, imin, pivot;
   struct index_data temp;
+
+  /* Allocate a stack of operations */
+  int stack_size = log(N) + 5;
+  struct qstack *qstack =
+    (struct qstack *) malloc(sizeof(struct qstack) * stack_size);
 
   /* Sort parts in decreasing order with quicksort */
   qstack[0].lo = 0;
@@ -41,7 +46,7 @@ void quick_sort(struct index_data *data, size_t N) {
   qpos = 0;
   while (qpos >= 0) {
     if (qpos >= stack_size) {
-      error("Stack too small.");
+      error("The stack size for sorting is too small.");
     }
     lo = qstack[qpos].lo;
     hi = qstack[qpos].hi;
@@ -90,28 +95,26 @@ void quick_sort(struct index_data *data, size_t N) {
           j -= 1;
         }
       }
-      /* Do we still have element to sort in j? */
+      /* Add the next operations to the stack.
+       * The order is important in order to decrease the stack size.
+       */
       if (j > (lo + hi) / 2) {
-        /* Sort elements in [lo, j] */
         if (lo < j) {
           qpos += 1;
           qstack[qpos].lo = lo;
           qstack[qpos].hi = j;
         }
-        /* Sort lements in [i. hi] */
         if (i < hi) {
           qpos += 1;
           qstack[qpos].lo = i;
           qstack[qpos].hi = hi;
         }
       } else {
-        /* Sort lements in [i. hi] */
         if (i < hi) {
           qpos += 1;
           qstack[qpos].lo = i;
           qstack[qpos].hi = hi;
         }
-        /* Sort lements in [lo. j] */
         if (lo < j) {
           qpos += 1;
           qstack[qpos].lo = lo;
@@ -120,4 +123,7 @@ void quick_sort(struct index_data *data, size_t N) {
       }
     }
   }
+
+  /* Free the allocated memory */
+  free(qstack);
 }
