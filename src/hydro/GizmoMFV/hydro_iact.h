@@ -515,12 +515,12 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
                         vi[1] + xfac * (vi[1] - vj[1]),
                         vi[2] + xfac * (vi[2] - vj[2])};
   
-  if (fabsf(vij[0] - MLADEN_SETVX) > 1e-6) {
-    printf("Got different vij_x for particles %lld %lld %14.7e", pi->id, pj->id, vij[0]);
-  }
-  if (fabsf(vij[1]) > 1e-6) {
-    printf("Got different vij_y for particles %lld %lld %14.7e", pi->id, pj->id, vij[1]);
-  }
+  // if (fabsf(vij[0] - MLADEN_SETVX) > 1e-6) {
+  //   printf("Got different vij_x for particles %lld %lld %14.7e\n", pi->id, pj->id, vij[0]);
+  // }
+  // if (fabsf(vij[1]) > 1e-6) {
+  //   printf("Got different vij_y for particles %lld %lld %14.7e\n", pi->id, pj->id, vij[1]);
+  // }
 
   hydro_gradients_predict(pi, pj, hi, hj, dx, r, xij_i, Wi, Wj);
 
