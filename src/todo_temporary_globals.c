@@ -7,7 +7,8 @@
 
 
 
-/* #define SKIP_MLADEN_STUFF */
+#define DO_MLADEN_DEBUG_OUTPUT
+/* #define DO_MLADEN_TRACKING */
 
 #define MAXDEBUGDUMPS 10
 
@@ -22,7 +23,7 @@ void mladen_setup(struct engine* e){
    * in here.
    * written to be called at the beginning of main.c
    */
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 
   /* mladen_globs.outfilep = fopen("mladen_outputfile_all.txt", "w");   */
   /* mladen_globs.oneTimeFlagFilep = fopen("mladen_flags_all.txt", "w");   */
@@ -51,7 +52,7 @@ void mladen_cleanup(void){
   /* clean up after yourself */
   /* to be called at the end of the run in main.c. */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 
   /* fclose(mladen_globs.outfilep); */
   /* fclose(mladen_globs.oneTimeFlagFilep); */
@@ -76,7 +77,7 @@ void mladen_setup_data_dump(long long npart){
    * parameters necessary.
    * Call somewhere in main.c before sim loop starts*/
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
   mladen_globs.npart = npart+1;
   mladen_globs.data = (struct gizmo_debug_dump*) swift_malloc("debug_data", (npart+1)*sizeof(struct gizmo_debug_dump));
 
@@ -100,7 +101,7 @@ void mladen_reset_dump_data(){
 /* ======================================= */
   /* reset dump data values
    * called after dump is written, or when dump data is initialized, both in mladen_* functions*/
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
   struct mladen_globals m = mladen_globs;
   for (int i = 0; i < m.npart; i++){
     struct gizmo_debug_dump *d = &m.data[i];
@@ -158,7 +159,7 @@ void mladen_dump_after_timestep(void){
           e->s_updates, e->b_updates, e->wallclock_time, e->step_props);
     */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 
 #ifdef MAXDEBUGDUMPS
   if (mladen_globs.dump_nr == MAXDEBUGDUMPS) return;
@@ -245,7 +246,7 @@ void mladen_store_particle_data(struct part *p, float h){
    * Gets called whenever a mladen_store* routine is called
    * */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 
   int ind = (int) p->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
@@ -288,8 +289,9 @@ void mladen_store_neighbour_data(struct part *restrict pi,
 
 
   /* printf("   Storing data for particle %lld\n", pi->id); */
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 
+#ifdef WITH_IVANOVA
   /* first store particle data to be safe */
   mladen_store_particle_data(pi, hi);
 
@@ -329,7 +331,7 @@ void mladen_store_neighbour_data(struct part *restrict pi,
   dumploc->dwdr[ng] = dwdr;
   dumploc->wjxi[ng] = wi;
   dumploc->r[ng] = r;
-
+#endif
 #endif
 
 }
@@ -348,7 +350,8 @@ void mladen_store_density_data(struct part *restrict pi,
 
   /* written to be called from runner_iact_fluxes_common */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
+#ifdef WITH_IVANOVA
   mladen_store_particle_data(pi, hi);
   int ind = (int) pi->id;
   struct gizmo_debug_dump * dumploc = &(mladen_globs.data[ind]);
@@ -359,7 +362,7 @@ void mladen_store_density_data(struct part *restrict pi,
 
   dumploc->volume_store = Vi;
   dumploc->omega = pi->density.wcount;
-
+#endif
 #endif
 
 
@@ -380,8 +383,9 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
   /* grad_final_x: \del psi_j (x_i) / \del x: The gradient of psi which will
    * be multiplied by V_i in the A_ij */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
   mladen_store_particle_data(pi, hi);
+#ifdef WITH_IVANOVA
 
   /* quit if you're outside the compact support radius */
   if (r > hi*1.778002) return;
@@ -421,6 +425,7 @@ void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float 
   dumploc->neighbour_ids[n] = pj->id;
 
 #endif
+#endif
 
 }
 
@@ -434,10 +439,10 @@ void mladen_track_volume(const struct part *restrict pi, const struct part *rest
   /* to be called at the start of runner_iact_density and runner_iact_nonsym density*/
   /* call it twice with pi, pj inversed in symmetric one                            */
 
-#ifndef SKIP_MLADEN_STUFF
+#ifdef DO_MLADEN_DEBUG_OUTPUT
 /* which particle to look for */
 #define MLADEN_PART_I 2066
-
+#ifdef WITH_IVANOVA
 
   if (pi->id != MLADEN_PART_I) return;
 
@@ -466,6 +471,42 @@ void mladen_track_volume(const struct part *restrict pi, const struct part *rest
   printf("wcount is now: %14.7e || adding %14.7e \n", pi->density.wcount*hi_inv*hi_inv, wi);
   printf("r:   %14.7e \nH:   %14.7e \nr/H: %14.7e \n", r, hi*gamma, r/hi/gamma);
   printf("\n");
+
+#endif
+#endif
+}
+
+
+
+
+
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------------------------ */
+/* ------------------------------------------------------------------------------------------------------------------ */
+
+
+/* ========================================================================================== */
+void mladen_track_particle_stdout(struct part* restrict pi, int condition){
+/* ========================================================================================== */
+
+  /* track particles that satisfy some condition given by condition int
+   * 1: 
+   */
+
+#ifdef DO_MLADEN_TRACKING
+  
+  if (condition == 1){
+    float r = sqrtf((float) pi->x[0]*pi->x[0] + (float) pi->x[1]*pi->x[1] + (float) pi->x[2]+pi->x[2]);
+    float u = hydro_get_comoving_internal_energy(pi);
+    if (r>=0.2 && u >=5){
+      printf("Got u=%14.7e for r=%14.7f\n", u, r);
+    }
+  }
+  
+
 
 #endif
 

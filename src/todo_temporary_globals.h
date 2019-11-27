@@ -7,9 +7,34 @@
 
 
 /* ================================ */
-struct gizmo_debug_dump {
+struct mladen_globals {
 /* ================================ */
 
+  FILE *outfilep;
+  FILE *oneTimeFlagFilep;
+  int called_fluxes;
+  long long npart;
+
+  int dump_nr;              /* index of dump */
+
+  struct gizmo_debug_dump * data; /* array for data dump */
+
+  struct engine* e;
+
+} ;
+
+
+
+
+extern struct mladen_globals mladen_globs;
+
+
+
+
+
+/* ================================ */
+struct gizmo_debug_dump {
+/* ================================ */
 
   long long id;                     /* particle ID */
   float h;                          /* smoothing length */
@@ -37,32 +62,12 @@ struct gizmo_debug_dump {
 
 
 
-
-/* ================================ */
-struct mladen_globals {
-/* ================================ */
-
-  FILE *outfilep;
-  FILE *oneTimeFlagFilep;
-  int called_fluxes;
-  long long npart;
-
-  int dump_nr;              /* index of dump */
-
-  struct gizmo_debug_dump * data; /* array for data dump */
-
-  struct engine* e;
-
-} ;
-
-
-
-
-extern struct mladen_globals mladen_globs;
-
-
+/* general functions */
 void mladen_setup(struct engine* e);
 void mladen_cleanup(void);
+
+
+/* Aij debug dumps */
 void mladen_dump_after_timestep(void);
 void mladen_setup_data_dump(long long npart);
 void mladen_reset_dump_data(void);
@@ -78,8 +83,13 @@ void mladen_store_density_data(struct part *restrict pi,
 void mladen_store_Aij(struct part *restrict pi, struct part *restrict pj, float r, float hi,
     float* A, float grad_final_x, float grad_final_y, int negative);
 
-
 void mladen_track_volume(const struct part *restrict pi, const struct part *restrict pj);
+
+
+
+/* particle tracking */
+
+void mladen_track_particle_stdout(struct part* restrict pi, int condition);
 
 
 #endif /* todo_temporary_globals.h */

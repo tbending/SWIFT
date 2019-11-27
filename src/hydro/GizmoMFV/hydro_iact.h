@@ -62,8 +62,10 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
     struct part *restrict pj, float a, float H) {
 
   float wi, wj, wi_dx, wj_dx;
+
   // TODO: temporary
-  // mladen_track_volume(pi, pj);
+  mladen_track_particle_stdout(pi, /*condition=*/1);
+  mladen_track_particle_stdout(pj, /*condition=*/1);
 
   /* Get r and h inverse. */
   const float r = sqrtf(r2);
@@ -174,8 +176,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
     const struct part *restrict pj, float a, float H) {
 
   // TODO: temporary
-  // mladen_track_volume(pi, pj);
-  // mladen_track_volume(pj, pi);
+  mladen_track_particle_stdout(pi, /*condition=*/1);
 
   float wi, wi_dx;
 
@@ -491,6 +492,18 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   const float n_unit[3] = {A[0] * Anorm_inv, A[1] * Anorm_inv,
                            A[2] * Anorm_inv};
 
+  // const float xfac = -Vi / (Vi + Vj);
+  // const float xfac = 0.5;
+  // const float xfac = 0.;
+  // const float xij_i[3] = {pi->x[0]*Vi - pj->x[0]*Vj,
+  //                         pi->x[1]*Vi - pj->x[1]*Vj,
+  //                         pi->x[2]*Vi - pj->x[2]*Vj};
+  //
+  // const float vij[3] = {vi[0] - (vj[0]*Vj-vi[0]*Vi),
+  //                       vi[1] - (vj[1]*Vj-vi[1]*Vi),
+  //                       vi[2] - (vj[2]*Vj-vi[2]*Vi)};
+  /* originals below */
+
   /* Compute interface position (relative to pi, since we don't need the actual
    * position) eqn. (8) */
   const float xfac = -hi / (hi + hj);
@@ -501,6 +514,13 @@ __attribute__((always_inline)) INLINE static void runner_iact_fluxes_common(
   const float vij[3] = {vi[0] + xfac * (vi[0] - vj[0]),
                         vi[1] + xfac * (vi[1] - vj[1]),
                         vi[2] + xfac * (vi[2] - vj[2])};
+  
+  if (fabsf(vij[0] - MLADEN_SETVX) > 1e-6) {
+    printf("Got different vij_x for particles %lld %lld %14.7e", pi->id, pj->id, vij[0]);
+  }
+  if (fabsf(vij[1]) > 1e-6) {
+    printf("Got different vij_y for particles %lld %lld %14.7e", pi->id, pj->id, vij[1]);
+  }
 
   hydro_gradients_predict(pi, pj, hi, hj, dx, r, xij_i, Wi, Wj);
 
