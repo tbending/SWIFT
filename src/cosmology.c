@@ -48,12 +48,6 @@ const int cosmology_table_length = 10000;
 #ifdef HAVE_LIBGSL
 /*! Size of the GSL workspace */
 const size_t GSL_workspace_size = 100000;
-
-/* GSL interpolator object */
-gsl_interp *poly;
-
-/* GSL interpolation accelarator object */
-gsl_interp_accel *acc;
 #endif
 
 /**
@@ -86,13 +80,22 @@ static INLINE double interp_table(const double *restrict y_table,
     error("Extrapolating not interpolating!");
 #endif
 
+  const gsl_interp_type *t = gsl_interp_polynomial;
+  gsl_interp_accel *acc = gsl_interp_accel_alloc();
+  gsl_interp *poly = gsl_interp_alloc(t, 4);
+
   /* Initialise the interpolation range with 4 data points
    * The point of interest is in the range [ii - 1, ii] */
-  // gsl_interp_init(poly, &x_table[ii - 2], &y_table[ii - 2], 4);
+  gsl_interp_init(poly, &x_table[ii - 2], &y_table[ii - 2], 4);
 
   /* Interpolate! */
-  // return gsl_interp_eval(poly, &x_table[ii - 2], &y_table[ii - 2], x, acc);
-  return y_table[ii - 1] + (y_table[ii] - y_table[ii - 1]) * (xx - ii);
+  const double y =
+      gsl_interp_eval(poly, &x_table[ii - 2], &y_table[ii - 2], x, acc);
+
+  gsl_interp_accel_free(acc);
+  gsl_interp_free(poly);
+
+  return y;
 }
 
 /**
@@ -361,9 +364,9 @@ void cosmology_init_tables(struct cosmology *c) {
   c->log_a_table_end = log(a_end);
 
   /* Allocate the GSL interpolator memory */
-  const gsl_interp_type *t = gsl_interp_polynomial;
-  acc = gsl_interp_accel_alloc();
-  poly = gsl_interp_alloc(t, 4);
+  // const gsl_interp_type *t = gsl_interp_polynomial;
+  // acc = gsl_interp_accel_alloc();
+  // poly = gsl_interp_alloc(t, 4);
 
   /* Allocate memory for the interpolation tables */
   if (swift_memalign("cosmo.table", (void **)&c->log_a_interp_table,
@@ -938,8 +941,8 @@ void cosmology_print(const struct cosmology *c) {
 
 void cosmology_clean(struct cosmology *c) {
 
-  gsl_interp_accel_free(acc);
-  gsl_interp_free(poly);
+  // gsl_interp_accel_free(acc);
+  // gsl_interp_free(poly);
 
   swift_free("cosmo.table", c->log_a_interp_table);
   swift_free("cosmo.table", c->drift_fac_interp_table);
