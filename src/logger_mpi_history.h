@@ -21,8 +21,27 @@
 
 #include "../config.h"
 
+/* Standard includes */
+#include <stdint.h>
+
+/* Local include */
+#include "part_type.h"
+#include "error.h"
+
+
 #if defined(WITH_LOGGER) && defined(WITH_MPI)
 
+/* Forward declaration */
+struct xpart;
+struct part;
+struct gpart;
+struct spart;
+struct bpart;
+
+/**
+ * @brief Contains the information concerning
+ * a particle for the index files.
+ */
 struct logger_index_data {
   /* Id of the particle. */
   int64_t id;
@@ -31,6 +50,10 @@ struct logger_index_data {
   uint64_t offset;
 };
 
+/**
+ * @brief Structure dealing with the particle
+ * exchanged through MPI.
+ */
 struct logger_mpi_history {
 
   /* Number of elements currently stored */
@@ -40,10 +63,17 @@ struct logger_mpi_history {
   size_t capacity[swift_type_count];
 
   /* Buffer containing the particles */
-  struct logger_index_data[swift_type_count];
-
+  struct logger_index_data *data[swift_type_count];
 };
 
+void logger_mpi_history_init(struct logger_mpi_history *hist,
+                             int already_allocated);
+void logger_mpi_history_clean(struct logger_mpi_history *hist);
+void logger_mpi_history_log_part(struct logger_mpi_history *hist, struct part *p,
+                                 struct xpart *xp);
+void logger_mpi_history_log_spart(struct logger_mpi_history *hist, struct spart *sp);
+void logger_mpi_history_log_gpart(struct logger_mpi_history *hist, struct gpart *gp);
+void logger_mpi_history_log_bpart(struct logger_mpi_history *hist, struct bpart *bp);
 
 #endif // WITH_LOGGER && WITH_MPI
 #endif // SWIFT_LOGGER_MPI_HISTORY_H

@@ -28,6 +28,7 @@
 #include "common_io.h"
 #include "dump.h"
 #include "inline.h"
+#include "logger_mpi_history.h"
 #include "timeline.h"
 #include "units.h"
 
@@ -121,6 +122,12 @@ extern const struct mask_data logger_mask_data[logger_count_mask];
  * @brief structure containing global data for the particle logger.
  */
 struct logger_writer {
+
+#ifdef WITH_MPI
+  /* History of the MPI rank since the last index file */
+  struct logger_mpi_history history;
+#endif
+
   /* Number of particle steps between dumping a chunk of data. */
   short int delta_step;
 
