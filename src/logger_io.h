@@ -32,7 +32,8 @@
 
 void logger_write_index_file(struct logger_writer* log, struct engine* e);
 void logger_write_description(struct logger_writer* log, struct engine* e);
-
+void writeIndexArray(const struct engine* e, FILE* f, struct io_props* props,
+                     size_t n_props, size_t N);
 /**
  * @brief Specifies which particle fields to write to a dataset
  *

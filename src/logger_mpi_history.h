@@ -37,6 +37,7 @@ struct part;
 struct gpart;
 struct spart;
 struct bpart;
+struct engine;
 
 /**
  * @brief Contains the information concerning
@@ -74,6 +75,11 @@ void logger_mpi_history_log_part(struct logger_mpi_history *hist, struct part *p
 void logger_mpi_history_log_spart(struct logger_mpi_history *hist, struct spart *sp);
 void logger_mpi_history_log_gpart(struct logger_mpi_history *hist, struct gpart *gp);
 void logger_mpi_history_log_bpart(struct logger_mpi_history *hist, struct bpart *bp);
+void logger_mpi_history_write(struct logger_mpi_history *hist,
+                              struct engine *e, FILE *f);
+
+void logger_mpi_history_dump(const struct logger_mpi_history *hist);
+void logger_mpi_history_restore(struct logger_mpi_history *hist);
 
 #endif // WITH_LOGGER && WITH_MPI
 #endif // SWIFT_LOGGER_MPI_HISTORY_H

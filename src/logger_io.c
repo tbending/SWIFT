@@ -49,6 +49,7 @@
 #include "hydro_properties.h"
 #include "io_properties.h"
 #include "kernel_hydro.h"
+#include "logger_mpi_history.h"
 #include "parallel_io.h"
 #include "part.h"
 #include "serial_io.h"
@@ -351,6 +352,11 @@ void logger_write_index_file(struct logger_writer* log, struct engine* e) {
     if (sparts_written) swift_free("sparts_written", sparts_written);
     if (bparts_written) swift_free("bparts_written", bparts_written);
   }
+
+#ifdef WITH_MPI
+  /* Write the MPI history */
+  logger_mpi_history_write(&log->history, e, f);
+#endif
 
   /* Close file */
   fclose(f);

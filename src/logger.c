@@ -38,6 +38,7 @@
 #include "dump.h"
 #include "engine.h"
 #include "error.h"
+#include "logger_mpi_history.h"
 #include "part.h"
 #include "units.h"
 
@@ -570,6 +571,11 @@ void logger_init(struct logger_writer *log, struct swift_params *params) {
 
   /* init dump. */
   dump_init(&log->dump, logger_name_file, buffer_size);
+
+#ifdef WITH_MPI
+  /* initialize the history */
+  logger_mpi_history_init(&log->history, /* already_allocated */ 0);
+#endif
 }
 
 /**
@@ -577,7 +583,14 @@ void logger_init(struct logger_writer *log, struct swift_params *params) {
  *
  * @param log The #logger_writer
  */
-void logger_free(struct logger_writer *log) { dump_close(&log->dump); }
+void logger_free(struct logger_writer *log) {
+  dump_close(&log->dump);
+
+#ifdef WITH_MPI
+  logger_mpi_history_clean(&log->history);
+#endif
+
+}
 
 /**
  * @brief Write a file header to a logger file
@@ -1042,6 +1055,11 @@ void logger_log_recv_strays(
 void logger_struct_dump(const struct logger_writer *log, FILE *stream) {
   restart_write_blocks((void *)log, sizeof(struct logger_writer), 1, stream,
                        "logger", "logger");
+
+#ifdef WITH_MPI
+  /* Dump the logger mpi history */
+  logger_mpi_history_dump(&log->history);
+#endif
 }
 
 
@@ -1062,6 +1080,11 @@ void logger_struct_restore(struct logger_writer *log, FILE *stream) {
   logger_get_dump_name(log, logger_name_file);
 
   dump_restart(&log->dump, logger_name_file);
+
+#ifdef WITH_MPI
+  /* Restore the logger mpi history */
+  logger_mpi_history_restore(&log->history);
+#endif
 }
 
 #endif /* WITH_LOGGER */

@@ -25,6 +25,7 @@
 
 /* Local include */
 #include "part.h"
+#include "logger_io.h"
 
 #if defined(WITH_LOGGER) && defined(WITH_MPI)
 
@@ -178,5 +179,40 @@ void logger_mpi_history_log_gpart(struct logger_mpi_history *hist, struct gpart 
 void logger_mpi_history_log_bpart(struct logger_mpi_history *hist, struct bpart *bp) {
   error("TODO");
 }
+
+/**
+ * @brief Write the history into an index file.
+ *
+ * @param hist The #logger_mpi_history.
+ * @param e The #engine.
+ * @param f The file where to write the history.
+ */
+void logger_mpi_history_write(struct logger_mpi_history *hist, struct engine *e, FILE *f) {
+  /* Write the number of particles */
+  fwrite(hist->size, sizeof(uint64_t), swift_type_count, f);
+
+  /* write the particles */
+  for(int i = 0; i < swift_type_count; i++) {
+    /* Generate the structures for writing the index file */
+    const int num_fields = 2;
+    struct io_props list[2];
+    list[0] = io_make_output_field("ParticleIDs", ULONGLONG, 1, UNIT_CONV_NO_UNITS, 0.f, hist->data[i],
+                                   id, "Field not used");
+    list[1] = io_make_output_field("Offset", UINT64, 1, UNIT_CONV_NO_UNITS, 0.f, hist->data[i],
+                                   offset, "Field not used");
+
+    writeIndexArray(e, f, list, num_fields, hist->size[i]);
+  }
+}
+
+void logger_mpi_history_dump(const struct logger_mpi_history *hist) {
+  error("TODO");
+}
+
+void logger_mpi_history_restore(struct logger_mpi_history *hist) {
+  error("TODO");
+}
+
+
 
 #endif // WITH_LOGGER && WITH_MPI
