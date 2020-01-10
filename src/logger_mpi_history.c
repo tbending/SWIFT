@@ -203,6 +203,9 @@ void logger_mpi_history_write(struct logger_mpi_history *hist, struct engine *e,
 
     writeIndexArray(e, f, list, num_fields, hist->size[i]);
   }
+
+  /* Reset the logger history */
+  logger_mpi_history_init(hist, /* already_initialized */ 1);
 }
 
 void logger_mpi_history_dump(const struct logger_mpi_history *hist) {

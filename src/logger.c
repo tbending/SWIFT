@@ -921,6 +921,11 @@ void logger_log_repartition(
                       &xparts[ind].logger_data.last_offset,
                       flag);
       xparts[ind].logger_data.steps_since_last_output = 0;
+
+      /* Log in the history the received particles */
+      if (!sending) {
+        logger_mpi_history_log_part(&log->history, &parts[ind], &xparts[ind]);
+      }
     }
 
     const unsigned int mask_stars = logger_mask_data[logger_x].mask |
@@ -935,6 +940,11 @@ void logger_log_repartition(
                        &sparts[ind].logger_data.last_offset,
                        flag);
       sparts[ind].logger_data.steps_since_last_output = 0;
+
+      /* Log in the history the received particles */
+      if (!sending) {
+        logger_mpi_history_log_spart(&log->history, &sparts[ind]);
+      }
     }
 
     const unsigned int mask_grav =
@@ -952,6 +962,11 @@ void logger_log_repartition(
                        &gparts[ind].logger_data.last_offset,
                        flag);
       gparts[ind].logger_data.steps_since_last_output = 0;
+
+      /* Log in the history the received particles */
+      if (!sending) {
+        logger_mpi_history_log_gpart(&log->history, &gparts[ind]);
+      }
     }
 
     /* Log the bparts */
@@ -1008,6 +1023,9 @@ void logger_log_recv_strays(
                     &xparts[i].logger_data.last_offset,
                     flag);
     xparts[i].logger_data.steps_since_last_output = 0;
+
+    /* Save it in the history logger */
+    logger_mpi_history_log_part(&log->history, &parts[i], &xparts[i]);
   }
 
   /* Log the stellar particles */
@@ -1020,6 +1038,9 @@ void logger_log_recv_strays(
                      &sparts[i].logger_data.last_offset,
                      /* Special flags */ 0);
     sparts[i].logger_data.steps_since_last_output = 0;
+
+    /* Save it in the history logger */
+    logger_mpi_history_log_spart(&log->history, &sparts[i]);
   }
 
 
@@ -1036,6 +1057,9 @@ void logger_log_recv_strays(
                      &gparts[i].logger_data.last_offset,
                      /* Special flags */ 0);
     gparts[i].logger_data.steps_since_last_output = 0;
+
+    /* Save it in the history logger */
+    logger_mpi_history_log_gpart(&log->history, &gparts[i]);
   }
 
   /* Log the bparts */
