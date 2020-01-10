@@ -85,6 +85,9 @@ struct header {
 
   /* Timestamp mask */
   size_t timestamp_mask;
+
+  /* Mask for special cases */
+  size_t special_cases_mask;
 };
 
 void header_print(const struct header *h);

@@ -111,14 +111,18 @@ int _tools_get_next_record_backward(const struct header *h, void *map,
  * @brief switch side offset.
  *
  * From current record, switch side of the offset of the previous one.
- * @param h #header structure of the file.
+ * @param reader The #logger_reader of the file.
  * @param file_map file mapping.
  * @param offset position of the record.
  *
+ * TODO fix offset for particles leaving/entering rank.
  * @return position after the record.
  */
-size_t tools_reverse_offset(const struct header *h, void *file_map,
+size_t tools_reverse_offset(const struct logger_reader *reader, void *file_map,
                             size_t offset) {
+
+  const struct header *h = &reader->log.header;
+
   size_t mask = 0;
   size_t prev_offset = 0;
   const size_t cur_offset = offset;
@@ -139,6 +143,17 @@ size_t tools_reverse_offset(const struct header *h, void *file_map,
 
   /* first records do not have a previous partner. */
   if (prev_offset == cur_offset) return after_current_record;
+
+  /* If dealing with MPI skip for now */
+  if (mask & h->special_cases_mask) {
+    error("See flag writing");
+    /* Read the special flag */
+    const int flag = logger_particle_get_special_flag(reader, file_map + cur_offset);
+    /* MPI exchange => nothing to do */
+    if (flag < 0) {
+      return after_current_record;
+    }
+  }
 
   if (prev_offset > cur_offset)
     error("Unexpected offset: header %lu, current %lu.", prev_offset,

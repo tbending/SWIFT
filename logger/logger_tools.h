@@ -52,7 +52,7 @@ int _tools_get_next_record_backward(const struct header *h, void *map,
                                     size_t *offset, size_t file_size);
 int _tools_get_next_record_forward(const struct header *h, void *map,
                                    size_t *offset);
-size_t tools_reverse_offset(const struct header *h, void *map, size_t offset);
+size_t tools_reverse_offset(const struct logger_reader *reader, void *map, size_t offset);
 size_t tools_check_record_consistency(const struct logger_reader *reader,
                                       size_t offset);
 

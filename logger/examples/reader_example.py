@@ -32,7 +32,7 @@ def plot2D():
     plt.ylabel("Entropy")
 
 
-basename = "../../examples/HydroTests/SedovBlast_3D/index"
+basename = "../../examples/HydroTests/SedovBlast_3D/index_0000"
 time = 0.05
 if len(sys.argv) >= 2:
     basename = sys.argv[1]

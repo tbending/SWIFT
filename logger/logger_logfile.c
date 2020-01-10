@@ -139,7 +139,7 @@ void logger_logfile_reverse_offset(struct logger_logfile *log, char *filename) {
 
   /* reverse the record's offset. */
   for (size_t offset = header->offset_first_record; offset < log->log.mmap_size;
-       offset = tools_reverse_offset(header, log->log.map, offset)) {
+       offset = tools_reverse_offset(reader, log->log.map, offset)) {
   }
 
   if (reader->verbose > 0) {

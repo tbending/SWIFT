@@ -267,3 +267,33 @@ void logger_particle_interpolate(struct logger_particle *part_curr,
   /* set time. */
   part_curr->time = time;
 }
+
+
+/**
+ * @brief Read the special flag of a given particle.
+ *
+ * @param reader The #logger_reader.
+ * @param file_map The mapped file at the position of the particle record.
+ *
+ * @return The special flag.
+ */
+int logger_particle_get_special_flag(const struct logger_reader *reader, void *map_file) {
+  const struct header *h = &reader->log.header;
+
+  /* Read the mask */
+  size_t mask = 0;
+  map_file = logger_loader_io_read_mask(h, map_file, &mask, NULL);
+
+  /* Skip the useless fields */
+  for(size_t i = 0; i < h->special_cases_mask; i++) {
+    map_file += h->masks[i].size;
+  }
+
+  /* Read the special flag */
+  int flag = 0;
+  logger_loader_io_read_data(map_file, h->masks[h->special_cases_mask].size,
+                             &flag);
+
+  return flag;
+
+}
