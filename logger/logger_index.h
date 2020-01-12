@@ -63,6 +63,12 @@ struct logger_index {
   /* Number of particles in the file */
   uint64_t nparts[swift_type_count];
 
+  /* Number of received particles in the file */
+  uint64_t nparts_received[swift_type_count];
+
+  /* Offset of the received particles */
+  size_t offset_received_particles;
+
   /* Is the file sorted ? */
   char is_sorted;
 
@@ -81,5 +87,6 @@ size_t logger_index_get_particle_offset(struct logger_index *index,
 void logger_index_free(struct logger_index *index);
 void logger_index_sort_file(struct logger_index *index);
 struct index_data *logger_index_get_data(struct logger_index *index, int type);
+struct index_data *logger_index_get_data_received(struct logger_index *index, int type);
 
 #endif  // LOGGER_LOGGER_INDEX_H

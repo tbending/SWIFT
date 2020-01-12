@@ -79,6 +79,21 @@ void logger_index_read_header(struct logger_index *index,
          (char *)index->index.map + logger_index_is_sorted_offset,
          logger_index_is_sorted_size);
 
+  /* Compute the position of the received particles */
+  size_t data_size = 0;
+  for(int i = 0; i < swift_type_count; i++) {
+    data_size += index->nparts[i];
+  }
+  data_size *= sizeof(struct index_data);
+  index->offset_received_particles = logger_index_data_offset + data_size;
+
+  /* Read the number of new particles */
+  memcpy(index->nparts_received, (char *)index->index.map + index->offset_received_particles,
+         logger_index_npart_size);
+
+  /* Skip the number of particles */
+  index->offset_received_particles += logger_index_npart_size;
+
   /* Close the file */
   logger_index_free(index);
 }
@@ -120,6 +135,27 @@ struct index_data *logger_index_get_data(struct logger_index *index, int type) {
 }
 
 /**
+ * @brief Get the #index_data of a (new) particle.
+ *
+ * @param index The #logger_index.
+ * @param type The particle type.
+ */
+struct index_data *logger_index_get_data(struct logger_index *index, int type) {
+  /* Get the offset of particles of this type by skipping entries of lower
+   * types. */
+  size_t count = 0;
+  for (int i = 0; i < type; i++) {
+    count += index->nparts_received[i];
+  }
+  const size_t type_offset = count * sizeof(struct index_data);
+
+  const char *ret =
+    (char *)index->index.map + index->offset_received_particles + type_offset;
+  return (struct index_data *)ret;
+
+}
+
+/**
  * @brief Map the file and if required sort it.
  *
  * @param index The #logger_index.
@@ -148,6 +184,8 @@ void logger_index_map_file(struct logger_index *index, const char *filename,
         quick_sort(data, index->nparts[i]);
       }
     }
+
+    message("Not sorting the received particles");
 
     /* Write that the file is sorted */
     logger_index_write_sorted(index);
@@ -224,4 +262,7 @@ void logger_index_init(struct logger_index *index,
 
   /* Set the time to its default value */
   index->time = -1;
+
+  /* Set the received part offset */
+  index->offset_received_particles = 0;
 }

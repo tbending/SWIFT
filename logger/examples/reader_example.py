@@ -33,7 +33,7 @@ def plot2D():
 
 
 basename = "../../examples/HydroTests/SedovBlast_3D/index_0000"
-time = 0.05
+time = 0.005
 if len(sys.argv) >= 2:
     basename = sys.argv[1]
 else:

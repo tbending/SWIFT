@@ -160,7 +160,7 @@ void header_read(struct header *h, struct logger_logfile *log) {
 
   /* Loop over all masks. */
   h->timestamp_mask = 0;
-  h->special_cases_mask = 0;
+  h->special_cases_ind = 0;
   for (size_t i = 0; i < h->masks_count; i++) {
     /* Read the mask name. */
     map = logger_loader_io_read_data(map, h->string_length, h->masks[i].name);
@@ -179,7 +179,7 @@ void header_read(struct header *h, struct logger_logfile *log) {
 
     /* Keep the timestamp mask in memory */
     if (strcmp(h->masks[i].name, "special flags") == 0) {
-      h->special_cases_mask = h->masks[i].mask;
+      h->special_cases_ind = i;
     }
 
 
@@ -191,7 +191,7 @@ void header_read(struct header *h, struct logger_logfile *log) {
   }
 
   /* Check that the special cases mask exists */
-  if (h->special_cases_mask == 0) {
+  if (h->special_cases_ind == 0) {
     error("Unable to find the special cases mask.");
   }
 

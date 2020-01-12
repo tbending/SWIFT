@@ -123,37 +123,44 @@ size_t tools_reverse_offset(const struct logger_reader *reader, void *file_map,
 
   const struct header *h = &reader->log.header;
 
-  size_t mask = 0;
-  size_t prev_offset = 0;
-  const size_t cur_offset = offset;
-  void *map = file_map;
+  size_t mask = 0; /* Mask of the current record */
+  size_t prev_offset = 0; /* Offset to the previous record */
+  const size_t cur_offset = offset; /* Offset of the current record */
+  void *map = file_map; /* File position */
 
   /* read mask + offset. */
   map =
       logger_loader_io_read_mask(h, (char *)map + offset, &mask, &prev_offset);
 
-  /* write offset of zero (in case it is the last record). */
-  const size_t zero = 0;
-  map = (char *)map - LOGGER_OFFSET_SIZE;
-  map = logger_loader_io_write_data(map, LOGGER_OFFSET_SIZE, &zero);
 
-  /* set offset after current record. */
+  /* If something special happened, read the flag */
+  const int has_flag = mask & h->masks[h->special_cases_ind].mask;
+  enum logger_special_flags flag;
+  int data;
+  if (has_flag) {
+    logger_particle_get_special_flag(reader, file_map + cur_offset, &flag,
+                                     &data);
+  }
+
+  /* For received particle, we flag them as new. */
+  if (has_flag && (flag & logger_flag_create)) {
+    map -= LOGGER_OFFSET_SIZE;
+    map = logger_loader_io_write_data(map, LOGGER_OFFSET_SIZE, &cur_offset);
+    prev_offset = cur_offset;
+  }
+  /* Otherwise, we simply set the offset to zero (in case it is the last record). */
+  else {
+    const size_t zero = 0;
+    map = (char *)map - LOGGER_OFFSET_SIZE;
+    map = logger_loader_io_write_data(map, LOGGER_OFFSET_SIZE, &zero);
+  }
+
+  /* Compute the position after the current record. */
   map = (char *)map + header_get_record_size_from_mask(h, mask);
   size_t after_current_record = (size_t)((char *)map - (char *)file_map);
 
   /* first records do not have a previous partner. */
   if (prev_offset == cur_offset) return after_current_record;
-
-  /* If dealing with MPI skip for now */
-  if (mask & h->special_cases_mask) {
-    error("See flag writing");
-    /* Read the special flag */
-    const int flag = logger_particle_get_special_flag(reader, file_map + cur_offset);
-    /* MPI exchange => nothing to do */
-    if (flag < 0) {
-      return after_current_record;
-    }
-  }
 
   if (prev_offset > cur_offset)
     error("Unexpected offset: header %lu, current %lu.", prev_offset,

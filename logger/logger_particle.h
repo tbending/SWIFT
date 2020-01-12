@@ -110,6 +110,7 @@ void logger_particle_interpolate(struct logger_particle *part_curr,
                                  const struct logger_particle *part_next,
                                  const double time);
 
-int logger_particle_get_special_flag(const struct logger_reader *reader, void *map_file);
+void logger_particle_get_special_flag(const struct logger_reader *reader, void *map_file,
+                                      enum logger_special_flags *flag, int *data);
 
 #endif  // LOGGER_LOGGER_PARTICLE_H
