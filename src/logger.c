@@ -574,7 +574,7 @@ void logger_init(struct logger_writer *log, struct swift_params *params) {
 
 #ifdef WITH_MPI
   /* initialize the history */
-  logger_mpi_history_init(&log->history, /* already_allocated */ 0);
+  logger_mpi_history_first_init(&log->history, params);
 #endif
 }
 

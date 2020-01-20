@@ -38,6 +38,7 @@ struct gpart;
 struct spart;
 struct bpart;
 struct engine;
+struct swift_params;
 
 /**
  * @brief Contains the information concerning
@@ -65,10 +66,14 @@ struct logger_mpi_history {
 
   /* Buffer containing the particles */
   struct logger_index_data *data[swift_type_count];
+
+  /* Maximal number of particle stored in the history */
+  size_t maximal_size;
 };
 
-void logger_mpi_history_init(struct logger_mpi_history *hist,
-                             int already_allocated);
+void logger_mpi_history_first_init(struct logger_mpi_history *hist,
+                                   struct swift_params *params);
+void logger_mpi_history_init(struct logger_mpi_history *hist);
 void logger_mpi_history_clean(struct logger_mpi_history *hist);
 void logger_mpi_history_log_part(struct logger_mpi_history *hist, struct part *p,
                                  struct xpart *xp);
@@ -77,6 +82,7 @@ void logger_mpi_history_log_gpart(struct logger_mpi_history *hist, struct gpart 
 void logger_mpi_history_log_bpart(struct logger_mpi_history *hist, struct bpart *bp);
 void logger_mpi_history_write(struct logger_mpi_history *hist,
                               struct engine *e, FILE *f);
+size_t logger_mpi_history_get_size(const struct logger_mpi_history *hist);
 
 void logger_mpi_history_dump(const struct logger_mpi_history *hist);
 void logger_mpi_history_restore(struct logger_mpi_history *hist);

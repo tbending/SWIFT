@@ -32,12 +32,45 @@
 #define LOGGER_MPI_HISTORY_INIT_SIZE 1024
 
 /**
- * @brief Initialize the structure.
+ * @brief Initialize the structure for the first time.
  *
  * @param hist The #logger_mpi_history.
+ * @param params The #swift_params.
+ */
+void logger_mpi_history_first_init(struct logger_mpi_history *hist,
+                                   struct swift_params *params) {
+
+  /* Read the parameters */
+  const float max_memory_size = parser_get_opt_param_float(
+      params, "LoggerHistory:maximal_memory_size", 1.);
+  hist->maximal_size = max_memory_size / sizeof(struct logger_index_data);
+
+  if (engine_rank == 0) {
+    message("Maximal memory size for the logger history: %g GB",
+            max_memory_size);
+  }
+
+  for(int i = 0; i < swift_type_count; i++) {
+    /* Set the counters to their initial value */
+    hist->size[i] = 0;
+    hist->capacity[i] = LOGGER_MPI_HISTORY_INIT_SIZE;
+
+    hist->data[i] = (struct logger_index_data *)
+      malloc(sizeof(struct logger_index_data) * LOGGER_MPI_HISTORY_INIT_SIZE);
+    if (hist->data[i] == NULL) {
+      error("Failed to allocate memory for the logger_mpi_history (particle type %i)", i);
+    }
+  }
+}
+
+/**
+ * @brief Initialize the structure (for example just after a dump).
+ *
+ * @param hist The #logger_mpi_history.
+ * @param params The #swift_params.
  * @param already_allocated Are the data already allocated? (Need to free it?)
  */
-void logger_mpi_history_init(struct logger_mpi_history *hist, int already_allocated) {
+void logger_mpi_history_init(struct logger_mpi_history *hist) {
 
   for(int i = 0; i < swift_type_count; i++) {
     /* Set the counters to their initial value */
@@ -45,9 +78,8 @@ void logger_mpi_history_init(struct logger_mpi_history *hist, int already_alloca
     hist->capacity[i] = LOGGER_MPI_HISTORY_INIT_SIZE;
 
     /* Allocate the initial size */
-    if (already_allocated) {
-      free(hist->data[i]);
-    }
+    free(hist->data[i]);
+
     hist->data[i] = (struct logger_index_data *)
       malloc(sizeof(struct logger_index_data) * LOGGER_MPI_HISTORY_INIT_SIZE);
     if (hist->data[i] == NULL) {
@@ -205,7 +237,23 @@ void logger_mpi_history_write(struct logger_mpi_history *hist, struct engine *e,
   }
 
   /* Reset the logger history */
-  logger_mpi_history_init(hist, /* already_initialized */ 1);
+  logger_mpi_history_init(hist);
+}
+
+/**
+ * @brief Compute the number of particles in the history.
+ *
+ * @param hist The #logger_mpi_history.
+ *
+ * @return The total number of particle stored.
+ */
+size_t logger_mpi_history_get_size(const struct logger_mpi_history *hist) {
+  size_t number = 0;
+  for(int i = 0; i < swift_type_count; i++) {
+    number += hist->size[i];
+  }
+
+  return number;
 }
 
 void logger_mpi_history_dump(const struct logger_mpi_history *hist) {
