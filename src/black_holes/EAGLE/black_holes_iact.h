@@ -160,29 +160,17 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
      for repositioning */
   if (r2 < max_dist_repos2) {
 
-    /* Compute relative peculiar velocity between the two BHs
-     * Recall that in SWIFT v is (v_pec * a) */
-    const float delta_v[3] = {bi->v[0] - pj->v[0], bi->v[1] - pj->v[1],
-                              bi->v[2] - pj->v[2]};
-    const float v2 = delta_v[0] * delta_v[0] + delta_v[1] * delta_v[1] +
-                     delta_v[2] * delta_v[2];
+    /* NO Velocity criterion in this branch! */
+    const float potential = pj->black_holes_data.potential;
 
-    const float v2_pec = v2 * cosmo->a2_inv;
-
-    /* Check the velocity criterion */
-    if (v2_pec < 0.25f * bi->sound_speed_gas * bi->sound_speed_gas) {
-
-      const float potential = pj->black_holes_data.potential;
-
-      /* Is the potential lower? */
-      if (potential < bi->reposition.min_potential) {
-
-        /* Store this as our new best */
-        bi->reposition.min_potential = potential;
-        bi->reposition.delta_x[0] = -dx[0];
-        bi->reposition.delta_x[1] = -dx[1];
-        bi->reposition.delta_x[2] = -dx[2];
-      }
+    /* Is the potential lower? */
+    if (potential < bi->reposition.min_potential) {
+      
+      /* Store this as our new best */
+      bi->reposition.min_potential = potential;
+      bi->reposition.delta_x[0] = -dx[0];
+      bi->reposition.delta_x[1] = -dx[1];
+      bi->reposition.delta_x[2] = -dx[2];
     }
   }
 
@@ -266,20 +254,17 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
      for repositioning */
   if (r2 < max_dist_repos2) {
 
-    /* Check the velocity criterion */
-    if (v2_pec < 0.25f * bi->sound_speed_gas * bi->sound_speed_gas) {
+    /* NO velocity criterion in this branch */
+    const float potential = bj->reposition.potential;
 
-      const float potential = bj->reposition.potential;
+    /* Is the potential lower? */
+    if (potential < bi->reposition.min_potential) {
 
-      /* Is the potential lower? */
-      if (potential < bi->reposition.min_potential) {
-
-        /* Store this as our new best */
-        bi->reposition.min_potential = potential;
-        bi->reposition.delta_x[0] = -dx[0];
-        bi->reposition.delta_x[1] = -dx[1];
-        bi->reposition.delta_x[2] = -dx[2];
-      }
+      /* Store this as our new best */
+      bi->reposition.min_potential = potential;
+      bi->reposition.delta_x[0] = -dx[0];
+      bi->reposition.delta_x[1] = -dx[1];
+      bi->reposition.delta_x[2] = -dx[2];
     }
   }
 
