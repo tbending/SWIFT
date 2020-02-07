@@ -57,10 +57,13 @@ SPH:
   particle_splitting:                1        # Particle splitting is ON
   particle_splitting_mass_threshold: 7e-4     # (internal units, i.e. 7e6 Msun ~ 4x initial gas particle mass)
 
-# Parameters of the stars neighbour search
+# Parameters of the stars
 Stars:
-  resolution_eta:        1.1642   # Target smoothing length in units of the mean inter-particle separation
-  h_tolerance:           7e-3
+  resolution_eta:             1.1642 # Target smoothing length in units of the mean inter-particle separation
+  h_tolerance:                 7e-3
+  timestep_age_threshold_Myr:  10.   # Age at which stars switch from young to old (in Mega-years).
+  max_timestep_young_Myr:      0.1   # Maximal time-step length of young stars (in Mega-years).
+  max_timestep_old_Myr:        1.0   # Maximal time-step length of old stars (in Mega-years).
 
 # Parameters for the Friends-Of-Friends algorithm
 FOF:
