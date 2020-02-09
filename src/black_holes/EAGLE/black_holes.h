@@ -113,7 +113,7 @@ __attribute__((always_inline)) INLINE static void black_holes_init_bpart(
  *
  * @param bp The BH particle to check.
  */
-__attribute__((always_inline)) INLINE static void black_holes_check_repositioning(struct bpart* restrict bp) {
+__attribute__((always_inline)) INLINE static void black_holes_check_repositioning(struct bpart* restrict bp, const struct black_holes_props* props) {
 
   const float potential = gravity_get_comoving_potential(bp->gpart);
     
@@ -123,7 +123,7 @@ __attribute__((always_inline)) INLINE static void black_holes_check_repositionin
       bp->subgrid_mass > props->max_reposition_mass) {
 
     /* No need to reposition */
-    printf("Re-check: no need to reposition BH %lld.\n");    
+    printf("Re-check: no need to reposition BH %lld.\n", bp->id);    
     bp->reposition.min_potential = FLT_MAX;
     bp->reposition.delta_x[0] = -FLT_MAX;
     bp->reposition.delta_x[1] = -FLT_MAX;
