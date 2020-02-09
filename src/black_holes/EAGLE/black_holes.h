@@ -136,6 +136,11 @@ __attribute__((always_inline)) INLINE static void black_holes_predict_extra(
 #endif
 
     /* Move the black hole */
+    printf("Repositioning BH ID=%lld right now, by %f/%f/%f. (Pot=%f)\n",
+	   bp->id, bp->reposition.delta_x[0],
+	   bp->reposition.delta_x[1],
+	   bp->reposition.delta_x[2],
+	   bp->reposition.min_potential);
     bp->x[0] += bp->reposition.delta_x[0];
     bp->x[1] += bp->reposition.delta_x[1];
     bp->x[2] += bp->reposition.delta_x[2];
@@ -546,7 +551,8 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
  */
 __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
     struct bpart* restrict bp, const struct black_holes_props* props,
-    const struct phys_const* constants, const struct cosmology* cosmo) {
+    const struct phys_const* constants, const struct cosmology* cosmo,
+    const double time) {
 
   const float potential = gravity_get_comoving_potential(bp->gpart);
 
@@ -560,7 +566,13 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
     bp->reposition.delta_x[0] = -FLT_MAX;
     bp->reposition.delta_x[1] = -FLT_MAX;
     bp->reposition.delta_x[2] = -FLT_MAX;
+    printf("No need to reposition BH %lld at time=%g (pot=>%f).\n",
+	   bp->id, time, bp->reposition.min_potential);
   }
+  else
+    printf("BH %lld set for repositioning at time=%g by %f/%f/%f.\n",
+	   bp->id, time, bp->reposition.delta_x[0], bp->reposition.delta_x[1],
+	   bp->reposition.delta_x[2]);
 }
 
 /**
