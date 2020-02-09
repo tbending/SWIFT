@@ -181,6 +181,9 @@ __attribute__((always_inline)) INLINE static void drift_bpart(
   bp->ti_drift = ti_current;
 #endif
 
+  /* CRUDE BUG FIX (YB): re-check BH potential and mass again here */
+  black_holes_check_repositioning(bp);
+
   /* Drift... */
   bp->x[0] += bp->v[0] * dt_drift;
   bp->x[1] += bp->v[1] * dt_drift;

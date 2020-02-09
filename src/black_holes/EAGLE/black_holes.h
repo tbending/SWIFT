@@ -105,6 +105,36 @@ __attribute__((always_inline)) INLINE static void black_holes_init_bpart(
   bp->reposition.potential = FLT_MAX;
 }
 
+/** 
+ * @brief Check (again!) whether a BH particle should be repositioned.
+ *
+ * This is necessary while the black_holes_end_reposition() function is not 
+ * called reliably.
+ *
+ * @param bp The BH particle to check.
+ */
+__attribute__((always_inline)) INLINE static void black_holes_check_repositioning(struct bpart* restrict bp) {
+
+  const float potential = gravity_get_comoving_potential(bp->gpart);
+    
+  /* Is the potential lower (i.e. the BH is at the bottom already)
+   * OR is the BH massive enough that we don't reposition? */
+  if (potential < bp->reposition.min_potential ||
+      bp->subgrid_mass > props->max_reposition_mass) {
+
+    /* No need to reposition */
+    printf("Re-check: no need to reposition BH %lld.\n");    
+    bp->reposition.min_potential = FLT_MAX;
+    bp->reposition.delta_x[0] = -FLT_MAX;
+    bp->reposition.delta_x[1] = -FLT_MAX;
+    bp->reposition.delta_x[2] = -FLT_MAX;
+  }
+  else
+    printf("Re-check: BH %lld set for repositioning by %f/%f/%f.\n",
+	   bp->id, bp->reposition.delta_x[0], bp->reposition.delta_x[1],
+	   bp->reposition.delta_x[2]);
+}
+
 /**
  * @brief Predict additional particle fields forward in time when drifting
  *
