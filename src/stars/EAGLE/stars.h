@@ -37,6 +37,9 @@ __attribute__((always_inline)) INLINE static float stars_compute_timestep(
     const int with_cosmology, const struct cosmology* cosmo,
     const double time) {
 
+  /* Background star particles have no time-step limits */
+  if (sp->birth_time == -1.) return FLT_MAX;
+
   /* Star age (in internal units) */
   double star_age;
   if (with_cosmology) {
