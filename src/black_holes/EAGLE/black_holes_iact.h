@@ -151,16 +151,18 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
   kernel_eval(ui, &wi);
 
   /* Start by checking the repositioning criteria */
-
+  
+  
   /* (Square of) Max repositioning distance allowed based on the softening */
   const float max_dist_repos2 =
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
-      const_max_repositioning_distance_ratio *
-      const_max_repositioning_distance_ratio * grav_props->epsilon_baryon_cur *
+      bh_props->max_reposition_distance_ratio *
+      bh_props->max_reposition_distance_ratio *
+      grav_props->epsilon_baryon_cur *
       grav_props->epsilon_baryon_cur;
 
-  /* This gas neighbour is close enough that we can consider it's potential
+  /* This gas neighbour is close enough that we can consider its potential
      for repositioning */
   if (r2 < max_dist_repos2) {
 
@@ -252,8 +254,9 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
   const float max_dist_repos2 =
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
-      const_max_repositioning_distance_ratio *
-      const_max_repositioning_distance_ratio * grav_props->epsilon_baryon_cur *
+      bh_props->max_reposition_distance_ratio *
+      bh_props->max_reposition_distance_ratio *
+      grav_props->epsilon_baryon_cur *
       grav_props->epsilon_baryon_cur;
 
   /* This gas neighbour is close enough that we can consider it's potential
@@ -286,7 +289,8 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
   const float max_dist_merge2 =
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
-      const_max_merging_distance_ratio * const_max_merging_distance_ratio *
+      bh_props->max_merging_distance_ratio *
+      bh_props->max_merging_distance_ratio *
       grav_props->epsilon_baryon_cur * grav_props->epsilon_baryon_cur;
 
   const float G_Newton = grav_props->G_Newton;
@@ -301,7 +305,11 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
     /* Merge if gravitationally bound AND if within max distance
      * Note that we use the kernel support here as the size and not just the
      * smoothing length */
-    if (v2_pec < G_Newton * M / (kernel_gamma * h) && (r2 < max_dist_merge2)) {
+    const v2_threshold = (bh_props->merger_threshold_type == 0) ?
+      (G_Newton * M / (kernel_gamma * h)) :
+      (G_Newton * M / sqrt(r2) );
+
+    if (v2_pec < v2_threshold && (r2 < max_dist_merge2)) {
 
       /* This particle is swallowed by the BH with the largest ID of all the
        * candidates wanting to swallow it */

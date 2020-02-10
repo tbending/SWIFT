@@ -82,6 +82,10 @@ struct black_holes_props {
   /*! Maximal mass of BH to reposition */
   float max_reposition_mass;
 
+  /*! Maximal distance to reposition, in units of softening length */
+  float max_reposition_distance_ratio;
+
+  
   /* ---- Properties of the merger model ---------- */
 
   /*! Mass ratio above which a merger is considered 'minor' */
@@ -90,6 +94,13 @@ struct black_holes_props {
   /*! Mass ratio above which a merger is considered 'major' */
   float major_merger_threshold;
 
+  /*! Type of merger threshold (0: standard, 1: improved) */
+  int merger_threshold_type;
+
+  /*! Maximal distance over which BHs merge, in units of softening length */
+  float max_merging_distance_ratio;
+
+  
   /* ---- Common conversion factors --------------- */
 
   /*! Conversion factor from temperature to internal energy */
@@ -183,6 +194,10 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   /* Convert to internal units */
   bp->max_reposition_mass *= phys_const->const_solar_mass;
 
+  bp->max_reposition_distance_ratio =
+      parser_get_param_float(params, "EAGLEAGN:max_reposition_distance_ratio");
+
+  
   /* Merger parameters ------------------------------------- */
 
   bp->minor_merger_threshold =
@@ -191,6 +206,13 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->major_merger_threshold =
       parser_get_param_float(params, "EAGLEAGN:threshold_major_merger");
 
+  bp->merger_threshold_type =
+      parser_get_param_float(params, "EAGLEAGN:merger_threshold_type");
+
+  bp->max_merging_distance_ratio =
+      parser_get_param_float(params, "EAGLEAGN:merger_max_distance_ratio");
+
+  
   /* Common conversion factors ----------------------------- */
 
   /* Calculate temperature to internal energy conversion factor (all internal
