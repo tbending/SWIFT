@@ -354,7 +354,8 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
        * the distance of the lower-mass BH */
       const float r_12 = sqrt(r2);
 
-      if (r_12 < grav_props->epsilon_baryon_cur) {
+      if ((bh_props->merger_threshold_type == 1) &&
+	  (r_12 < grav_props->epsilon_baryon_cur)) {
 
 	/* If BHs are within softening range, take this into account */
 	float w_grav;
@@ -368,7 +369,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
       }
     }
 
-    if (v2_pec < v2_threshold && (r2 < max_dist_merge2)) {
+    if ((v2_pec < v2_threshold) && (r2 < max_dist_merge2)) {
 
       /* This particle is swallowed by the BH with the largest ID of all the
        * candidates wanting to swallow it */
