@@ -87,6 +87,9 @@ struct black_holes_props {
 
   /*! Maximal velocity offset of repositioning targets [c_sound] */
   float max_reposition_velocity_ratio;
+
+  /*! Enable redundant repositioning check, to patch bug (TEMPORARY!) */
+  int enable_redundant_repositioning_check;
   
   /* ---- Properties of the merger model ---------- */
 
@@ -202,6 +205,8 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->max_reposition_velocity_ratio =
       parser_get_param_float(params, "EAGLEAGN:max_reposition_velocity_ratio");
 
+  bp->enable_redundant_repositioning_check =
+      parser_get_param_int(params, "EAGLEAGN:enable_redundant_repositioning_check");
   
   /* Merger parameters ------------------------------------- */
 
