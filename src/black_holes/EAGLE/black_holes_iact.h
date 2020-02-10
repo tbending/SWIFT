@@ -305,6 +305,37 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
     /* Merge if gravitationally bound AND if within max distance
      * Note that we use the kernel support here as the size and not just the
      * smoothing length */
+
+    /* Maximum velocity difference between BHs allowed to merge */
+    float v2_thresh;
+
+    if (bh_props->merger_threshold_type == 0) {
+
+      /* 'Old-style' merger threshold using circular velocity at the
+       * edge of the more massive BH's kernel */
+      v2_thresh = G_Newton * M / (kernel_gamma * h);
+    } else {
+
+      /* Arguably better merger threshold using the escape velocity at
+       * the distance of the lower-mass BH */
+      const float r_12 = sqrt(r2);
+
+      if (r_12 < grav_props->epsilon_baryon_cur) {
+
+	/* If BHs are within softening range, take this into account */
+	float w_grav;
+	kernel_grav_pot_eval(r_12/grav_props->epsilon_baryon_cur, &w_grav);
+	const float r_mod = w_grav / grav_props->epsilon_baryon_cur;
+	v2_thresh = 2 * G_Newton * M / (r_mod);
+
+      } else {
+	/* Standard formula if BH interactions are not softened */
+	v2_thresh = 2 * G_Newton * M / (r_12);
+      }
+      
+      if ((v2_pec < v2_thresh) && (r2 < max_dist_merge2)) {
+
+
     const v2_threshold = (bh_props->merger_threshold_type == 0) ?
       (G_Newton * M / (kernel_gamma * h)) :
       (G_Newton * M / sqrt(r2) );
