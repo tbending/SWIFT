@@ -172,8 +172,8 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
 
       /* Compute relative peculiar velocity between the two BHs
        * Recall that in SWIFT v is (v_pec * a) */
-      const float delta_v[3] = {bi->v[0] - bj->v[0], bi->v[1] - bj->v[1],
-				bi->v[2] - bj->v[2]};
+      const float delta_v[3] = {bi->v[0] - pj->v[0], bi->v[1] - pj->v[1],
+				bi->v[2] - pj->v[2]};
       const float v2 = delta_v[0] * delta_v[0] + delta_v[1] * delta_v[1] +
                        delta_v[2] * delta_v[2];
       
@@ -341,13 +341,13 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
      * smoothing length */
 
     /* Maximum velocity difference between BHs allowed to merge */
-    float v2_thresh;
+    float v2_threshold;
 
     if (bh_props->merger_threshold_type == 0) {
 
       /* 'Old-style' merger threshold using circular velocity at the
        * edge of the more massive BH's kernel */
-      v2_thresh = G_Newton * M / (kernel_gamma * h);
+      v2_threshold = G_Newton * M / (kernel_gamma * h);
     } else {
 
       /* Arguably better merger threshold using the escape velocity at
@@ -360,19 +360,13 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
 	float w_grav;
 	kernel_grav_pot_eval(r_12/grav_props->epsilon_baryon_cur, &w_grav);
 	const float r_mod = w_grav / grav_props->epsilon_baryon_cur;
-	v2_thresh = 2 * G_Newton * M / (r_mod);
+	v2_threshold = 2 * G_Newton * M / (r_mod);
 
       } else {
 	/* Standard formula if BH interactions are not softened */
-	v2_thresh = 2 * G_Newton * M / (r_12);
+	v2_threshold = 2 * G_Newton * M / (r_12);
       }
-      
-      if ((v2_pec < v2_thresh) && (r2 < max_dist_merge2)) {
-
-
-    const v2_threshold = (bh_props->merger_threshold_type == 0) ?
-      (G_Newton * M / (kernel_gamma * h)) :
-      (G_Newton * M / sqrt(r2) );
+    }
 
     if (v2_pec < v2_threshold && (r2 < max_dist_merge2)) {
 
