@@ -85,6 +85,8 @@ struct black_holes_props {
   /*! Maximal distance to reposition, in units of softening length */
   float max_reposition_distance_ratio;
 
+  /*! Maximal velocity offset of repositioning targets [c_sound] */
+  float max_reposition_velocity_ratio;
   
   /* ---- Properties of the merger model ---------- */
 
@@ -197,6 +199,9 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->max_reposition_distance_ratio =
       parser_get_param_float(params, "EAGLEAGN:max_reposition_distance_ratio");
 
+  bp->max_reposition_velocity_ratio =
+      parser_get_param_float(params, "EAGLEAGN:max_reposition_velocity_ratio");
+
   
   /* Merger parameters ------------------------------------- */
 
@@ -207,7 +212,7 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
       parser_get_param_float(params, "EAGLEAGN:threshold_major_merger");
 
   bp->merger_threshold_type =
-      parser_get_param_float(params, "EAGLEAGN:merger_threshold_type");
+      parser_get_param_int(params, "EAGLEAGN:merger_threshold_type");
 
   bp->max_merging_distance_ratio =
       parser_get_param_float(params, "EAGLEAGN:merger_max_distance_ratio");

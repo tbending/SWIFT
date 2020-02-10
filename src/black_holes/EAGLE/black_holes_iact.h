@@ -151,8 +151,7 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
   kernel_eval(ui, &wi);
 
   /* Start by checking the repositioning criteria */
-  
-  
+    
   /* (Square of) Max repositioning distance allowed based on the softening */
   const float max_dist_repos2 =
       kernel_gravity_softening_plummer_equivalent_inv *
@@ -166,17 +165,38 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
      for repositioning */
   if (r2 < max_dist_repos2) {
 
-    /* NO Velocity criterion in this branch! */
-    const float potential = pj->black_holes_data.potential;
+    /* Flag to check whether neighbour is slow enough to be considered
+     * as repositioning target. Always true if velocity cut switched off */
+    int neighbour_is_slow_enough = 1;
+    if (bh_props->max_reposition_velocity_ratio > 0) {
 
-    /* Is the potential lower? */
-    if (potential < bi->reposition.min_potential) {
+      /* Compute relative peculiar velocity between the two BHs
+       * Recall that in SWIFT v is (v_pec * a) */
+      const float delta_v[3] = {bi->v[0] - bj->v[0], bi->v[1] - bj->v[1],
+				bi->v[2] - bj->v[2]};
+      const float v2 = delta_v[0] * delta_v[0] + delta_v[1] * delta_v[1] +
+                       delta_v[2] * delta_v[2];
       
-      /* Store this as our new best */
-      bi->reposition.min_potential = potential;
-      bi->reposition.delta_x[0] = -dx[0];
-      bi->reposition.delta_x[1] = -dx[1];
-      bi->reposition.delta_x[2] = -dx[2];
+      const float v2_pec = v2 * cosmo->a2_inv;
+      const float v2_max = bh_props->max_reposition_velocity_ratio *
+	                   bh_props->max_reposition_velocity_ratio *
+                           bi->sound_speed_gas * bi->sound_speed_gas;
+      if (v2_pec >= v2_max)
+	neighbour_is_slow_enough = 0;
+    }
+
+    if (neighbour_is_slow_enough) {
+      const float potential = pj->black_holes_data.potential;
+
+      /* Is the potential lower? */
+      if (potential < bi->reposition.min_potential) {
+      
+	/* Store this as our new best */
+	bi->reposition.min_potential = potential;
+	bi->reposition.delta_x[0] = -dx[0];
+	bi->reposition.delta_x[1] = -dx[1];
+	bi->reposition.delta_x[2] = -dx[2];
+      }
     }
   }
 
@@ -259,21 +279,35 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
       grav_props->epsilon_baryon_cur *
       grav_props->epsilon_baryon_cur;
 
-  /* This gas neighbour is close enough that we can consider it's potential
+  /* This gas neighbour is close enough that we can consider its potential
      for repositioning */
   if (r2 < max_dist_repos2) {
 
-    /* NO velocity criterion in this branch */
-    const float potential = bj->reposition.potential;
+    /* Flag to check whether neighbour is slow enough to be considered
+     * as repositioning target. Always true if velocity cut switched off */
+    int neighbour_is_slow_enough = 1;
+    if (bh_props->max_reposition_velocity_ratio > 0) {
 
-    /* Is the potential lower? */
-    if (potential < bi->reposition.min_potential) {
+      const float v2_max = bh_props->max_reposition_velocity_ratio *
+	                   bh_props->max_reposition_velocity_ratio *
+                           bi->sound_speed_gas * bi->sound_speed_gas;
+      if (v2_pec >= v2_max)
+	neighbour_is_slow_enough = 0;
+    }
 
-      /* Store this as our new best */
-      bi->reposition.min_potential = potential;
-      bi->reposition.delta_x[0] = -dx[0];
-      bi->reposition.delta_x[1] = -dx[1];
-      bi->reposition.delta_x[2] = -dx[2];
+    if (neighbour_is_slow_enough) {
+
+      const float potential = bj->reposition.potential;
+
+      /* Is the potential lower? */
+      if (potential < bi->reposition.min_potential) {
+	
+	/* Store this as our new best */
+	bi->reposition.min_potential = potential;
+	bi->reposition.delta_x[0] = -dx[0];
+	bi->reposition.delta_x[1] = -dx[1];
+	bi->reposition.delta_x[2] = -dx[2];
+      }
     }
   }
 
