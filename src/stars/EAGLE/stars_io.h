@@ -269,10 +269,10 @@ INLINE static void stars_props_print(const struct stars_props *sp) {
     message("Stars' birth time read from the ICs will be overwritten to %f",
             sp->spart_first_init_birth_time);
 
-  message("Stars' young/old age threshold: %f [U_t]", sp->age_threshold);
-  message("Max time-step size of young stars: %f [U_t]",
+  message("Stars' young/old age threshold: %e [U_t]", sp->age_threshold);
+  message("Max time-step size of young stars: %e [U_t]",
           sp->max_time_step_young);
-  message("Max time-step size of old stars: %f [U_t]", sp->max_time_step_old);
+  message("Max time-step size of old stars: %e [U_t]", sp->max_time_step_old);
 }
 
 #if defined(HAVE_HDF5)
