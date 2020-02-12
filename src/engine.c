@@ -65,6 +65,7 @@
 #include "equation_of_state.h"
 #include "error.h"
 #include "feedback.h"
+#include "fof.h"
 #include "gravity.h"
 #include "gravity_cache.h"
 #include "hydro.h"
@@ -73,6 +74,7 @@
 #include "map.h"
 #include "memuse.h"
 #include "minmax.h"
+#include "mpiuse.h"
 #include "outputlist.h"
 #include "parallel_io.h"
 #include "part.h"
@@ -210,8 +212,9 @@ void engine_repartition(struct engine *e) {
   /* Task arrays. */
   scheduler_free_tasks(&e->sched);
 
-  /* Foreign parts. */
-  space_free_foreign_parts(e->s);
+  /* Foreign parts. (no need to nullify the cell pointers as the cells
+   * will be regenerated) */
+  space_free_foreign_parts(e->s, /*clear_cell_pointers=*/0);
 
   /* Now comes the tricky part: Exchange particles between all nodes.
      This is done in two steps, first allreducing a matrix of
@@ -3105,17 +3108,10 @@ void engine_split(struct engine *e, struct partition *initial_partition) {
   swift_free("gparts", s->gparts);
   s->gparts = gparts_new;
 
-  /* Re-link the parts. */
-  if (s->nr_parts > 0 && s->nr_gparts > 0)
-    part_relink_parts_to_gparts(s->gparts, s->nr_gparts, s->parts);
-
-  /* Re-link the sparts. */
-  if (s->nr_sparts > 0 && s->nr_gparts > 0)
-    part_relink_sparts_to_gparts(s->gparts, s->nr_gparts, s->sparts);
-
-  /* Re-link the bparts. */
-  if (s->nr_bparts > 0 && s->nr_gparts > 0)
-    part_relink_bparts_to_gparts(s->gparts, s->nr_gparts, s->bparts);
+  /* Re-link everything to the gparts. */
+  if (s->nr_gparts > 0)
+    part_relink_all_parts_to_gparts(s->gparts, s->nr_gparts, s->parts,
+                                    s->sparts, s->bparts, &e->threadpool);
 
 #ifdef SWIFT_DEBUG_CHECKS
 
@@ -3382,6 +3378,72 @@ void engine_unpin(void) {
   error("SWIFT was not compiled with support for pinning.");
 #endif
 }
+
+#ifdef SWIFT_DUMPER_THREAD
+/**
+ * @brief dumper thread action, checks got the existence of the .dump file
+ * every 5 seconds and does the dump if found.
+ *
+ * @param p the #engine
+ */
+static void *engine_dumper_poll(void *p) {
+  struct engine *e = (struct engine *)p;
+  while (1) {
+    if (access(".dump", F_OK) == 0) {
+
+      /* OK, do our work. */
+      message("Dumping engine tasks in step: %d", e->step);
+      task_dump_active(e);
+
+#ifdef SWIFT_MEMUSE_REPORTS
+      /* Dump the currently logged memory. */
+      message("Dumping memory use report");
+      memuse_log_dump_error(e->nodeID);
+#endif
+
+#if defined(SWIFT_MPIUSE_REPORTS) && defined(WITH_MPI)
+      /* Dump the MPI interactions in the step. */
+      mpiuse_log_dump_error(e->nodeID);
+#endif
+
+      /* Add more interesting diagnostics. */
+      scheduler_dump_queues(e);
+
+      /* Delete the file. */
+      unlink(".dump");
+      message("Dumping completed");
+      fflush(stdout);
+    }
+
+    /* Take a breath. */
+    sleep(5);
+  }
+  return NULL;
+}
+#endif /* SWIFT_DUMPER_THREAD */
+
+#ifdef SWIFT_DUMPER_THREAD
+/**
+ * @brief creates the dumper thread.
+ *
+ * This watches for the creation of a ".dump" file in the current directory
+ * and if found dumps the current state of the tasks and memory use (if also
+ * configured).
+ *
+ * @param e the #engine
+ *
+ */
+static void engine_dumper_init(struct engine *e) {
+  pthread_t dumper;
+
+  /* Make sure the .dump file is not present, that is bad when starting up. */
+  struct stat buf;
+  if (stat(".dump", &buf) == 0) unlink(".dump");
+
+  /* Thread does not exit, so nothing to do but create it. */
+  pthread_create(&dumper, NULL, &engine_dumper_poll, e);
+}
+#endif /* SWIFT_DUMPER_THREAD */
 
 /**
  * @brief init an engine struct with the necessary properties for the
@@ -4281,6 +4343,12 @@ void engine_config(int restart, int fof, struct engine *e,
   if (with_aff) {
     free(cpuid);
   }
+#endif
+
+#ifdef SWIFT_DUMPER_THREAD
+
+  /* Start the dumper thread.*/
+  engine_dumper_init(e);
 #endif
 
   /* Wait for the runner threads to be in place. */
