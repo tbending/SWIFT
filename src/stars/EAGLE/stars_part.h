@@ -178,6 +178,9 @@ struct stars_props {
 
   /*! Age threshold for the young/old transition (internal units) */
   double age_threshold;
+
+  /*! Maximal age to impose a time-step to the stars (internal units) */
+  double max_age_for_limit;
 };
 
 #endif /* SWIFT_EAGLE_STAR_PART_H */

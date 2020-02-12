@@ -49,6 +49,10 @@ __attribute__((always_inline)) INLINE static float stars_compute_timestep(
     star_age = time - sp->birth_time;
   }
 
+  /* Are we above the age where limits are imposed? */
+  if (star_age > stars_properties->max_age_for_limit) return FLT_MAX;
+
+  /* OK, set a time-step for the stars */
   if (star_age < stars_properties->age_threshold)
     return stars_properties->max_time_step_young;
   else

@@ -238,10 +238,18 @@ INLINE static void stars_props_init(struct stars_props *sp,
       parser_get_opt_param_float(params, "Stars:max_timestep_old_Myr", FLT_MAX);
   const double age_threshold_Myr = parser_get_opt_param_float(
       params, "Stars:timestep_age_threshold_Myr", FLT_MAX);
+  const double max_age_for_limit_Myr = parser_get_opt_param_float(
+      params, "Stars:max_age_for_limit_Myr", FLT_MAX);
+
+  if (max_age_for_limit_Myr < age_threshold_Myr)
+    error(
+        "Maximal age for the stars' time-step limit smaller than the young/old "
+        "threshold");
 
   sp->max_time_step_young = max_time_step_young_Myr * Myr / conv_fac;
   sp->max_time_step_old = max_time_step_old_Myr * Myr / conv_fac;
   sp->age_threshold = age_threshold_Myr * Myr / conv_fac;
+  sp->max_age_for_limit = max_age_for_limit_Myr * Myr / conv_fac;
 }
 
 /**
@@ -273,6 +281,8 @@ INLINE static void stars_props_print(const struct stars_props *sp) {
   message("Max time-step size of young stars: %e [U_t]",
           sp->max_time_step_young);
   message("Max time-step size of old stars: %e [U_t]", sp->max_time_step_old);
+  message("Time-step of stars imposed until an age of %e [U_t]",
+          sp->max_age_for_limit);
 }
 
 #if defined(HAVE_HDF5)
