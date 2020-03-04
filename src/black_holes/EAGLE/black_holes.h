@@ -561,13 +561,7 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
     bp->reposition.delta_x[0] = -FLT_MAX;
     bp->reposition.delta_x[1] = -FLT_MAX;
     bp->reposition.delta_x[2] = -FLT_MAX;
-    printf("No need to reposition BH %lld at time=%g (pot=>%f).\n",
-	   bp->id, time, bp->reposition.min_potential);
   }
-  else
-    printf("BH %lld set for repositioning at time=%g by %f/%f/%f.\n",
-	   bp->id, time, bp->reposition.delta_x[0], bp->reposition.delta_x[1],
-	   bp->reposition.delta_x[2]);
 }
 
 /**
