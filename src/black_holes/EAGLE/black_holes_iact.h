@@ -313,13 +313,11 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
 
   /* Find the most massive of the two BHs */
   float M = bi->subgrid_mass;
-  float h = hi;
   if (bj->subgrid_mass > M) {
     M = bj->subgrid_mass;
-    h = hj;
   }
 
-  /* (Square of) Max swallowing distance allowed based on the softening */
+  /* (Square of) max swallowing distance allowed based on the softening */
   const float max_dist_merge2 =
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
