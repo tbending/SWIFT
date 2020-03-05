@@ -407,6 +407,12 @@ if test "$enable_memuse_reports" = "yes"; then
    AC_DEFINE([SWIFT_MEMUSE_REPORTS],1,[Enable memory usage reports])
 fi
 
+# The system memory report depends on the presence of /proc/self/statm, i.e.
+# a linux OS, check for that.
+if test -f "/proc/self/statm"; then
+   AC_DEFINE([SWIFT_MEMUSE_STATM],1,[Have /proc/self/statm capability])
+fi
+
 # Check if we want to make the dumper thread active.
 AC_ARG_ENABLE([dumper],
    [AS_HELP_STRING([--enable-dumper],
@@ -1219,6 +1225,17 @@ if test "x$with_velociraptor" != "xno"; then
 fi
 AC_SUBST([VELOCIRAPTOR_LIBS])
 AM_CONDITIONAL([HAVEVELOCIRAPTOR],[test -n "$VELOCIRAPTOR_LIBS"])
+
+# Now that we found VELOCIraptor, let's check how it was compiled.
+if test "$have_velociraptor" == "yes"; then
+    AC_CHECK_LIB(
+       [velociraptor],
+       [VR_NOMASS],
+       [AC_DEFINE([HAVE_VELOCIRAPTOR_WITH_NOMASS],1,[The VELOCIraptor library has been compiled with the NOMASS option. Only useful if running a uniform box.])],
+       [AC_MSG_RESULT(VELOCIraptor not compiled to so as to *not* store masses per particle.)],
+       [$VELOCIRAPTOR_LIBS $HDF5_LDFLAGS $HDF5_LIBS $GSL_LIBS]
+    )
+fi
 
 # Check for dummy VELOCIraptor.
 AC_ARG_ENABLE([dummy-velociraptor],
@@ -2133,6 +2150,17 @@ case "$with_star_formation" in
       AC_MSG_ERROR([Unknown star formation model])
    ;;
 esac 
+
+AC_ARG_WITH([gadget2-physical-constants],
+    [AS_HELP_STRING([--with-gadget2-physical-constants],
+       [Use the same physical constants (G, Msun, Mpc) as the Gadget-2 code rather than more up-to-date values.]
+    )],
+    [with_gadget2_physical_constants="$withval"],
+    [with_gadget2_physical_constants="no"]
+)
+if test "$with_gadget2_physical_constants" = "yes"; then
+   AC_DEFINE([SWIFT_USE_GADGET2_PHYSICAL_CONSTANTS],1,[Use the same physical constants as Gadget-2])
+fi
 
 #  Gravity multipole order
 AC_ARG_WITH([multipole-order],
