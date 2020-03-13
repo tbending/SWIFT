@@ -103,6 +103,18 @@ struct star_formation {
   /*! Maximum density threshold to form stars (H atoms per cm^3) */
   double density_threshold_max_HpCM3;
 
+  /*! Pressure threshold to form stars (internal units) */
+  double pressure_threshold;
+
+  /*! Pressure threshold to form stars in user units */
+  double pressure_threshold_KpCM3;
+
+  /*! Maximum pressure threshold to form stars (internal units) */
+  double pressure_threshold_max;
+
+  /*! Maximum pressure threshold to form stars (H atoms per cm^3) */
+  double pressure_threshold_max_KpCM3;
+
   /*! Reference metallicity for metal-dependant threshold */
   double Z0;
 
@@ -172,6 +184,37 @@ INLINE static double star_formation_threshold(
   /* Convert to mass density */
   return density_threshold * phys_const->const_proton_mass;
 }
+
+/**
+ * @brief Computes the pressure threshold for star-formation fo a given total
+ * metallicity.
+ *
+ * Follows Schaye (2004) eq. 19 and 24 (see also Schaye et al. 2015, eq. 2).
+ *
+ * @param Z The metallicity (metal mass fraction).
+ * @param starform The properties of the star formation model.
+ * @param phys_const The physical constants.
+ * @return The physical pressure threshold for star formation in internal units.
+ */
+INLINE static double star_formation_threshold_pressure(
+    const double Z, const struct star_formation* starform,
+    const struct phys_const* phys_const) {
+
+  double pressure_threshold;
+
+  /* Schaye (2004), eq. 19 and 24 */
+  if (Z > 0.) {
+    pressure_threshold = starform->pressure_threshold *
+                        powf(Z * starform->Z0_inv, starform->n_Z0);
+    pressure_threshold = min(pressure_threshold, starform->pressure_threshold_max);
+  } else {
+    pressure_threshold = starform->pressure_threshold_max;
+  }
+
+  /* Convert to mass pressure */
+  return pressure_threshold * phys_const->const_proton_mass;
+}
+
 
 /**
  * @brief Compute the pressure on the polytropic equation of state for a given
@@ -248,18 +291,22 @@ INLINE static int star_formation_is_star_forming(
   /* In this case there are actually multiple possibilities
    * because we also need to check if the physical density exceeded
    * the appropriate limit */
-
-  /* Get the Hydrogen number density (assuming primordial H abundance) */
-  const double n_H = physical_density * hydro_props->hydrogen_mass_fraction;
+  
+  /* Get the pressure of the particle */
+  const double P = hydro_get_physical_pressure(p, cosmo);
 
   /* Get the density threshold for star formation */
   const double Z =
       chemistry_get_total_metal_mass_fraction_for_star_formation(p);
-  const double density_threshold =
-      star_formation_threshold(Z, starform, phys_const);
+
+  const double pressure_threshold =
+      star_formation_threshold_pressure(Z, starform, phys_const);
 
   /* Check if it exceeded the minimum density */
-  if (n_H < density_threshold) return 0;
+  if (P < pressure_threshold) return 0;
+
+  /* Get the Hydrogen number density (assuming primordial H abundance) */
+  const double n_H = physical_density * hydro_props->hydrogen_mass_fraction;
 
   /* Calculate the entropy of the particle */
   const double entropy = hydro_get_physical_entropy(p, xp, cosmo);
@@ -488,6 +535,10 @@ INLINE static void starformation_init_backend(
   const double number_density_from_cgs =
       1. / units_cgs_conversion_factor(us, UNIT_CONV_NUMBER_DENSITY);
 
+  /* Conversion of pressure from cgs */
+  const double pressure_from_cgs =
+      1. / units_cgs_conversion_factor(us, UNIT_CONV_TEMPERATURE_DENSITY);
+
   /* Quantities that have to do with the Normal Kennicutt-
    * Schmidt law will be read in this part of the code*/
 
@@ -603,6 +654,15 @@ INLINE static void starformation_init_backend(
   starform->density_threshold =
       starform->density_threshold_HpCM3 * number_density_from_cgs;
 
+  /* Read the normalization of the metallicity dependent critical
+   * pressure*/
+  starform->pressure_threshold_KpCM3 = parser_get_param_double(
+      parameter_file, "EAGLEStarFormation:threshold_norm_K_p_cm3");
+
+  /* Convert to internal units */
+  starform->pressure_threshold =
+      starform->pressure_threshold_KpCM3 * pressure_from_cgs * phys_const->const_boltzmann_k;
+
   /* Read the scale metallicity Z0 */
   starform->Z0 = parser_get_param_double(parameter_file,
                                          "EAGLEStarFormation:threshold_Z0");
@@ -619,6 +679,16 @@ INLINE static void starformation_init_backend(
   /* Convert to internal units */
   starform->density_threshold_max =
       starform->density_threshold_max_HpCM3 * number_density_from_cgs;
+
+  /* Read the maximum allowed pressure for star formation */
+  starform->pressure_threshold_max_KpCM3 = parser_get_param_double(
+      parameter_file, "EAGLEStarFormation:threshold_max_pressure_K_p_cm3");
+
+  /* Convert to internal units */
+  starform->pressure_threshold_max =
+      starform->pressure_threshold_max_KpCM3 * pressure_from_cgs * phys_const->const_boltzmann_k;
+
+  message("%e %e %e %e", starform->pressure_threshold_KpCM3, starform->pressure_threshold, starform->pressure_threshold_max_KpCM3, starform->pressure_threshold_max);
 }
 
 /**
