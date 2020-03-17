@@ -101,6 +101,8 @@ EAGLEStarFormation:
   threshold_Z0:                      0.002     # Reference metallicity (metal mass fraction) for the metal-dependant threshold for star formation.
   threshold_slope:                   -0.64     # Slope of the metal-dependant star formation threshold
   threshold_max_density_H_p_cm3:     10.0      # Maximal density of the metal-dependant density threshold for star formation in Hydrogen atoms per cm^3.
+  threshold_norm_K_p_cm3:            4.4e2
+  threshold_max_pressure_K_p_cm3:    4.6e4
   
 # Parameters for the EAGLE "equation of state"
 EAGLEEntropyFloor:
