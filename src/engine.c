@@ -262,9 +262,10 @@ void engine_repartition_trigger(struct engine *e) {
 
   /* Do nothing if there have not been enough steps since the last repartition
    * as we don't want to repeat this too often or immediately after a
-   * repartition step. We attempt all this even when we are not repartitioning
-   * as the balance logs can still be interesting. */
-  if (e->step - e->last_repartition >= 2) {
+   * repartition step, or also immediately on restart. We check all this
+   * even when we are not repartitioning as the balance logs can still be
+   * interesting. */
+  if (e->step - e->last_repartition >= 2 && !e->restarting) {
 
     /* If we have fixed costs available and this is step 2 or we are forcing
      * repartitioning then we do a forced fixed costs repartition regardless. */
@@ -1669,6 +1670,12 @@ void engine_rebuild(struct engine *e, int repartitioned,
   e->forcerebuild = 0;
   e->restarting = 0;
 
+  /* Report the time spent in the different task categories */
+  if (e->verbose) scheduler_report_task_times(&e->sched, e->nr_threads);
+
+  /* Give some breathing space */
+  scheduler_free_tasks(&e->sched);
+
   /* Re-build the space. */
   space_rebuild(e->s, repartitioned, e->verbose);
 
@@ -2113,6 +2120,9 @@ void engine_launch(struct engine *e, const char *call) {
   /* Sit back and wait for the runners to come home. */
   swift_barrier_wait(&e->wait_barrier);
 
+  /* Store the wallclock time */
+  e->sched.total_ticks += getticks() - tic;
+
   if (e->verbose)
     message("(%s) took %.3f %s.", call, clocks_from_ticks(getticks() - tic),
             clocks_getunit());
@@ -2396,6 +2406,10 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
   e->forcerebuild = 1;
   e->wallclock_time = (float)clocks_diff(&time1, &time2);
 
+#ifdef SWIFT_GRAVITY_FORCE_CHECKS
+  e->force_checks_snapshot_flag = 0;
+#endif
+
   if (e->verbose) message("took %.3f %s.", e->wallclock_time, clocks_getunit());
 }
 
@@ -2420,6 +2434,8 @@ void engine_step(struct engine *e) {
 
   if (e->nodeID == 0) {
 
+    const ticks tic_files = getticks();
+
     /* Print some information to the screen */
     printf(
         "  %6d %14e %12.7f %12.7f %14e %4d %4d %12lld %12lld %12lld "
@@ -2433,6 +2449,7 @@ void engine_step(struct engine *e) {
 
     /* Write the star formation information to the file */
     if (e->policy & engine_policy_star_formation) {
+
       star_formation_logger_write_to_log_file(e->sfh_logger, e->time,
                                               e->cosmology->a, e->cosmology->z,
                                               e->sfh, e->step);
@@ -2455,6 +2472,10 @@ void engine_step(struct engine *e) {
 #ifdef SWIFT_DEBUG_CHECKS
     fflush(e->file_timesteps);
 #endif
+
+    if (e->verbose)
+      message("Writing step info to files took %.3f %s",
+              clocks_from_ticks(getticks() - tic_files), clocks_getunit());
   }
 
   /* We need some cells to exist but not the whole task stuff. */
@@ -2484,14 +2505,16 @@ void engine_step(struct engine *e) {
     e->time_step = (e->ti_current - e->ti_old) * e->time_base;
   }
 
+  /*****************************************************/
+  /* OK, we now know what the next end of time-step is */
+  /*****************************************************/
+
+  const ticks tic_updates = getticks();
+
   /* Update the cooling function */
   if ((e->policy & engine_policy_cooling) ||
       (e->policy & engine_policy_temperature))
     cooling_update(e->cosmology, e->cooling_func, e->s);
-
-  /*****************************************************/
-  /* OK, we now know what the next end of time-step is */
-  /*****************************************************/
 
   /* Update the softening lengths */
   if (e->policy & engine_policy_self_gravity)
@@ -2501,6 +2524,10 @@ void engine_step(struct engine *e) {
   if (e->policy & engine_policy_hydro)
     hydro_props_update(e->hydro_properties, e->gravity_properties,
                        e->cosmology);
+
+  if (e->verbose)
+    message("Updating general quantities took %.3f %s",
+            clocks_from_ticks(getticks() - tic_updates), clocks_getunit());
 
   /* Trigger a tree-rebuild if we passed the frequency threshold */
   if ((e->policy & engine_policy_self_gravity) &&
@@ -2569,9 +2596,38 @@ void engine_step(struct engine *e) {
 #endif
 
 #ifdef SWIFT_GRAVITY_FORCE_CHECKS
-  /* Run the brute-force gravity calculation for some gparts */
-  if (e->policy & engine_policy_self_gravity)
-    gravity_exact_force_compute(e->s, e);
+  /* Do we need to check if all gparts are active? */
+  if (e->force_checks_only_all_active) {
+    size_t nr_gparts = e->s->nr_gparts;
+    e->all_gparts_active = 1;
+
+    /* Look for inactive gparts */
+    for (size_t i = 0; i < nr_gparts; ++i) {
+      struct gpart *gp = &e->s->gparts[i];
+
+      /* If one gpart is inactive we can stop. */
+      if (!gpart_is_active(gp, e)) {
+        e->all_gparts_active = 0;
+        break;
+      }
+    }
+  }
+
+  /* Check if we want to run force checks this timestep. */
+  if (e->policy & engine_policy_self_gravity) {
+    /* Are all gparts active (and the option is selected)? */
+    if ((e->all_gparts_active && e->force_checks_only_all_active) ||
+        !e->force_checks_only_all_active) {
+      /* Is this a snapshot timestep (and the option is selected)? */
+      if ((e->force_checks_snapshot_flag &&
+           e->force_checks_only_at_snapshots) ||
+          !e->force_checks_only_at_snapshots) {
+
+        /* Do checks */
+        gravity_exact_force_compute(e->s, e);
+      }
+    }
+  }
 #endif
 
     /* Get current CPU times.*/
@@ -2608,9 +2664,24 @@ void engine_step(struct engine *e) {
   }
 
 #ifdef SWIFT_GRAVITY_FORCE_CHECKS
-  /* Check the accuracy of the gravity calculation */
-  if (e->policy & engine_policy_self_gravity)
-    gravity_exact_force_check(e->s, e, 1e-1);
+  /* Check if we want to run force checks this timestep. */
+  if (e->policy & engine_policy_self_gravity) {
+    /* Are all gparts active (and the option is selected)? */
+    if ((e->all_gparts_active && e->force_checks_only_all_active) ||
+        !e->force_checks_only_all_active) {
+      /* Is this a snapshot timestep (and the option is selected)? */
+      if ((e->force_checks_snapshot_flag &&
+           e->force_checks_only_at_snapshots) ||
+          !e->force_checks_only_at_snapshots) {
+
+        /* Do checks */
+        gravity_exact_force_check(e->s, e, 1e-1);
+
+        /* Reset flag waiting for next output time */
+        e->force_checks_snapshot_flag = 0;
+      }
+    }
+  }
 #endif
 
 #ifdef SWIFT_DEBUG_CHECKS
@@ -2738,6 +2809,11 @@ void engine_check_for_dumps(struct engine *e) {
     switch (type) {
 
       case output_snapshot:
+
+#ifdef SWIFT_GRAVITY_FORCE_CHECKS
+        /* Indicate we are allowed to do a brute force calculation now */
+        e->force_checks_snapshot_flag = 1;
+#endif
 
         /* Do we want a corresponding VELOCIraptor output? */
         if (with_stf && e->snapshot_invoke_stf && !e->stf_this_timestep) {
@@ -3838,6 +3914,13 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
     e->logger = (struct logger_writer *)malloc(sizeof(struct logger_writer));
     logger_init(e->logger, params);
   }
+#endif
+
+#ifdef SWIFT_GRAVITY_FORCE_CHECKS
+  e->force_checks_only_all_active =
+      parser_get_opt_param_int(params, "ForceChecks:only_when_all_active", 0);
+  e->force_checks_only_at_snapshots =
+      parser_get_opt_param_int(params, "ForceChecks:only_at_snapshots", 0);
 #endif
 
   /* Make the space link back to the engine. */
@@ -4975,6 +5058,12 @@ void engine_recompute_displacement_constraint(struct engine *e) {
   float min_mass[swift_type_count] = {
       e->s->min_part_mass,  e->s->min_gpart_mass, FLT_MAX, FLT_MAX,
       e->s->min_spart_mass, e->s->min_bpart_mass};
+
+#ifdef WITH_MPI
+  MPI_Allreduce(MPI_IN_PLACE, min_mass, swift_type_count, MPI_FLOAT, MPI_MIN,
+                MPI_COMM_WORLD);
+#endif
+
 #ifdef SWIFT_DEBUG_CHECKS
   /* Check that the minimal mass collection worked */
   float min_part_mass_check = FLT_MAX;
@@ -4983,13 +5072,8 @@ void engine_recompute_displacement_constraint(struct engine *e) {
     min_part_mass_check =
         min(min_part_mass_check, hydro_get_mass(&e->s->parts[i]));
   }
-  if (min_part_mass_check != min_mass[swift_type_gas])
+  if (min_part_mass_check < min_mass[swift_type_gas])
     error("Error collecting minimal mass of gas particles.");
-#endif
-
-#ifdef WITH_MPI
-  MPI_Allreduce(MPI_IN_PLACE, min_mass, swift_type_count, MPI_FLOAT, MPI_MIN,
-                MPI_COMM_WORLD);
 #endif
 
   /* Do the same for the velocity norm sum */
