@@ -57,7 +57,8 @@ include_HEADERS = space.h runner.h queue.h task.h lock.h cell.h part.h const.h \
     pressure_floor.h pressure_floor_struct.h pressure_floor_iact.h \
     velociraptor_struct.h velociraptor_io.h random.h memuse.h mpiuse.h memuse_rnodes.h \
     black_holes.h black_holes_io.h black_holes_properties.h black_holes_struct.h \
-    feedback.h feedback_struct.h feedback_properties.h task_order.h
+    feedback.h feedback_struct.h feedback_properties.h task_order.h \
+    space_unique_id.h
 
 # source files for EAGLE cooling
 QLA_COOLING_SOURCES =
@@ -107,14 +108,14 @@ AM_SOURCES = space.c runner_main.c runner_doiact_hydro.c runner_doiact_limiter.c
     collectgroup.c hydro_space.c equation_of_state.c \
     chemistry.c cosmology.c restart.c mesh_gravity.c velociraptor_interface.c \
     outputlist.c velociraptor_dummy.c logger_io.c memuse.c mpiuse.c memuse_rnodes.c fof.c \
-    hashmap.c pressure_floor.c \
+    hashmap.c pressure_floor.c space_unique_id.c \
     $(QLA_COOLING_SOURCES) \
     $(EAGLE_COOLING_SOURCES) $(EAGLE_FEEDBACK_SOURCES) \
     $(GRACKLE_COOLING_SOURCES) $(GEAR_FEEDBACK_SOURCES)
 
 # Include files for distribution, not installation.
 nobase_noinst_HEADERS = align.h approx_math.h atomic.h barrier.h cycle.h error.h inline.h kernel_hydro.h kernel_gravity.h \
-		 gravity_iact.h kernel_long_gravity.h vector.h cache.h \
+		 gravity_iact.h kernel_long_gravity.h vector.h accumulate.h cache.h \
 	         runner_doiact_nosort.h runner_doiact_hydro.h runner_doiact_stars.h runner_doiact_black_holes.h runner_doiact_grav.h \
                  runner_doiact_functions_hydro.h runner_doiact_functions_stars.h runner_doiact_functions_black_holes.h \
 		 runner_doiact_functions_limiter.h runner_doiact_limiter.h units.h intrinsics.h minmax.h \
@@ -148,11 +149,11 @@ nobase_noinst_HEADERS = align.h approx_math.h atomic.h barrier.h cycle.h error.h
 		 hydro/PressureEnergyMorrisMonaghanAV/hydro.h hydro/PressureEnergyMorrisMonaghanAV/hydro_iact.h hydro/PressureEnergyMorrisMonaghanAV/hydro_io.h \
                  hydro/PressureEnergyMorrisMonaghanAV/hydro_debug.h hydro/PressureEnergyMorrisMonaghanAV/hydro_part.h \
 		 hydro/PressureEnergyMorrisMonaghanAV/hydro_parameters.h \
-		 hydro/AnarchyPU/hydro.h hydro/PressureEnergy/hydro_iact.h hydro/PressureEnergy/hydro_io.h \
-                 hydro/AnarchyPU/hydro_debug.h hydro/PressureEnergy/hydro_part.h \
+		 hydro/AnarchyPU/hydro.h hydro/AnarchyPU/hydro_iact.h hydro/AnarchyPU/hydro_io.h \
+                 hydro/AnarchyPU/hydro_debug.h hydro/AnarchyPU/hydro_part.h \
 		 hydro/AnarchyPU/hydro_parameters.h \
-		 hydro/SPHENIX/hydro.h hydro/PressureEnergy/hydro_iact.h hydro/PressureEnergy/hydro_io.h \
-                 hydro/SPHENIX/hydro_debug.h hydro/PressureEnergy/hydro_part.h \
+		 hydro/SPHENIX/hydro.h hydro/SPHENIX/hydro_iact.h hydro/SPHENIX/hydro_io.h \
+                 hydro/SPHENIX/hydro_debug.h hydro/SPHENIX/hydro_part.h \
 		 hydro/SPHENIX/hydro_parameters.h \
 		 hydro/Gizmo/hydro_parameters.h \
                  hydro/Gizmo/hydro_io.h hydro/Gizmo/hydro_debug.h \
