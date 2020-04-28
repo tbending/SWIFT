@@ -1019,7 +1019,7 @@ INLINE static struct io_props io_make_output_field_convert_bpart_LONGLONG(
 #define io_make_output_field_convert_sink(name, type, dim, units, a_exponent, \
                                           sink, convert, desc)          \
   io_make_output_field_convert_sink_##type(name, type, dim, units,      \
-                                           a_exponent, sizeof(bpart[0]), \
+                                           a_exponent, sizeof(sink[0]), \
                                            sink, convert, desc)
 
 /**
@@ -1040,7 +1040,7 @@ INLINE static struct io_props io_make_output_field_convert_bpart_LONGLONG(
 INLINE static struct io_props io_make_output_field_convert_sink_INT(
     const char name[FIELD_BUFFER_SIZE], enum IO_DATA_TYPE type, int dimension,
     enum unit_conversion_factor units, float a_exponent, size_t sinkSize,
-    const struct sink* sinks, conversion_func_bpart_int functionPtr,
+    const struct sink* sinks, conversion_func_sink_int functionPtr,
     const char description[DESCRIPTION_BUFFER_SIZE]) {
 
   struct io_props r;
@@ -1083,7 +1083,7 @@ INLINE static struct io_props io_make_output_field_convert_sink_INT(
 INLINE static struct io_props io_make_output_field_convert_sink_FLOAT(
     const char name[FIELD_BUFFER_SIZE], enum IO_DATA_TYPE type, int dimension,
     enum unit_conversion_factor units, float a_exponent, size_t sinkSize,
-    const struct sink* sinks, conversion_func_bpart_float functionPtr,
+    const struct sink* sinks, conversion_func_sink_float functionPtr,
     const char description[DESCRIPTION_BUFFER_SIZE]) {
 
   struct io_props r;
@@ -1126,7 +1126,7 @@ INLINE static struct io_props io_make_output_field_convert_sink_FLOAT(
 INLINE static struct io_props io_make_output_field_convert_sink_DOUBLE(
     const char name[FIELD_BUFFER_SIZE], enum IO_DATA_TYPE type, int dimension,
     enum unit_conversion_factor units, float a_exponent, size_t sinkSize,
-    const struct sink* sinks, conversion_func_bpart_double functionPtr,
+    const struct sink* sinks, conversion_func_sink_double functionPtr,
     const char description[DESCRIPTION_BUFFER_SIZE]) {
 
   struct io_props r;
@@ -1169,7 +1169,7 @@ INLINE static struct io_props io_make_output_field_convert_sink_DOUBLE(
 INLINE static struct io_props io_make_output_field_convert_sink_LONGLONG(
     const char name[FIELD_BUFFER_SIZE], enum IO_DATA_TYPE type, int dimension,
     enum unit_conversion_factor units, float a_exponent, size_t sinkSize,
-    const struct sink* sinks, conversion_func_bpart_long_long functionPtr,
+    const struct sink* sinks, conversion_func_sink_long_long functionPtr,
     const char description[DESCRIPTION_BUFFER_SIZE]) {
 
   struct io_props r;

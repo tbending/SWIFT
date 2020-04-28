@@ -55,6 +55,7 @@
 #include "memuse.h"
 #include "part.h"
 #include "part_type.h"
+#include "sink_io.h"
 #include "star_formation_io.h"
 #include "stars_io.h"
 #include "tracers_io.h"
@@ -718,10 +719,10 @@ void writeArray(struct engine* e, hid_t grp, char* fileName,
  */
 void read_ic_parallel(char* fileName, const struct unit_system* internal_units,
                       double dim[3], struct part** parts, struct gpart** gparts,
-                      struct spart** sparts, struct bpart** bparts,
+                      struct sink** sinks, struct spart** sparts, struct bpart** bparts,
                       size_t* Ngas, size_t* Ngparts, size_t* Ngparts_background,
-                      size_t* Nstars, size_t* Nblackholes, int* flag_entropy,
-                      int with_hydro, int with_gravity, int with_stars,
+                      size_t* Nsinks, size_t* Nstars, size_t* Nblackholes, int* flag_entropy,
+                      int with_hydro, int with_gravity, int with_sink, int with_stars,
                       int with_black_holes, int with_cosmology, int cleanup_h,
                       int cleanup_sqrt_a, double h, double a, int mpi_rank,
                       int mpi_size, MPI_Comm comm, MPI_Info info, int n_threads,
@@ -741,7 +742,7 @@ void read_ic_parallel(char* fileName, const struct unit_system* internal_units,
 
   /* Initialise counters */
   *Ngas = 0, *Ngparts = 0, *Ngparts_background = 0, *Nstars = 0,
-  *Nblackholes = 0;
+  *Nblackholes = 0, *Nsinks = 0;
 
   /* Open file */
   /* message("Opening file '%s' as IC.", fileName); */
@@ -882,11 +883,11 @@ void read_ic_parallel(char* fileName, const struct unit_system* internal_units,
 
   /* Allocate memory to store black hole particles */
   if (with_sink) {
-    *Nsink = N[swift_type_sink];
+    *Nsinks = N[swift_type_sink];
     if (swift_memalign("sinks", (void**)sinks, sink_align,
-                       *Nsink * sizeof(struct sink)) != 0)
+                       *Nsinks * sizeof(struct sink)) != 0)
       error("Error while allocating memory for sink particles");
-    bzero(*sinks, *Nsink * sizeof(struct sink));
+    bzero(*sinks, *Nsinks * sizeof(struct sink));
   }
 
   /* Allocate memory to store stars particles */
@@ -975,7 +976,7 @@ void read_ic_parallel(char* fileName, const struct unit_system* internal_units,
 
       case swift_type_sink:
         if (with_sink) {
-          Nparticles = *Nsink;
+          Nparticles = *Nsinks;
           sink_read_particles(*sinks, list, &num_fields);
         }
         break;
@@ -1030,18 +1031,18 @@ void read_ic_parallel(char* fileName, const struct unit_system* internal_units,
 
     /* Duplicate the sink particles into gparts */
     if (with_sink)
-      io_duplicate_sinks_gparts(&tp, *sinks, *gparts, *Nsink,
+      io_duplicate_sinks_gparts(&tp, *sinks, *gparts, *Nsinks,
                                 Ndm + Ndm_background + *Ngas);
 
     /* Duplicate the stars particles into gparts */
     if (with_stars)
       io_duplicate_stars_gparts(&tp, *sparts, *gparts, *Nstars,
-                                Ndm + Ndm_background + *Ngas + *Nsink);
+                                Ndm + Ndm_background + *Ngas + *Nsinks);
 
     /* Duplicate the stars particles into gparts */
     if (with_black_holes)
       io_duplicate_black_holes_gparts(&tp, *bparts, *gparts, *Nblackholes,
-                                      Ndm + Ndm_background + *Ngas + *Nsink + *Nstars);
+                                      Ndm + Ndm_background + *Ngas + *Nsinks + *Nstars);
 
     threadpool_clean(&tp);
   }
@@ -1076,7 +1077,7 @@ void prepare_file(struct engine* e, const char* baseName, long long N_total[6],
   const struct gpart* gparts = e->s->gparts;
   const struct spart* sparts = e->s->sparts;
   const struct bpart* bparts = e->s->bparts;
-  const struct sink* sinks = e->s->sinks;
+  const struct sink* sinks = e->s->sinks.parts;
   struct swift_params* params = e->parameter_file;
   const int with_cosmology = e->policy & engine_policy_cosmology;
   const int with_cooling = e->policy & engine_policy_cooling;
@@ -1433,7 +1434,7 @@ void write_output_parallel(struct engine* e, const char* baseName,
   const struct gpart* gparts = e->s->gparts;
   const struct spart* sparts = e->s->sparts;
   const struct bpart* bparts = e->s->bparts;
-  const struct sink* sinks = e->s->sink.parts;
+  const struct sink* sinks = e->s->sinks.parts;
   struct swift_params* params = e->parameter_file;
   const int with_cosmology = e->policy & engine_policy_cosmology;
   const int with_cooling = e->policy & engine_policy_cooling;
@@ -1451,7 +1452,7 @@ void write_output_parallel(struct engine* e, const char* baseName,
   const size_t Ntot = e->s->nr_gparts;
   const size_t Ngas = e->s->nr_parts;
   const size_t Nstars = e->s->nr_sparts;
-  const size_t Nsink = e->s->sink.nrparts;
+  const size_t Nsinks = e->s->sinks.nr_parts;
   const size_t Nblackholes = e->s->nr_bparts;
   // const size_t Nbaryons = Ngas + Nstars;
   // const size_t Ndm = Ntot > 0 ? Ntot - Nbaryons : 0;
@@ -1467,15 +1468,15 @@ void write_output_parallel(struct engine* e, const char* baseName,
   const size_t Ngas_written =
       e->s->nr_parts - e->s->nr_inhibited_parts - e->s->nr_extra_parts;
   const size_t Nsinks_written =
-    e->s->sink.nr_parts; /* - e->s->nr_inhibited_bparts - e->s->nr_extra_bparts; */
+    e->s->sinks.nr_parts - e->s->sinks.nr_inhibited_parts - e->s->sinks.nr_extra_parts;
   const size_t Nstars_written =
       e->s->nr_sparts - e->s->nr_inhibited_sparts - e->s->nr_extra_sparts;
   const size_t Nblackholes_written =
       e->s->nr_bparts - e->s->nr_inhibited_bparts - e->s->nr_extra_bparts;
   const size_t Nbaryons_written =
-      Ngas_written + Nstars_written + Nblackholes_written;
+      Ngas_written + Nstars_written + Nblackholes_written + Nsinks_written;
   const size_t Ndm_written =
-      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background : 0;
+      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background: 0;
 
   /* Compute offset in the file and total number of particles */
   size_t N[swift_type_count] = {Ngas_written,   Ndm_written,
@@ -1849,7 +1850,7 @@ void write_output_parallel(struct engine* e, const char* baseName,
                                     Nsinks_written);
 
           /* Select the fields to write */
-          sinks_write_particles(sinks_written, list, &num_fields,
+          sink_write_particles(sinks_written, list, &num_fields,
                                 with_cosmology);
         }
       } break;

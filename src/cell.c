@@ -1624,7 +1624,7 @@ void cell_bunlocktree(struct cell *c) {
  *        space's bparts array, i.e. c->black_holes.parts -
  * s->black_holes.parts.
  * @param sinks_offset Offset of the cell sink array relative to the
- *        space's sink array, i.e. c->sink.parts - s->sink.parts.
+ *        space's sink array, i.e. c->sinks.parts - s->sinks.parts.
  * @param buff A buffer with at least max(c->hydro.count, c->grav.count)
  * entries, used for sorting indices.
  * @param sbuff A buffer with at least max(c->stars.count, c->grav.count)
@@ -1633,22 +1633,22 @@ void cell_bunlocktree(struct cell *c) {
  * entries, used for sorting indices for the sparts.
  * @param gbuff A buffer with at least max(c->hydro.count, c->grav.count)
  * entries, used for sorting indices for the gparts.
- * @param sink_buff A buffer with at least max(c->sink.count, c->grav.count)
+ * @param sinkbuff A buffer with at least max(c->sinks.count, c->grav.count)
  * entries, used for sorting indices for the sinks.
  */
 void cell_split(struct cell *c, ptrdiff_t parts_offset, ptrdiff_t sparts_offset,
                 ptrdiff_t bparts_offset, ptrdiff_t sinks_offset, struct cell_buff *buff,
                 struct cell_buff *sbuff, struct cell_buff *bbuff,
-                struct cell_buff *gbuff) {
+                struct cell_buff *gbuff, struct cell_buff *sinkbuff) {
   const int count = c->hydro.count, gcount = c->grav.count,
     scount = c->stars.count, bcount = c->black_holes.count,
-    sink_count = c->sink.count;
+    sink_count = c->sinks.count;
   struct part *parts = c->hydro.parts;
   struct xpart *xparts = c->hydro.xparts;
   struct gpart *gparts = c->grav.parts;
   struct spart *sparts = c->stars.parts;
   struct bpart *bparts = c->black_holes.parts;
-  struct sink *sinks = c->sink.parts;
+  struct sink *sinks = c->sinks.parts;
   const double pivot[3] = {c->loc[0] + c->width[0] / 2,
                            c->loc[1] + c->width[1] / 2,
                            c->loc[2] + c->width[2] / 2};
@@ -1960,8 +1960,8 @@ void cell_split(struct cell *c, ptrdiff_t parts_offset, ptrdiff_t sparts_offset,
 
   /* Store the counts and offsets. */
   for (int k = 0; k < 8; k++) {
-    c->progeny[k]->sink.count = bucket_count[k];
-    c->progeny[k]->sink.parts = &c->sink.parts[bucket_offset[k]];
+    c->progeny[k]->sinks.count = bucket_count[k];
+    c->progeny[k]->sinks.parts = &c->sinks.parts[bucket_offset[k]];
   }
 
   /* Finally, do the same song and dance for the gparts. */

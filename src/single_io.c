@@ -54,6 +54,7 @@
 #include "memuse.h"
 #include "part.h"
 #include "part_type.h"
+#include "sink_io.h"
 #include "star_formation_io.h"
 #include "stars_io.h"
 #include "tracers_io.h"
@@ -578,7 +579,7 @@ void read_ic_single(const char* fileName,
     *Nblackholes = N[swift_type_black_hole];
     if (swift_memalign("bparts", (void**)bparts, bpart_align,
                        *Nblackholes * sizeof(struct bpart)) != 0)
-      error("Error while allocating memory for stars particles");
+      error("Error while allocating memory for black hole particles");
     bzero(*bparts, *Nblackholes * sizeof(struct bpart));
   }
 
@@ -589,6 +590,7 @@ void read_ic_single(const char* fileName,
     *Ngparts = (with_hydro ? N[swift_type_gas] : 0) +
                N[swift_type_dark_matter] +
                N[swift_type_dark_matter_background] +
+               (with_sink ? N[swift_type_sink] : 0) +
                (with_stars ? N[swift_type_stars] : 0) +
                (with_black_holes ? N[swift_type_black_hole] : 0);
     *Ngparts_background = Ndm_background;
@@ -754,7 +756,7 @@ void write_output_single(struct engine* e, const char* baseName,
   const struct gpart* gparts = e->s->gparts;
   const struct spart* sparts = e->s->sparts;
   const struct bpart* bparts = e->s->bparts;
-  const struct sink* sinks = e->s->sink.parts;
+  const struct sink* sinks = e->s->sinks.parts;
   struct swift_params* params = e->parameter_file;
   const int with_cosmology = e->policy & engine_policy_cosmology;
   const int with_cooling = e->policy & engine_policy_cooling;
@@ -772,7 +774,7 @@ void write_output_single(struct engine* e, const char* baseName,
   const size_t Ntot = e->s->nr_gparts;
   const size_t Ngas = e->s->nr_parts;
   const size_t Nstars = e->s->nr_sparts;
-  const size_t Nsinks = e->s->sink.nr_parts;
+  const size_t Nsinks = e->s->sinks.nr_parts;
   const size_t Nblackholes = e->s->nr_bparts;
   // const size_t Nbaryons = Ngas + Nstars;
   // const size_t Ndm = Ntot > 0 ? Ntot - Nbaryons : 0;
@@ -791,13 +793,13 @@ void write_output_single(struct engine* e, const char* baseName,
   const size_t Nstars_written =
       e->s->nr_sparts - e->s->nr_inhibited_sparts - e->s->nr_extra_sparts;
   const size_t Nsinks_written =
-    e->s->sink.nr_parts; /* - e->s->nr_inhibited_sparts - e->s->nr_extra_sparts; */
+    e->s->sinks.nr_parts - e->s->sinks.nr_inhibited_parts - e->s->sinks.nr_extra_parts;
   const size_t Nblackholes_written =
       e->s->nr_bparts - e->s->nr_inhibited_bparts - e->s->nr_extra_bparts;
   const size_t Nbaryons_written =
-      Ngas_written + Nstars_written + Nblackholes_written;
+      Ngas_written + Nstars_written + Nblackholes_written + Nsinks_written;
   const size_t Ndm_written =
-      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background : 0;
+      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background: 0;
 
   /* Format things in a Gadget-friendly array */
   long long N_total[swift_type_count] = {
@@ -1146,7 +1148,7 @@ void write_output_single(struct engine* e, const char* baseName,
           /* Ok, we need to fish out the particles we want */
           N = Ndm_written;
 
-          /* Allocate temporary array */
+              /* Allocate temporary array */
           if (swift_memalign("gparts_written", (void**)&gparts_written,
                              gpart_align,
                              Ndm_written * sizeof(struct gpart)) != 0)

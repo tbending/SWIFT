@@ -22,8 +22,7 @@
 #include <float.h>
 
 /* Local includes */
-#include "sink_properties.h"
-#include "sink_struct.h"
+#include "sink_part.h"
 #include "dimension.h"
 #include "kernel_hydro.h"
 #include "minmax.h"

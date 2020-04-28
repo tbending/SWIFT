@@ -41,6 +41,7 @@ struct velociraptor_gpart_data;
 struct spart;
 struct bpart;
 struct xpart;
+struct sink;
 struct io_props;
 struct engine;
 struct threadpool;

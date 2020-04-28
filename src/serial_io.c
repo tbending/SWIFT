@@ -55,6 +55,7 @@
 #include "memuse.h"
 #include "part.h"
 #include "part_type.h"
+#include "sink_io.h"
 #include "star_formation_io.h"
 #include "stars_io.h"
 #include "tracers_io.h"
@@ -497,7 +498,7 @@ void writeArray(const struct engine* e, hid_t grp, char* fileName,
  */
 void read_ic_serial(char* fileName, const struct unit_system* internal_units,
                     double dim[3], struct part** parts, struct gpart** gparts,
-                    struct spart** sinks, struct spart** sparts, struct bpart** bparts,
+                    struct sink** sinks, struct spart** sparts, struct bpart** bparts,
                     size_t* Ngas, size_t* Ngparts, size_t* Ngparts_background,
                     size_t* Nsinks, size_t* Nstars, size_t* Nblackholes, int* flag_entropy,
                     int with_hydro, int with_gravity, int with_sink,
@@ -673,7 +674,7 @@ void read_ic_serial(char* fileName, const struct unit_system* internal_units,
 
   /* Allocate memory to store sinks particles */
   if (with_sink) {
-    *Nsinks = N[swift_type_sinks];
+    *Nsinks = N[swift_type_sink];
     if (swift_memalign("sinks", (void**)sinks, sink_align,
                        *Nsinks * sizeof(struct sink)) != 0)
       error("Error while allocating memory for sink particles");
@@ -705,6 +706,7 @@ void read_ic_serial(char* fileName, const struct unit_system* internal_units,
     *Ngparts = (with_hydro ? N[swift_type_gas] : 0) +
                N[swift_type_dark_matter] +
                N[swift_type_dark_matter_background] +
+               (with_sink ? N[swift_type_sink] : 0) +
                (with_stars ? N[swift_type_stars] : 0) +
                (with_black_holes ? N[swift_type_black_hole] : 0);
     *Ngparts_background = Ndm_background;
@@ -847,7 +849,7 @@ void read_ic_serial(char* fileName, const struct unit_system* internal_units,
     /* Duplicate the stars particles into gparts */
     if (with_stars)
       io_duplicate_stars_gparts(&tp, *sparts, *gparts, *Nstars,
-                                Ndm + Ndm_background + **Ngas + *Nsinks);
+                                Ndm + Ndm_background + *Ngas + *Nsinks);
 
     /* Duplicate the black holes particles into gparts */
     if (with_black_holes)
@@ -895,7 +897,7 @@ void write_output_serial(struct engine* e, const char* baseName,
   const struct gpart* gparts = e->s->gparts;
   const struct spart* sparts = e->s->sparts;
   const struct bpart* bparts = e->s->bparts;
-  const struct sink* sinks = e->s->sink.parts;
+  const struct sink* sinks = e->s->sinks.parts;
   struct swift_params* params = e->parameter_file;
   const int with_cosmology = e->policy & engine_policy_cosmology;
   const int with_cooling = e->policy & engine_policy_cooling;
@@ -914,7 +916,7 @@ void write_output_serial(struct engine* e, const char* baseName,
   /* Number of particles currently in the arrays */
   const size_t Ntot = e->s->nr_gparts;
   const size_t Ngas = e->s->nr_parts;
-  const size_t Nsinks = e->s->sink.nr_parts;
+  const size_t Nsinks = e->s->sinks.nr_parts;
   const size_t Nstars = e->s->nr_sparts;
   const size_t Nblackholes = e->s->nr_bparts;
   // const size_t Nbaryons = Ngas + Nstars;
@@ -932,15 +934,15 @@ void write_output_serial(struct engine* e, const char* baseName,
   const size_t Ngas_written =
       e->s->nr_parts - e->s->nr_inhibited_parts - e->s->nr_extra_parts;
   const size_t Nsinks_written =
-      e->s->sink.nr_parts; /* - e->s->nr_inhibited_sparts - e->s->nr_extra_sparts; */
+      e->s->sinks.nr_parts - e->s->sinks.nr_inhibited_parts - e->s->sinks.nr_extra_parts;
   const size_t Nstars_written =
       e->s->nr_sparts - e->s->nr_inhibited_sparts - e->s->nr_extra_sparts;
   const size_t Nblackholes_written =
       e->s->nr_bparts - e->s->nr_inhibited_bparts - e->s->nr_extra_bparts;
   const size_t Nbaryons_written =
-      Ngas_written + Nstars_written + Nblackholes_written;
+      Ngas_written + Nstars_written + Nblackholes_written + Nsinks_written;
   const size_t Ndm_written =
-      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background : 0;
+      Ntot_written > 0 ? Ntot_written - Nbaryons_written - Ndm_background: 0;
 
   /* File name */
   char fileName[FILENAME_BUFFER_SIZE];

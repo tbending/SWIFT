@@ -41,6 +41,7 @@
 #include "kernel_hydro.h"
 #include "part.h"
 #include "part_type.h"
+#include "sink_io.h"
 #include "star_formation_io.h"
 #include "stars_io.h"
 #include "threadpool.h"
@@ -691,8 +692,8 @@ static long long cell_count_non_inhibited_black_holes(const struct cell* c) {
 }
 
 static long long cell_count_non_inhibited_sinks(const struct cell* c) {
-  const int total_count = c->sink.count;
-  struct sink* sinks = c->sink.parts;
+  const int total_count = c->sinks.count;
+  struct sink* sinks = c->sinks.parts;
   long long count = 0;
   for (int i = 0; i < total_count; ++i) {
     if ((sinks[i].time_bin != time_bin_inhibited) &&
@@ -1661,7 +1662,7 @@ void io_convert_sink_i_mapper(void* restrict temp, int N,
                               void* restrict extra_data) {
 
   const struct io_props props = *((const struct io_props*)extra_data);
-  const struct sink* restrict sinks = props.sink;
+  const struct sink* restrict sinks = props.sinks;
   const struct engine* e = props.e;
   const size_t dim = props.dimension;
 
@@ -2256,31 +2257,31 @@ void io_duplicate_sinks_gparts_mapper(void* restrict data,
 }
 
 /**
- * @brief Copy every #bpart into the corresponding #gpart and link them.
+ * @brief Copy every #sink into the corresponding #gpart and link them.
  *
  * This function assumes that the DM particles, gas particles and star particles
- * are all at the start of the gparts array and adds the black hole particles
+ * are all at the start of the gparts array and adds the sinks particles
  * afterwards
  *
  * @param tp The current #threadpool.
- * @param bparts The array of #bpart freshly read in.
+ * @param sinks The array of #sink freshly read in.
  * @param gparts The array of #gpart freshly read in with all the DM, gas
  * and star particles at the start.
- * @param Nblackholes The number of blackholes particles read in.
+ * @param Nsinks The number of sink particles read in.
  * @param Ndm The number of DM, gas and star particles read in.
  */
-void io_duplicate_black_holes_gparts(struct threadpool* tp,
-                                     struct bpart* const bparts,
-                                     struct gpart* const gparts,
-                                     size_t Nblackholes, size_t Ndm) {
+void io_duplicate_sinks_gparts(struct threadpool* tp,
+                               struct sink* const sinks,
+                               struct gpart* const gparts,
+                               size_t Nsinks, size_t Ndm) {
 
   struct duplication_data data;
   data.gparts = gparts;
-  data.bparts = bparts;
+  data.sinks = sinks;
   data.Ndm = Ndm;
 
-  threadpool_map(tp, io_duplicate_black_holes_gparts_mapper, bparts,
-                 Nblackholes, sizeof(struct bpart), threadpool_auto_chunk_size,
+  threadpool_map(tp, io_duplicate_sinks_gparts_mapper, sinks,
+                 Nsinks, sizeof(struct sink), threadpool_auto_chunk_size,
                  &data);
 }
 
@@ -2622,7 +2623,7 @@ void io_check_output_fields(const struct swift_params* params,
         break;
 
       case swift_type_sink:
-        sink_write_particle(NULL, list, &num_fields, /* with_cosmology */ 1);
+        sink_write_particles(NULL, list, &num_fields, /* with_cosmology */ 1);
         break;
 
       case swift_type_stars:
@@ -2745,7 +2746,7 @@ void io_write_output_field_parameter(const char* filename) {
         num_fields += velociraptor_write_gparts(NULL, list + num_fields);
         break;
 
-      case swift_type_stars:
+      case swift_type_sink:
         sink_write_particles(NULL, list, &num_fields, /*with_cosmology=*/1);
         break;
 

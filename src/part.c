@@ -221,8 +221,8 @@ void part_relink_all_parts_to_gparts_mapper(void *restrict map_data, int count,
  * @param tp The #threadpool object.
  */
 void part_relink_all_parts_to_gparts(struct gpart *gparts, const size_t N,
-                                     struct part *parts, struct spart *sparts,
-                                     struct bpart *bparts,
+                                     struct part *parts, struct sink *sinks,
+                                     struct spart *sparts, struct bpart *bparts,
                                      struct threadpool *tp) {
 
   struct relink_data data = {parts, /*gparts=*/NULL, sinks, sparts, bparts};
@@ -397,7 +397,7 @@ void part_verify_links(struct part *parts, struct gpart *gparts,
             "Linked particles are not at the same position !\n"
             "gp->x=[%e %e %e] sink->x=[%e %e %e] diff=[%e %e %e]",
             gparts[k].x[0], gparts[k].x[1], gparts[k].x[2], sink->x[0],
-            bpart->x[1], sink->x[2], gparts[k].x[0] - sink->x[0],
+            sink->x[1], sink->x[2], gparts[k].x[0] - sink->x[0],
             gparts[k].x[1] - sink->x[1], gparts[k].x[2] - sink->x[2]);
 
       /* Check that the particles have the same mass */
