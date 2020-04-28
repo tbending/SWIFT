@@ -43,6 +43,7 @@ struct threadpool;
 #define spart_align 128
 #define gpart_align 128
 #define bpart_align 128
+#define sink_align 128
 
 /* Import the right hydro particle definition */
 #if defined(MINIMAL_SPH)
@@ -119,6 +120,14 @@ struct threadpool;
 #else
 #error "Invalid choice of black hole particle"
 #endif
+
+/* Import the right sink particle definition */
+#if defined(SINK_NONE)
+#include "./sink/Default/sink_part.h"
+#else
+#error "Invalid choice of sink particle"
+#endif
+
 
 void part_relink_gparts_to_parts(struct part *parts, const size_t N,
                                  const ptrdiff_t offset);

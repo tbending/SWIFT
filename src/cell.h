@@ -732,6 +732,19 @@ struct cell {
 
   } black_holes;
 
+    /*! Sink particles variables */
+  struct {
+
+    /*! Pointer to the #sink data. */
+    struct sink *parts;
+
+    /*! Nr of #sink in this cell. */
+    int count;
+
+    /*! Nr of #sink this cell can hold after addition of new one. */
+    int count_total;
+  } sinks;
+
 #ifdef WITH_MPI
   /*! MPI variables */
   struct {

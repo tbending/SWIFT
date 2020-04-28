@@ -123,7 +123,8 @@ const char *engine_policy_names[] = {"none",
                                      "fof search",
                                      "time-step limiter",
                                      "time-step sync",
-                                     "logger"};
+                                     "logger",
+                                     "sink"};
 
 /** The rank of the engine as a global variable (for messages). */
 int engine_rank;
@@ -1507,6 +1508,7 @@ void engine_print_task_counts(const struct engine *e) {
   fflush(stdout);
   message("nr_parts = %zu.", e->s->nr_parts);
   message("nr_gparts = %zu.", e->s->nr_gparts);
+  message("nr_sink = %zu.", e->s->nr_sink);
   message("nr_sparts = %zu.", e->s->nr_sparts);
   message("nr_bparts = %zu.", e->s->nr_bparts);
 

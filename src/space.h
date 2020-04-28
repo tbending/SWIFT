@@ -281,6 +281,25 @@ struct space {
   /*! Structure dealing with the computation of a unique ID */
   struct unique_id unique_id;
 
+  /*! Structure dealing with the sink particles. */
+  struct {
+    /*! The total number of #sink in the space. */
+    size_t nr_parts;
+
+    /*! The total number of #part we allocated memory for. */
+    size_t size_parts;
+
+    /*! Number of inhibted particles in the space */
+    size_t nr_inhibited_parts;
+
+    /*! Number of extra #sink we allocated (for on-the-fly creation) */
+    size_t nr_extra_parts;
+
+    /*! The particle data (cells have pointers to this). */
+    struct sink *parts;
+
+  } sink;
+
 #ifdef WITH_MPI
 
   /*! Buffers for parts that we will receive from foreign cells. */
