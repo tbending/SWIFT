@@ -479,6 +479,7 @@ GEARFeedback:
 # EAGLE AGN model
 EAGLEAGN:
   subgrid_seed_mass_Msun:           1.5e5      # Black hole subgrid mass at creation time in solar masses.
+  use_subgrid_mass_from_ics:        1          # Use subgrid masses specified in ICs [1], or initialise them to particle masses [0]?
   max_eddington_fraction:           1.         # Maximal allowed accretion rate in units of the Eddington rate.
   eddington_fraction_for_recording: 0.1        # Record the last time BHs reached an Eddington ratio above this threshold.
   viscous_alpha:                    1e6        # Normalisation constant of the Bondi viscuous time-scale accretion reduction term
