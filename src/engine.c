@@ -61,6 +61,7 @@
 #include "cosmology.h"
 #include "cycle.h"
 #include "debug.h"
+#include "distributed_io.h"
 #include "entropy_floor.h"
 #include "equation_of_state.h"
 #include "error.h"
@@ -1878,7 +1879,7 @@ void engine_prepare(struct engine *e) {
 
   /* Perform particle splitting. Only if there is a rebuild coming and no
      repartitioning. */
-  if (e->forcerebuild && !e->forcerepart && e->step > 1) {
+  if (!e->restarting && e->forcerebuild && !e->forcerepart && e->step > 1) {
 
     /* Let's start by drifting everybody to the current time */
     if (!drifted_all) engine_drift_all(e, /*drift_mpole=*/0);
@@ -3586,41 +3587,26 @@ void engine_dump_snapshot(struct engine *e) {
   engine_collect_stars_counter(e);
 #endif
 
-  /* Determine snapshot location */
-  char snapshotBase[FILENAME_BUFFER_SIZE];
-  if (strnlen(e->snapshot_subdir, PARSER_MAX_LINE_SIZE) > 0) {
-    if (snprintf(snapshotBase, FILENAME_BUFFER_SIZE, "%s/%s",
-                 e->snapshot_subdir,
-                 e->snapshot_base_name) >= FILENAME_BUFFER_SIZE) {
-      error(
-          "FILENAME_BUFFER_SIZE is too small for snapshot path and file name");
-    }
-      /* Try to ensure the directory exists */
-#ifdef WITH_MPI
-    if (engine_rank == 0) mkdir(e->snapshot_subdir, 0777);
-    MPI_Barrier(MPI_COMM_WORLD);
-#else
-    mkdir(e->snapshot_subdir, 0777);
-#endif
-  } else {
-    if (snprintf(snapshotBase, FILENAME_BUFFER_SIZE, "%s",
-                 e->snapshot_base_name) >= FILENAME_BUFFER_SIZE) {
-      error("FILENAME_BUFFER_SIZE is too small for snapshot file name");
-    }
-  }
-
-/* Dump... */
+/* Dump (depending on the chosen strategy) ... */
 #if defined(HAVE_HDF5)
 #if defined(WITH_MPI)
+
+  if (e->snapshot_distributed) {
+
+    write_output_distributed(e, e->internal_units, e->snapshot_units, e->nodeID,
+                             e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
+  } else {
+
 #if defined(HAVE_PARALLEL_HDF5)
-  write_output_parallel(e, snapshotBase, e->internal_units, e->snapshot_units,
-                        e->nodeID, e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
+    write_output_parallel(e, e->internal_units, e->snapshot_units, e->nodeID,
+                          e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
 #else
-  write_output_serial(e, snapshotBase, e->internal_units, e->snapshot_units,
-                      e->nodeID, e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
+    write_output_serial(e, e->internal_units, e->snapshot_units, e->nodeID,
+                        e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
 #endif
+  }
 #else
-  write_output_single(e, snapshotBase, e->internal_units, e->snapshot_units);
+  write_output_single(e, e->internal_units, e->snapshot_units);
 #endif
 #endif
 
@@ -3877,6 +3863,8 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
                               engine_default_snapshot_subdir);
   e->snapshot_compression =
       parser_get_opt_param_int(params, "Snapshots:compression", 0);
+  e->snapshot_distributed =
+      parser_get_opt_param_int(params, "Snapshots:distributed", 0);
   e->snapshot_int_time_label_on =
       parser_get_opt_param_int(params, "Snapshots:int_time_label_on", 0);
   e->snapshot_invoke_stf =
@@ -4446,6 +4434,9 @@ void engine_config(int restart, int fof, struct engine *e,
       }
     }
 
+    /* Try to ensure the snapshot directory exists */
+    if (e->nodeID == 0) io_make_snapshot_subdir(e->snapshot_subdir);
+
     /* Get the total mass */
     e->total_mass = 0.;
     for (size_t i = 0; i < e->s->nr_gparts; ++i)
@@ -4479,6 +4470,12 @@ void engine_config(int restart, int fof, struct engine *e,
     if (e->policy & engine_policy_fof) {
       engine_compute_next_fof_time(e);
     }
+
+    /* Check that the snapshot naming policy is valid */
+    if (e->snapshot_invoke_stf && e->snapshot_int_time_label_on)
+      error(
+          "Cannot use snapshot time labels and VELOCIraptor invocations "
+          "together!");
 
     /* Check that we are invoking VELOCIraptor only if we have it */
     if (e->snapshot_invoke_stf &&
@@ -5182,8 +5179,9 @@ void engine_recompute_displacement_constraint(struct engine *e) {
  *
  * @param e The #engine to clean.
  * @param fof Was this a stand-alone FOF run?
+ * @param restart Was this a run that was restarted from check-point files?
  */
-void engine_clean(struct engine *e, const int fof) {
+void engine_clean(struct engine *e, const int fof, const int restart) {
   /* Start by telling the runners to stop. */
   e->step_props = engine_step_prop_done;
   swift_barrier_wait(&e->run_barrier);
@@ -5240,6 +5238,39 @@ void engine_clean(struct engine *e, const int fof) {
     if (e->policy & engine_policy_star_formation) {
       fclose(e->sfh_logger);
     }
+  }
+
+  /* If the run was restarted, we should also free the memory allocated
+     in engine_struct_restore() */
+  if (restart) {
+    free((void *)e->parameter_file);
+    free((void *)e->external_potential);
+    free((void *)e->black_holes_properties);
+    free((void *)e->stars_properties);
+    free((void *)e->gravity_properties);
+    free((void *)e->hydro_properties);
+    free((void *)e->physical_constants);
+    free((void *)e->internal_units);
+    free((void *)e->cosmology);
+    free((void *)e->mesh);
+    free((void *)e->chemistry);
+    free((void *)e->entropy_floor);
+    free((void *)e->cooling_func);
+    free((void *)e->star_formation);
+    free((void *)e->feedback_props);
+#ifdef WITH_FOF
+    free((void *)e->fof_properties);
+#endif
+#ifdef WITH_MPI
+    free((void *)e->reparttype);
+#endif
+    if (e->output_list_snapshots) free((void *)e->output_list_snapshots);
+    if (e->output_list_stats) free((void *)e->output_list_stats);
+    if (e->output_list_stf) free((void *)e->output_list_stf);
+#ifdef WITH_LOGGER
+    if (e->policy & engine_policy_logger) free((void *)e->logger);
+#endif
+    free(e->s);
   }
 }
 
@@ -5324,14 +5355,15 @@ void engine_struct_restore(struct engine *e, FILE *stream) {
   e->s = s;
   s->e = e;
 
-  struct unit_system *us =
+  struct unit_system *internal_us =
       (struct unit_system *)malloc(sizeof(struct unit_system));
-  units_struct_restore(us, stream);
-  e->internal_units = us;
+  units_struct_restore(internal_us, stream);
+  e->internal_units = internal_us;
 
-  us = (struct unit_system *)malloc(sizeof(struct unit_system));
-  units_struct_restore(us, stream);
-  e->snapshot_units = us;
+  struct unit_system *snap_us =
+      (struct unit_system *)malloc(sizeof(struct unit_system));
+  units_struct_restore(snap_us, stream);
+  e->snapshot_units = snap_us;
 
   struct cosmology *cosmo =
       (struct cosmology *)malloc(sizeof(struct cosmology));
