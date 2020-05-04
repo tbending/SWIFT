@@ -182,7 +182,7 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
 	                   bh_props->max_reposition_velocity_ratio *
                            bi->sound_speed_gas * bi->sound_speed_gas;
       if (v2_pec >= v2_max)
-	neighbour_is_slow_enough = 0;
+	      neighbour_is_slow_enough = 0;
     }
 
     if (neighbour_is_slow_enough) {
@@ -191,11 +191,11 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
       /* Is the potential lower? */
       if (potential < bi->reposition.min_potential) {
       
-	/* Store this as our new best */
-	bi->reposition.min_potential = potential;
-	bi->reposition.delta_x[0] = -dx[0];
-	bi->reposition.delta_x[1] = -dx[1];
-	bi->reposition.delta_x[2] = -dx[2];
+        /* Store this as our new best */
+	      bi->reposition.min_potential = potential;
+	      bi->reposition.delta_x[0] = -dx[0];
+	      bi->reposition.delta_x[1] = -dx[1];
+	      bi->reposition.delta_x[2] = -dx[2];
       }
     }
   }
@@ -258,7 +258,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
                                  struct bpart *bi, struct bpart *bj,
                                  const struct cosmology *cosmo,
                                  const struct gravity_props *grav_props,
-				 const struct black_holes_props *bh_props,
+                        				 const struct black_holes_props *bh_props,
                                  const integertime_t ti_current) {
 
   /* Compute relative peculiar velocity between the two BHs
@@ -270,7 +270,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
 
   const float v2_pec = v2 * cosmo->a2_inv;
 
-  /* (Square of) Max repositioning distance allowed based on the softening */
+  /* (Square of) Max distance allowed based on the softening */
   const float max_dist_repos2 =
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
@@ -292,7 +292,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
 	                   bh_props->max_reposition_velocity_ratio *
                            bi->sound_speed_gas * bi->sound_speed_gas;
       if (v2_pec >= v2_max)
-	neighbour_is_slow_enough = 0;
+	      neighbour_is_slow_enough = 0;
     }
 
     if (neighbour_is_slow_enough) {
