@@ -315,7 +315,7 @@ __attribute__((always_inline)) INLINE static void black_holes_swallow_part(
   /* Finally, update the swallowing counter for this BH */
   const float dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
   message("BH %lld swallowing gas particle %lld "
-          "(Delta_v = [%f, %f, %f] U_V,\n"
+          "(Delta_v = [%f, %f, %f] U_V, "
           "Delta_x = [%f, %f, %f] U_L, "
           "Delta_v_rad = %f)",
           bp->id, p->id, -dv[0], -dv[1], -dv[2], -dx[0], -dx[1], -dx[2],
