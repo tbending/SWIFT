@@ -187,7 +187,7 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->subgrid_seed_mass *= phys_const->const_solar_mass;
 
   bp->use_subgrid_mass_from_ics =
-      parser_get_param_int(params, "EAGLEAGN:use_subgrid_mass_from_ics");
+      parser_get_opt_param_int(params, "EAGLEAGN:use_subgrid_mass_from_ics", 0);
 
   /* Accretion parameters ---------------------------------- */
 
@@ -200,7 +200,7 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
       parser_get_param_float(params, "EAGLEAGN:coupling_efficiency");
   bp->alpha_visc = parser_get_param_float(params, "EAGLEAGN:viscous_alpha");
   bp->with_angmom_limiter =
-      parser_get_param_int(params, "EAGLEAGN:with_angmom_limiter");
+      parser_get_opt_param_int(params, "EAGLEAGN:with_angmom_limiter", 1);
 
   /* Feedback parameters ---------------------------------- */
 
@@ -239,7 +239,7 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
      (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs)); 
   
   bp->reposition_exponent_xi =
-      parser_get_param_float(params, "EAGLEAGN:reposition_exponent_xi");
+      parser_get_opt_param_float(params, "EAGLEAGN:reposition_exponent_xi", 1.0);
 
   
   /* Merger parameters ------------------------------------- */
