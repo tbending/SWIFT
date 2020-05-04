@@ -129,9 +129,7 @@ void runner_do_gas_swallow(struct runner *r, struct cell *c, int timer) {
 
             /* Release the space as we are done updating the bpart */
             if (lock_unlock(&s->lock) != 0)
-              error("Failed to unlock the space.");
-
-            message("BH %lld swallowing gas particle %lld", bp->id, p->id);
+              error("Failed to unlock the space.");            
 
             /* If the gas particle is local, remove it */
             if (c->nodeID == e->nodeID) {
