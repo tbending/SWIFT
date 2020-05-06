@@ -56,6 +56,7 @@ enum task_types {
   task_type_ghost_out, /* Implicit */
   task_type_extra_ghost,
   task_type_drift_part,
+  task_type_drift_sink,
   task_type_drift_spart,
   task_type_drift_bpart,
   task_type_drift_gpart,
@@ -110,6 +111,7 @@ enum task_subtypes {
   task_subtype_external_grav,
   task_subtype_tend_part,
   task_subtype_tend_gpart,
+  task_subtype_tend_sink,
   task_subtype_tend_spart,
   task_subtype_tend_bpart,
   task_subtype_xv,
@@ -130,6 +132,7 @@ enum task_subtypes {
   task_subtype_do_gas_swallow,
   task_subtype_do_bh_swallow,
   task_subtype_bh_feedback,
+  task_subtype_sink,
   task_subtype_count
 } __attribute__((packed));
 
@@ -140,6 +143,7 @@ enum task_actions {
   task_action_none,
   task_action_part,
   task_action_gpart,
+  task_action_sink,
   task_action_spart,
   task_action_bpart,
   task_action_all,
@@ -163,6 +167,7 @@ enum task_categories {
   task_category_time_integration,
   task_category_mpi,
   task_category_fof,
+  task_category_sink,
   task_category_others,
   task_category_count
 };

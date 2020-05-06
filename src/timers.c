@@ -42,6 +42,7 @@ const char* timers_names[timer_count] = {
     "init_grav",
     "drift_part",
     "drift_gpart",
+    "drift_sink",
     "drift_spart",
     "drift_bpart",
     "kick1",

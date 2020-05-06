@@ -43,6 +43,7 @@ enum {
   timer_init_grav,
   timer_drift_part,
   timer_drift_gpart,
+  timer_drift_sink,
   timer_drift_spart,
   timer_drift_bpart,
   timer_kick1,

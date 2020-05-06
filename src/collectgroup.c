@@ -106,20 +106,32 @@ void collectgroup1_apply(const struct collectgroup1 *grp1, struct engine *e) {
   e->ti_black_holes_end_min = grp1->ti_black_holes_end_min;
   e->ti_black_holes_end_max = grp1->ti_black_holes_end_max;
   e->ti_black_holes_beg_max = grp1->ti_black_holes_beg_max;
-  e->ti_end_min = min4(e->ti_hydro_end_min, e->ti_gravity_end_min,
+  e->sinks.ti_end_min = grp1->sinks.ti_end_min;
+  e->sinks.ti_end_max = grp1->sinks.ti_end_max;
+  e->sinks.ti_beg_max = grp1->sinks.ti_beg_max;
+
+  e->ti_end_min = min5(e->ti_hydro_end_min, e->ti_gravity_end_min,
+                       e->sinks.ti_end_min,
                        e->ti_stars_end_min, e->ti_black_holes_end_min);
-  e->ti_end_max = max4(e->ti_hydro_end_max, e->ti_gravity_end_max,
+  e->ti_end_max = max5(e->ti_hydro_end_max, e->ti_gravity_end_max,
+                       e->sinks.ti_end_max,
                        e->ti_stars_end_max, e->ti_black_holes_end_max);
-  e->ti_beg_max = max4(e->ti_hydro_beg_max, e->ti_gravity_beg_max,
+  e->ti_beg_max = max5(e->ti_hydro_beg_max, e->ti_gravity_beg_max,
+                       e->sinks.ti_beg_max,
                        e->ti_stars_beg_max, e->ti_black_holes_beg_max);
+
   e->updates = grp1->updated;
   e->g_updates = grp1->g_updated;
+  e->sinks.updates = grp1->sinks.updated;
   e->s_updates = grp1->s_updated;
   e->b_updates = grp1->b_updated;
+
   e->nr_inhibited_parts = grp1->inhibited;
   e->nr_inhibited_gparts = grp1->g_inhibited;
+  e->sinks.nr_inhibited_parts = grp1->sinks.inhibited;
   e->nr_inhibited_sparts = grp1->s_inhibited;
   e->nr_inhibited_bparts = grp1->b_inhibited;
+
   e->forcerebuild = grp1->forcerebuild;
   e->total_nr_cells = grp1->total_nr_cells;
   e->total_nr_tasks = grp1->total_nr_tasks;
@@ -138,12 +150,15 @@ void collectgroup1_apply(const struct collectgroup1 *grp1, struct engine *e) {
  * @param g_updated the number of updated gravity particles on this node this
  *                  step.
  * @param s_updated the number of updated star particles on this node this step.
+ * @param sink_updated the number of updated sink particles on this node this step.
  * @param b_updated the number of updated black hole particles on this node this
  * step.
  * @param inhibited the number of inhibited hydro particles on this node this
  *                  step.
  * @param g_inhibited the number of inhibited gravity particles on this node
  *                    this step.
+ * @param sink_inhibited the number of inhibited sink particles on this node this
+ *                    step.
  * @param s_inhibited the number of inhibited star particles on this node this
  *                    step.
  * @param b_inhibited the number of inhibited black hole particles on this node
@@ -159,6 +174,12 @@ void collectgroup1_apply(const struct collectgroup1 *grp1, struct engine *e) {
  * @param ti_gravity_end_max the maximum end time for next gravity time step
  *                           after this step.
  * @param ti_gravity_beg_max the maximum begin time for next gravity time step
+ *                           after this step.
+ * @param ti_sinks_end_min the minimum end time for next sinks time step
+ *                           after this step.
+ * @param ti_sinks_end_max the maximum end time for next sinks time step
+ *                           after this step.
+ * @param ti_sinks_beg_max the maximum begin time for next sinks time step
  *                           after this step.
  * @param ti_stars_end_min the minimum end time for next stars time step
  *                           after this step.
@@ -180,12 +201,14 @@ void collectgroup1_apply(const struct collectgroup1 *grp1, struct engine *e) {
  * @param runtime The runtime of rank in hours.
  */
 void collectgroup1_init(
-    struct collectgroup1 *grp1, size_t updated, size_t g_updated,
+    struct collectgroup1 *grp1, size_t updated, size_t g_updated, size_t sink_updated,
     size_t s_updated, size_t b_updated, size_t inhibited, size_t g_inhibited,
-    size_t s_inhibited, size_t b_inhibited, integertime_t ti_hydro_end_min,
+    size_t sink_inhibited, size_t s_inhibited, size_t b_inhibited, integertime_t ti_hydro_end_min,
     integertime_t ti_hydro_end_max, integertime_t ti_hydro_beg_max,
     integertime_t ti_gravity_end_min, integertime_t ti_gravity_end_max,
-    integertime_t ti_gravity_beg_max, integertime_t ti_stars_end_min,
+    integertime_t ti_gravity_beg_max, integertime_t ti_sinks_end_min,
+    integertime_t ti_sinks_end_max, integertime_t ti_sinks_beg_max,
+    integertime_t ti_stars_end_min,
     integertime_t ti_stars_end_max, integertime_t ti_stars_beg_max,
     integertime_t ti_black_holes_end_min, integertime_t ti_black_holes_end_max,
     integertime_t ti_black_holes_beg_max, int forcerebuild,
@@ -194,18 +217,25 @@ void collectgroup1_init(
 
   grp1->updated = updated;
   grp1->g_updated = g_updated;
+  grp1->sinks.updated = sink_updated;
   grp1->s_updated = s_updated;
   grp1->b_updated = b_updated;
+
   grp1->inhibited = inhibited;
   grp1->g_inhibited = g_inhibited;
+  grp1->sinks.inhibited = sink_inhibited;
   grp1->s_inhibited = s_inhibited;
   grp1->b_inhibited = b_inhibited;
+
   grp1->ti_hydro_end_min = ti_hydro_end_min;
   grp1->ti_hydro_end_max = ti_hydro_end_max;
   grp1->ti_hydro_beg_max = ti_hydro_beg_max;
   grp1->ti_gravity_end_min = ti_gravity_end_min;
   grp1->ti_gravity_end_max = ti_gravity_end_max;
   grp1->ti_gravity_beg_max = ti_gravity_beg_max;
+  grp1->sinks.ti_end_min = ti_sinks_end_min;
+  grp1->sinks.ti_end_max = ti_sinks_end_max;
+  grp1->sinks.ti_beg_max = ti_sinks_beg_max;
   grp1->ti_stars_end_min = ti_stars_end_min;
   grp1->ti_stars_end_max = ti_stars_end_max;
   grp1->ti_stars_beg_max = ti_stars_beg_max;

@@ -1316,9 +1316,9 @@ int main(int argc, char *argv[]) {
 
   /* Legend */
   if (myrank == 0) {
-    printf("# %6s %14s %12s %12s %14s %9s %12s %12s %12s %12s %16s [%s] %6s\n",
+    printf("# %6s %14s %12s %12s %14s %9s %12s %12s %12s %12s %12s %16s [%s] %6s\n",
            "Step", "Time", "Scale-factor", "Redshift", "Time-step", "Time-bins",
-           "Updates", "g-Updates", "s-Updates", "b-Updates", "Wall-clock time",
+           "Updates", "g-Updates", "sink-Updates", "s-Updates", "b-Updates", "Wall-clock time",
            clocks_getunit(), "Props");
     fflush(stdout);
   }

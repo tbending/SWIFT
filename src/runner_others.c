@@ -539,6 +539,8 @@ void runner_do_end_grav_force(struct runner *r, struct cell *c, int timer) {
         long long id = 0;
         if (gp->type == swift_type_gas)
           id = e->s->parts[-gp->id_or_neg_offset].id;
+        else if (gp->type == swift_type_sink)
+          id = e->s->sinks.parts[-gp->id_or_neg_offset].id;
         else if (gp->type == swift_type_stars)
           id = e->s->sparts[-gp->id_or_neg_offset].id;
         else if (gp->type == swift_type_black_hole)
@@ -573,6 +575,8 @@ void runner_do_end_grav_force(struct runner *r, struct cell *c, int timer) {
             long long my_id = 0;
             if (gp->type == swift_type_gas)
               my_id = e->s->parts[-gp->id_or_neg_offset].id;
+            else if (gp->type == swift_type_sink)
+              my_id = e->s->sinks.parts[-gp->id_or_neg_offset].id;
             else if (gp->type == swift_type_stars)
               my_id = e->s->sparts[-gp->id_or_neg_offset].id;
             else if (gp->type == swift_type_black_hole)
@@ -630,6 +634,9 @@ void runner_do_logger(struct runner *r, struct cell *c, int timer) {
 
   if (c->black_holes.count != 0) {
     error("Black holes are not implemented in the logger.");
+  }
+  if (c->sinks.count != 0) {
+    error("Sink particles are not implemented in the logger.");
   }
 
   /* Anything to do here? */

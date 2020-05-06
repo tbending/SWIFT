@@ -494,7 +494,7 @@ struct engine {
     /* Total number of particles in the system. */
     long long total_nr_parts;
 
-  } sink;
+  } sinks;
 
 #ifdef SWIFT_GRAVITY_FORCE_CHECKS
   /* Run brute force checks only on steps when all gparts active? */

@@ -293,10 +293,12 @@ enum cell_flags {
   cell_flag_do_stars_sub_drift = (1UL << 10),
   cell_flag_do_bh_drift = (1UL << 11),
   cell_flag_do_bh_sub_drift = (1UL << 12),
-  cell_flag_do_stars_resort = (1UL << 13),
-  cell_flag_has_tasks = (1UL << 14),
-  cell_flag_do_hydro_sync = (1UL << 15),
-  cell_flag_do_hydro_sub_sync = (1UL << 16)
+  cell_flag_do_sink_drift = (1UL << 13),
+  cell_flag_do_sink_sub_drift = (1UL << 14),
+  cell_flag_do_stars_resort = (1UL << 15),
+  cell_flag_has_tasks = (1UL << 16),
+  cell_flag_do_hydro_sync = (1UL << 17),
+  cell_flag_do_hydro_sub_sync = (1UL << 18)
 };
 
 /**
@@ -743,6 +745,21 @@ struct cell {
 
     /*! Nr of #sink this cell can hold after addition of new one. */
     int count_total;
+
+    /*! Last (integer) time the cell's sink were drifted forward in time. */
+    integertime_t ti_old_part;
+
+    /*! Maximum end of (integer) time step in this cell for sink tasks. */
+    integertime_t ti_end_min;
+
+    /*! Maximum beginning of (integer) time step in this cell for sink
+     * tasks.
+     */
+    integertime_t ti_beg_max;
+
+    /*! Is the #bpart data of this cell being used in a sub-cell? */
+    int hold;
+
   } sinks;
 
 #ifdef WITH_MPI
@@ -1141,6 +1158,22 @@ cell_can_recurse_in_self_black_holes_task(const struct cell *c) {
   /* Is the cell split and not smaller than the smoothing length? */
   return c->split &&
          (kernel_gamma * c->black_holes.h_max_old < 0.5f * c->dmin) &&
+         (kernel_gamma * c->hydro.h_max_old < 0.5f * c->dmin);
+}
+
+/**
+ * @brief Can a sub-self sinks task recurse to a lower level based
+ * on the status of the particles in the cell.
+ *
+ * @param c The #cell.
+ */
+__attribute__((always_inline)) INLINE static int
+cell_can_recurse_in_self_sinks_task(const struct cell *c) {
+
+  /* Is the cell split and not smaller than the smoothing length? */
+  // loic TODO: add cut off radius
+  return c->split &&
+    //(kernel_gamma * c->sinks.h_max_old < 0.5f * c->dmin) &&
          (kernel_gamma * c->hydro.h_max_old < 0.5f * c->dmin);
 }
 

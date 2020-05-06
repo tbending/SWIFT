@@ -42,6 +42,16 @@ struct end_of_step_data {
   integertime_t ti_stars_end_min, ti_stars_end_max, ti_stars_beg_max;
   integertime_t ti_black_holes_end_min, ti_black_holes_end_max,
       ti_black_holes_beg_max;
+
+  /* Data for the sink particles */
+  struct {
+    size_t updated;
+    size_t inhibited;
+    integertime_t ti_end_min;
+    integertime_t ti_end_max;
+    integertime_t ti_beg_max;
+  } sinks;
+
   struct engine *e;
   struct star_formation_history sfh;
   float runtime;
@@ -274,6 +284,64 @@ void engine_collect_end_of_step_recurse_black_holes(struct cell *c,
 }
 
 /**
+ * @brief Recursive function gathering end-of-step data.
+ *
+ * We recurse until we encounter a timestep or time-step MPI recv task
+ * as the values will have been set at that level. We then bring these
+ * values upwards.
+ *
+ * @param c The #cell to recurse into.
+ * @param e The #engine.
+ */
+void engine_collect_end_of_step_recurse_sinks(struct cell *c,
+                                                    const struct engine *e) {
+
+  /* Skip super-cells (Their values are already set) */
+  if (c->timestep != NULL) return;
+#ifdef WITH_MPI
+  if (cell_get_recv(c, task_subtype_tend_sink) != NULL) return;
+#endif /* WITH_MPI */
+
+#ifdef SWIFT_DEBUG_CHECKS
+    // if (!c->split) error("Reached a leaf without finding a time-step task!");
+#endif
+
+  /* Counters for the different quantities. */
+  size_t updated = 0;
+  integertime_t ti_sinks_end_min = max_nr_timesteps,
+                ti_sinks_end_max = 0, ti_sinks_beg_max = 0;
+
+  /* Collect the values from the progeny. */
+  for (int k = 0; k < 8; k++) {
+    struct cell *cp = c->progeny[k];
+    if (cp != NULL && cp->sinks.count > 0) {
+
+      /* Recurse */
+      engine_collect_end_of_step_recurse_sinks(cp, e);
+
+      /* And update */
+      ti_sinks_end_min =
+          min(ti_sinks_end_min, cp->sinks.ti_end_min);
+      ti_sinks_end_max =
+          max(ti_sinks_end_max, cp->sinks.ti_end_max);
+      ti_sinks_beg_max =
+          max(ti_sinks_beg_max, cp->sinks.ti_beg_max);
+
+      updated += cp->sinks.updated;
+
+      /* Collected, so clear for next time. */
+      cp->sinks.updated = 0;
+    }
+  }
+
+  /* Store the collected values in the cell. */
+  c->sinks.ti_end_min = ti_sinks_end_min;
+  c->sinks.ti_end_max = ti_sinks_end_max;
+  c->sinks.ti_beg_max = ti_sinks_beg_max;
+  c->sinks.updated = updated;
+}
+
+/**
  * @brief Mapping function to collect the data from the end of the step
  *
  * This function will call a recursive function on all the top-level cells
@@ -294,17 +362,21 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
   const int with_ext_grav = (e->policy & engine_policy_external_gravity);
   const int with_grav = (with_self_grav || with_ext_grav);
   const int with_stars = (e->policy & engine_policy_stars);
+  const int with_sinks = (e->policy & engine_policy_sink);
   const int with_black_holes = (e->policy & engine_policy_black_holes);
   struct space *s = e->s;
   int *local_cells = (int *)map_data;
   struct star_formation_history *sfh_top = &data->sfh;
 
   /* Local collectible */
-  size_t updated = 0, g_updated = 0, s_updated = 0, b_updated = 0;
+  size_t updated = 0, g_updated = 0, sink_updated = 0,
+    s_updated = 0, b_updated = 0;
   integertime_t ti_hydro_end_min = max_nr_timesteps, ti_hydro_end_max = 0,
                 ti_hydro_beg_max = 0;
   integertime_t ti_gravity_end_min = max_nr_timesteps, ti_gravity_end_max = 0,
                 ti_gravity_beg_max = 0;
+  integertime_t ti_sinks_end_min = max_nr_timesteps, ti_sinks_end_max = 0,
+                ti_sinks_beg_max = 0;
   integertime_t ti_stars_end_min = max_nr_timesteps, ti_stars_end_max = 0,
                 ti_stars_beg_max = 0;
   integertime_t ti_black_holes_end_min = max_nr_timesteps,
@@ -320,7 +392,7 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
     struct cell *c = &s->cells_top[local_cells[ind]];
 
     if (c->hydro.count > 0 || c->grav.count > 0 || c->stars.count > 0 ||
-        c->black_holes.count > 0) {
+        c->black_holes.count > 0 || c->sinks.count > 0) {
 
       /* Make the top-cells recurse */
       if (with_hydro) {
@@ -328,6 +400,9 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
       }
       if (with_grav) {
         engine_collect_end_of_step_recurse_grav(c, e);
+      }
+      if (with_sinks) {
+        engine_collect_end_of_step_recurse_sinks(c, e);
       }
       if (with_stars) {
         engine_collect_end_of_step_recurse_stars(c, e);
@@ -347,6 +422,11 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
       ti_gravity_end_max = max(ti_gravity_end_max, c->grav.ti_end_max);
       ti_gravity_beg_max = max(ti_gravity_beg_max, c->grav.ti_beg_max);
 
+      if (c->sinks.ti_end_min > e->ti_current)
+        ti_sinks_end_min = min(ti_sinks_end_min, c->sinks.ti_end_min);
+      ti_sinks_end_max = max(ti_sinks_end_max, c->sinks.ti_end_max);
+      ti_sinks_beg_max = max(ti_sinks_beg_max, c->sinks.ti_beg_max);
+
       if (c->stars.ti_end_min > e->ti_current)
         ti_stars_end_min = min(ti_stars_end_min, c->stars.ti_end_min);
       ti_stars_end_max = max(ti_stars_end_max, c->stars.ti_end_max);
@@ -362,6 +442,7 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
 
       updated += c->hydro.updated;
       g_updated += c->grav.updated;
+      sink_updated += c->sinks.updated;
       s_updated += c->stars.updated;
       b_updated += c->black_holes.updated;
 
@@ -377,6 +458,7 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
       /* Collected, so clear for next time. */
       c->hydro.updated = 0;
       c->grav.updated = 0;
+      c->sinks.updated = 0;
       c->stars.updated = 0;
       c->black_holes.updated = 0;
     }
@@ -387,6 +469,7 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
   if (lock_lock(&s->lock) == 0) {
     data->updated += updated;
     data->g_updated += g_updated;
+    data->sinks.updated += sink_updated;
     data->s_updated += s_updated;
     data->b_updated += b_updated;
 
@@ -405,6 +488,11 @@ void engine_collect_end_of_step_mapper(void *map_data, int num_elements,
         max(ti_gravity_end_max, data->ti_gravity_end_max);
     data->ti_gravity_beg_max =
         max(ti_gravity_beg_max, data->ti_gravity_beg_max);
+
+    if (ti_sinks_end_min > e->ti_current)
+      data->sinks.ti_end_min = min(ti_sinks_end_min, data->sinks.ti_end_min);
+    data->sinks.ti_end_max = max(ti_sinks_end_max, data->sinks.ti_end_max);
+    data->sinks.ti_beg_max = max(ti_sinks_beg_max, data->sinks.ti_beg_max);
 
     if (ti_stars_end_min > e->ti_current)
       data->ti_stars_end_min = min(ti_stars_end_min, data->ti_stars_end_min);
@@ -445,11 +533,14 @@ void engine_collect_end_of_step(struct engine *e, int apply) {
   const ticks tic = getticks();
   struct space *s = e->s;
   struct end_of_step_data data;
-  data.updated = 0, data.g_updated = 0, data.s_updated = 0, data.b_updated = 0;
+  data.updated = 0, data.g_updated = 0, data.sink_udpated = 0,
+    data.s_updated = 0, data.b_updated = 0;
   data.ti_hydro_end_min = max_nr_timesteps, data.ti_hydro_end_max = 0,
   data.ti_hydro_beg_max = 0;
   data.ti_gravity_end_min = max_nr_timesteps, data.ti_gravity_end_max = 0,
   data.ti_gravity_beg_max = 0;
+  data.sinks.ti_end_min = max_nr_timesteps, data.sinks.ti_end_max = 0,
+  data.sinks.ti_beg_max = 0;
   data.ti_stars_end_min = max_nr_timesteps, data.ti_stars_end_max = 0,
   data.ti_stars_beg_max = 0;
   data.ti_black_holes_end_min = max_nr_timesteps,
@@ -471,16 +562,19 @@ void engine_collect_end_of_step(struct engine *e, int apply) {
    * since these have been updated atomically during the time-steps. */
   data.inhibited = s->nr_inhibited_parts;
   data.g_inhibited = s->nr_inhibited_gparts;
+  data.sinks.inhibited = s->sinks.nr_inhibited_parts;
   data.s_inhibited = s->nr_inhibited_sparts;
   data.b_inhibited = s->nr_inhibited_bparts;
 
   /* Store these in the temporary collection group. */
   collectgroup1_init(
-      &e->collect_group1, data.updated, data.g_updated, data.s_updated,
-      data.b_updated, data.inhibited, data.g_inhibited, data.s_inhibited,
+      &e->collect_group1, data.updated, data.g_updated, data.sinks.updated,
+      data.s_updated, data.b_updated, data.inhibited,
+      data.g_inhibited, data.sinks.inhibited, data.s_inhibited,
       data.b_inhibited, data.ti_hydro_end_min, data.ti_hydro_end_max,
       data.ti_hydro_beg_max, data.ti_gravity_end_min, data.ti_gravity_end_max,
-      data.ti_gravity_beg_max, data.ti_stars_end_min, data.ti_stars_end_max,
+      data.ti_gravity_beg_max, data.sinks.ti_end_min, data.sinks.ti_end_max,
+      data.sinks.ti_beg_max, data.ti_stars_end_min, data.ti_stars_end_max,
       data.ti_stars_beg_max, data.ti_black_holes_end_min,
       data.ti_black_holes_end_max, data.ti_black_holes_beg_max, e->forcerebuild,
       e->s->tot_cells, e->sched.nr_tasks,

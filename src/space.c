@@ -205,6 +205,7 @@ void space_rebuild_recycle_mapper(void *map_data, int num_elements,
     c->grav.mm = NULL;
     c->hydro.dx_max_part = 0.0f;
     c->hydro.dx_max_sort = 0.0f;
+    c->sinks.dx_max_part = 0.f;
     c->stars.dx_max_part = 0.f;
     c->stars.dx_max_sort = 0.f;
     c->black_holes.dx_max_part = 0.f;
@@ -218,6 +219,7 @@ void space_rebuild_recycle_mapper(void *map_data, int num_elements,
     c->grav.count_total = 0;
     c->grav.updated = 0;
     c->sinks.count = 0;
+    c->sinks.updated = 0;
     c->stars.count = 0;
     c->stars.count_total = 0;
     c->stars.updated = 0;
@@ -251,6 +253,7 @@ void space_rebuild_recycle_mapper(void *map_data, int num_elements,
     c->timestep_sync = NULL;
     c->hydro.end_force = NULL;
     c->hydro.drift = NULL;
+    c->sinks.drift = NULL;
     c->stars.drift = NULL;
     c->stars.stars_in = NULL;
     c->stars.stars_out = NULL;
@@ -281,6 +284,8 @@ void space_rebuild_recycle_mapper(void *map_data, int num_elements,
     c->hydro.ti_end_max = -1;
     c->grav.ti_end_min = -1;
     c->grav.ti_end_max = -1;
+    c->sinks.ti_end_min = -1;
+    c->sinks.ti_end_max = -1;
     c->stars.ti_end_min = -1;
     c->stars.ti_end_max = -1;
     c->black_holes.ti_end_min = -1;
@@ -589,6 +594,8 @@ void space_regrid(struct space *s, int verbose) {
         error("Failed to init spinlock for multipoles.");
       if (lock_init(&s->cells_top[k].grav.star_formation_lock) != 0)
         error("Failed to init spinlock for star formation (gpart).");
+      if (lock_init(&s->cells_top[k].sinks.lock) != 0)
+        error("Failed to init spinlock for sink.");
       if (lock_init(&s->cells_top[k].stars.lock) != 0)
         error("Failed to init spinlock for stars.");
       if (lock_init(&s->cells_top[k].black_holes.lock) != 0)
@@ -621,6 +628,7 @@ void space_regrid(struct space *s, int verbose) {
           c->grav.super = c;
           c->hydro.ti_old_part = ti_current;
           c->grav.ti_old_part = ti_current;
+          c->sinks.ti_old_part = ti_current;
           c->stars.ti_old_part = ti_current;
           c->black_holes.ti_old_part = ti_current;
           c->grav.ti_old_multipole = ti_current;
@@ -1606,6 +1614,8 @@ void space_rebuild(struct space *s, int repartitioned, int verbose) {
         /* Swap the link with part/spart */
         if (s->gparts[k].type == swift_type_gas) {
           s->parts[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
+        } else if (s->gparts[k].type == swift_type_sinks) {
+          s->sinks[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
         } else if (s->gparts[k].type == swift_type_stars) {
           s->sparts[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
         } else if (s->gparts[k].type == swift_type_black_hole) {
@@ -1615,6 +1625,9 @@ void space_rebuild(struct space *s, int repartitioned, int verbose) {
         if (s->gparts[nr_gparts].type == swift_type_gas) {
           s->parts[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
               &s->gparts[nr_gparts];
+        } else if (s->gparts[nr_gparts].type == swift_type_sink) {
+          s->sinks[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
+            &s->gparts[nr_gparts];
         } else if (s->gparts[nr_gparts].type == swift_type_stars) {
           s->sparts[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
               &s->gparts[nr_gparts];
@@ -2082,6 +2095,7 @@ void space_rebuild(struct space *s, int repartitioned, int verbose) {
     c->hydro.ti_old_part = ti_current;
     c->grav.ti_old_part = ti_current;
     c->grav.ti_old_multipole = ti_current;
+    c->sinks.ti_old_part = ti_current;
     c->stars.ti_old_part = ti_current;
     c->black_holes.ti_old_part = ti_current;
 
@@ -3750,6 +3764,8 @@ void space_split_recursive(struct space *s, struct cell *c,
                 ti_hydro_beg_max = 0;
   integertime_t ti_gravity_end_min = max_nr_timesteps, ti_gravity_end_max = 0,
                 ti_gravity_beg_max = 0;
+  integertime_t ti_sinks_end_min = max_nr_timesteps, ti_sinks_end_max = 0,
+                ti_sinks_beg_max = 0;
   integertime_t ti_stars_end_min = max_nr_timesteps, ti_stars_end_max = 0,
                 ti_stars_beg_max = 0;
   integertime_t ti_black_holes_end_min = max_nr_timesteps,
@@ -3886,6 +3902,7 @@ void space_split_recursive(struct space *s, struct cell *c,
       cp->hydro.ti_old_part = c->hydro.ti_old_part;
       cp->grav.ti_old_part = c->grav.ti_old_part;
       cp->grav.ti_old_multipole = c->grav.ti_old_multipole;
+      cp->sinks.ti_old_part = c->sinks.ti_old_part;
       cp->stars.ti_old_part = c->stars.ti_old_part;
       cp->black_holes.ti_old_part = c->black_holes.ti_old_part;
       cp->loc[0] = c->loc[0];
@@ -3903,6 +3920,7 @@ void space_split_recursive(struct space *s, struct cell *c,
       cp->hydro.h_max = 0.f;
       cp->hydro.dx_max_part = 0.f;
       cp->hydro.dx_max_sort = 0.f;
+      cp->sinks.dx_max_part = 0.f;
       cp->stars.h_max = 0.f;
       cp->stars.dx_max_part = 0.f;
       cp->stars.dx_max_sort = 0.f;
@@ -3971,6 +3989,9 @@ void space_split_recursive(struct space *s, struct cell *c,
         ti_gravity_end_min = min(ti_gravity_end_min, cp->grav.ti_end_min);
         ti_gravity_end_max = max(ti_gravity_end_max, cp->grav.ti_end_max);
         ti_gravity_beg_max = max(ti_gravity_beg_max, cp->grav.ti_beg_max);
+        ti_sinks_end_min = min(ti_sinks_end_min, cp->sinks.ti_end_min);
+        ti_sinks_end_max = max(ti_sinks_end_max, cp->sinks.ti_end_max);
+        ti_sinks_beg_max = max(ti_sinks_beg_max, cp->sinks.ti_beg_max);
         ti_stars_end_min = min(ti_stars_end_min, cp->stars.ti_end_min);
         ti_stars_end_max = max(ti_stars_end_max, cp->stars.ti_end_max);
         ti_stars_beg_max = max(ti_stars_beg_max, cp->stars.ti_beg_max);
@@ -4114,6 +4135,10 @@ void space_split_recursive(struct space *s, struct cell *c,
     ti_gravity_end_max = 0;
     ti_gravity_beg_max = 0;
 
+    ti_sinks_end_min = max_nr_timesteps;
+    ti_sinks_end_max = 0;
+    ti_sinks_beg_max = 0;
+
     ti_stars_end_min = max_nr_timesteps;
     ti_stars_end_max = 0;
     ti_stars_beg_max = 0;
@@ -4171,6 +4196,30 @@ void space_split_recursive(struct space *s, struct cell *c,
       ti_gravity_end_min = min(ti_gravity_end_min, ti_end);
       ti_gravity_end_max = max(ti_gravity_end_max, ti_end);
       ti_gravity_beg_max = max(ti_gravity_beg_max, ti_beg);
+    }
+
+    /* sinks: Get dt_min/dt_max */
+    for (int k = 0; k < sink_count; k++) {
+#ifdef SWIFT_DEBUG_CHECKS
+      if (sinks[k].time_bin == time_bin_not_created)
+        error("Extra sink-particle present in space_split()");
+      if (sinks[k].time_bin == time_bin_inhibited)
+        error("Inhibited sink-particle present in space_split()");
+#endif
+
+      /* When does this particle's time-step start and end? */
+      const timebin_t time_bin = sinks[k].time_bin;
+      const integertime_t ti_end = get_integer_time_end(ti_current, time_bin);
+      const integertime_t ti_beg = get_integer_time_begin(ti_current, time_bin);
+
+      ti_sinks_end_min = min(ti_sinks_end_min, ti_end);
+      ti_sinks_end_max = max(ti_sinks_end_max, ti_end);
+      ti_sinks_beg_max = max(ti_sinks_beg_max, ti_beg);
+
+      /* Reset x_diff */
+      sinks[k].x_diff[0] = 0.f;
+      sinks[k].x_diff[1] = 0.f;
+      sinks[k].x_diff[2] = 0.f;
     }
 
     /* sparts: Get dt_min/dt_max */
@@ -4262,6 +4311,9 @@ void space_split_recursive(struct space *s, struct cell *c,
   c->grav.ti_end_min = ti_gravity_end_min;
   c->grav.ti_end_max = ti_gravity_end_max;
   c->grav.ti_beg_max = ti_gravity_beg_max;
+  c->sinks.ti_end_min = ti_sinks_end_min;
+  c->sinks.ti_end_max = ti_sinks_end_max;
+  c->sinks.ti_beg_max = ti_sinks_beg_max;
   c->stars.ti_end_min = ti_stars_end_min;
   c->stars.ti_end_max = ti_stars_end_max;
   c->stars.ti_beg_max = ti_stars_beg_max;
@@ -4345,7 +4397,8 @@ void space_recycle(struct space *s, struct cell *c) {
       lock_destroy(&c->grav.mlock) != 0 || lock_destroy(&c->stars.lock) != 0 ||
       lock_destroy(&c->black_holes.lock) != 0 ||
       lock_destroy(&c->grav.star_formation_lock) != 0 ||
-      lock_destroy(&c->stars.star_formation_lock) != 0)
+      lock_destroy(&c->stars.star_formation_lock) != 0 ||
+      lock_destroy(&c->sinks.lock) != 0)
     error("Failed to destroy spinlocks.");
 
   /* Lock the space. */
@@ -4396,6 +4449,7 @@ void space_recycle_list(struct space *s, struct cell *cell_list_begin,
     if (lock_destroy(&c->hydro.lock) != 0 ||
         lock_destroy(&c->grav.plock) != 0 ||
         lock_destroy(&c->grav.mlock) != 0 ||
+        lock_destroy(&c->sinks.lock) != 0 ||
         lock_destroy(&c->stars.lock) != 0 ||
         lock_destroy(&c->black_holes.lock) != 0 ||
         lock_destroy(&c->stars.star_formation_lock) != 0 ||
@@ -4498,6 +4552,7 @@ void space_getcells(struct space *s, int nr_cells, struct cell **cells) {
     if (lock_init(&cells[j]->hydro.lock) != 0 ||
         lock_init(&cells[j]->grav.plock) != 0 ||
         lock_init(&cells[j]->grav.mlock) != 0 ||
+        lock_init(&cells[j]->sinks.lock) != 0 ||
         lock_init(&cells[j]->stars.lock) != 0 ||
         lock_init(&cells[j]->black_holes.lock) != 0 ||
         lock_init(&cells[j]->stars.star_formation_lock) != 0 ||

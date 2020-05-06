@@ -51,6 +51,19 @@ struct collectgroup1 {
   integertime_t ti_black_holes_end_min, ti_black_holes_end_max,
       ti_black_holes_beg_max;
 
+  /* Structure for the sink particles */
+  struct {
+    /* Number of particles updated */
+    long long updated;
+
+    /* Number of particles inhibited */
+    long long inhibited;
+
+    /* Times for the time-step */
+    integertime_t ti_end_min, ti_end_max, ti_beg_max;
+
+  } sinks;
+
   /* Force the engine to rebuild? */
   int forcerebuild;
 
@@ -68,12 +81,15 @@ struct collectgroup1 {
 void collectgroup_init(void);
 void collectgroup1_apply(const struct collectgroup1 *grp1, struct engine *e);
 void collectgroup1_init(
-    struct collectgroup1 *grp1, size_t updated, size_t g_updated,
+    struct collectgroup1 *grp1, size_t updated, size_t g_updated, size_t sink_updated,
     size_t s_updated, size_t b_updated, size_t inhibited, size_t g_inhibited,
-    size_t s_inhibited, size_t b_inhibited, integertime_t ti_hydro_end_min,
+    size_t sink_inhibited, size_t s_inhibited, size_t b_inhibited,
+    integertime_t ti_hydro_end_min,
     integertime_t ti_hydro_end_max, integertime_t ti_hydro_beg_max,
     integertime_t ti_gravity_end_min, integertime_t ti_gravity_end_max,
-    integertime_t ti_gravity_beg_max, integertime_t ti_stars_end_min,
+    integertime_t ti_gravity_beg_max, integertime_t ti_sinks_end_min,
+    integertime_t ti_sinks_end_max, integertime_t ti_sinks_beg_max,
+    integertime_t ti_stars_end_min,
     integertime_t ti_stars_end_max, integertime_t ti_stars_beg_max,
     integertime_t ti_black_holes_end_min, integertime_t ti_black_holes_end_max,
     integertime_t ti_black_holes_beg_max, int forcerebuild,

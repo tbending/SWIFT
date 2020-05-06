@@ -1073,6 +1073,7 @@ void engine_make_hierarchical_tasks_hydro(struct engine *e, struct cell *c,
                                           struct cell *star_resort_cell) {
 
   struct scheduler *s = &e->sched;
+  const int with_sinks = (e->policy & engine_policy_sink);
   const int with_stars = (e->policy & engine_policy_stars);
   const int with_feedback = (e->policy & engine_policy_feedback);
   const int with_cooling = (e->policy & engine_policy_cooling);
@@ -1145,6 +1146,13 @@ void engine_make_hierarchical_tasks_hydro(struct engine *e, struct cell *c,
       c->hydro.extra_ghost = scheduler_addtask(
           s, task_type_extra_ghost, task_subtype_none, 0, 0, c, NULL);
 #endif
+
+      /* Sinks */
+      if (with_sinks) {
+        c->sinks.drift = scheduler_addtask(s, task_type_drift_sink,
+                                           task_subtype_none, 0, 0, c, NULL);
+        scheduler_addunlock(s, c->sinks.drift, c->super->kick2);
+      }
 
       /* Stars */
       if (with_stars) {
@@ -2873,7 +2881,8 @@ void engine_make_hydroloop_tasks_mapper(void *map_data, int num_elements,
 
     /* Skip cells without hydro or star particles */
     if ((ci->hydro.count == 0) && (!with_stars || ci->stars.count == 0) &&
-        (!with_black_holes || ci->black_holes.count == 0))
+        (!with_black_holes || ci->black_holes.count == 0) &&
+        (!with_sinks || ci->sinks.count == 0))
       continue;
 
     /* If the cell is local build a self-interaction */
@@ -2904,7 +2913,8 @@ void engine_make_hydroloop_tasks_mapper(void *map_data, int num_elements,
           if ((cid >= cjd) ||
               ((cj->hydro.count == 0) &&
                (!with_feedback || cj->stars.count == 0) &&
-               (!with_black_holes || cj->black_holes.count == 0)) ||
+               (!with_black_holes || cj->black_holes.count == 0) &&
+               (!with_sinks || cj->sinks.count == 0)) ||
               (ci->nodeID != nodeID && cj->nodeID != nodeID))
             continue;
 
