@@ -486,7 +486,7 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
         r_times_v_tang * r_times_v_tang * r_times_v_tang;
     const double viscous_time = 2. * M_PI * r_times_v_tang_3 /
                                 (1e-6 * alpha_visc * G * G * BH_mass * BH_mass);
-    const double f_visc = max(Bondi_time / viscous_time, 1.);
+    const double f_visc = min(Bondi_time / viscous_time, 1.);
     bp->f_visc = f_visc;
 
     /* Limit the Bondi rate by the Bondi viscuous time ratio */
@@ -711,9 +711,11 @@ INLINE static void black_holes_create_from_gas(
   bp->cumulative_number_seeds = 1;
   bp->number_of_mergers = 0;
   bp->number_of_swallows = 0;
+  bp->number_of_time_steps = 0;
+
+  /* We haven't repositioned yet, nor attempted it */
   bp->number_of_repositionings = 0;
   bp->number_of_repos_attempts = 0;
-  bp->number_of_time_steps = 0;
 
   /* Initial metal masses */
   const float gas_mass = hydro_get_mass(p);

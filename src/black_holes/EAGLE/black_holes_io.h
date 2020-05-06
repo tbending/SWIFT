@@ -308,7 +308,7 @@ INLINE static void black_holes_write_particles(const struct bpart* bparts,
       "ViscosityFactors", FLOAT, 1, UNIT_CONV_NO_UNITS, 0.f, bparts,
       f_visc,
       "Factor by which Bondi-Hoyle-Lyttleton rate has been suppressed by "
-      "the angular momentum model");
+      "the angular momentum model.");
 
 #ifdef DEBUG_INTERACTIONS_BLACK_HOLES
 
