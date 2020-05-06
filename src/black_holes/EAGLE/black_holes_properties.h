@@ -66,6 +66,9 @@ struct black_holes_props {
   /*! Feedback coupling efficiency of the black holes. */
   float epsilon_f;
 
+  /*! Are we using the Rosas-Guevara et al. (2015) term? */
+  int with_angmom_limiter;
+
   /*! Normalisation of the viscuous angular momentum accretion reduction */
   float alpha_visc;
 
@@ -198,9 +201,12 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
       parser_get_param_float(params, "EAGLEAGN:radiative_efficiency");
   bp->epsilon_f =
       parser_get_param_float(params, "EAGLEAGN:coupling_efficiency");
-  bp->alpha_visc = parser_get_param_float(params, "EAGLEAGN:viscous_alpha");
+
+  /* Rosas-Guevara et al. (2015) model */
   bp->with_angmom_limiter =
-      parser_get_opt_param_int(params, "EAGLEAGN:with_angmom_limiter", 1);
+      parser_get_param_int(params, "EAGLEAGN:with_angmom_limiter");
+  if (bp->with_angmom_limiter)
+    bp->alpha_visc = parser_get_param_float(params, "EAGLEAGN:viscous_alpha");
 
   /* Feedback parameters ---------------------------------- */
 
