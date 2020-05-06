@@ -109,6 +109,7 @@ __attribute__((always_inline)) INLINE static void black_holes_init_bpart(
   bp->reposition.delta_x[2] = -FLT_MAX;
   bp->reposition.min_potential = FLT_MAX;
   bp->reposition.potential = FLT_MAX;
+  bp->f_visc = FLT_MAX;
 
   /* Record that the black hole has another active time step */
   bp->number_of_time_steps++;
@@ -486,9 +487,12 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
     const double viscous_time = 2. * M_PI * r_times_v_tang_3 /
                                 (1e-6 * alpha_visc * G * G * BH_mass * BH_mass);
     const double f_visc = max(Bondi_time / viscous_time, 1.);
+    bp->f_visc = f_visc;
 
     /* Limit the Bondi rate by the Bondi viscuous time ratio */
     Bondi_rate *= f_visc;
+  } else {
+    bp->f_visc = 1.0;
   }
 
   /* Compute the Eddington rate (internal units) */

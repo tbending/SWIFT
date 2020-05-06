@@ -99,6 +99,9 @@ struct bpart {
   /*! Curl of the velocity field around the black hole */
   float circular_velocity_gas[3];
 
+  /*! Suppression fraction from angular momentum factor */
+  float f_visc;
+
   /*! Total mass of the gas neighbours. */
   float ngb_mass;
 

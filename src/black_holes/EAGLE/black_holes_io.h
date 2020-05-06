@@ -148,7 +148,7 @@ INLINE static void black_holes_write_particles(const struct bpart* bparts,
                                                int with_cosmology) {
 
   /* Say how much we want to write */
-  *num_fields = 24;
+  *num_fields = 25;
 
   /* List what we want to write */
   list[0] = io_make_output_field_convert_bpart(
@@ -304,6 +304,11 @@ INLINE static void black_holes_write_particles(const struct bpart* bparts,
       number_of_time_steps,
       "Total number of time steps at which the black hole has been active.");
 
+  list[24] = io_make_output_field(
+      "ViscosityFactors", FLOAT, 1, UNIT_CONV_NO_UNITS, 0.f, bparts,
+      f_visc,
+      "Factor by which Bondi-Hoyle-Lyttleton rate has been suppressed by "
+      "the angular momentum model");
 
 #ifdef DEBUG_INTERACTIONS_BLACK_HOLES
 

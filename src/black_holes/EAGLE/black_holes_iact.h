@@ -209,6 +209,9 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
     const float prob =
         (bi->subgrid_mass - bi->mass) * hi_inv_dim * wi / bi->rho_gas;
 
+    /*message("BH %lld: delta_m_sg = %f, probability for swallowing %lld = %f",
+      bi->id, bi->subgrid_mass - bi->mass, pj->id, prob); */
+
     /* Draw a random number (Note mixing both IDs) */
     const float rand = random_unit_interval(bi->id + pj->id, ti_current,
                                             random_number_BH_swallow);
