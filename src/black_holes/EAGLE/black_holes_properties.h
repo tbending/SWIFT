@@ -66,9 +66,6 @@ struct black_holes_props {
   /*! Feedback coupling efficiency of the black holes. */
   float epsilon_f;
 
-  /*! Are we using the Rosas-Guevara et al. (2015) term? */
-  int with_angmom_limiter;
-
   /*! Normalisation of the viscuous angular momentum accretion reduction */
   float alpha_visc;
 
