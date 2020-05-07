@@ -299,6 +299,11 @@ struct space {
     /*! The particle data (cells have pointers to this). */
     struct sink *parts;
 
+    /*! Minimal mass of all the #sink */
+    float min_part_mass;
+
+    /*! Sum of the norm of the velocity of all the #sink */
+    float sum_part_vel_norm;
   } sinks;
 
 #ifdef WITH_MPI

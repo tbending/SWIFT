@@ -31,6 +31,7 @@
 #include "hydro.h"
 #include "hydro_properties.h"
 #include "part.h"
+#include "sink.h"
 #include "stars.h"
 
 /**

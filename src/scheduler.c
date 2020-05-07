@@ -1357,7 +1357,6 @@ void scheduler_reweight(struct scheduler *s, int verbose) {
     const float gcount_i = (t->ci != NULL) ? t->ci->grav.count : 0.f;
     const float gcount_j = (t->cj != NULL) ? t->cj->grav.count : 0.f;
     const float sink_count_i = (t->ci != NULL) ? t->ci->sinks.count : 0.f;
-    const float sink_count_j = (t->cj != NULL) ? t->cj->sinks.count : 0.f;
     const float scount_i = (t->ci != NULL) ? t->ci->stars.count : 0.f;
     const float scount_j = (t->cj != NULL) ? t->cj->stars.count : 0.f;
     const float bcount_i = (t->ci != NULL) ? t->ci->black_holes.count : 0.f;

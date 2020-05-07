@@ -301,7 +301,7 @@ void engine_do_unskip_mapper(void *map_data, int num_elements,
         if (!(e->policy & engine_policy_sink))
           error("Trying to unskip sink tasks in a non-sinks run!");
 #endif
-        engine_do_unskip_sinks(c, e, with_star_formation);
+        engine_do_unskip_sinks(c, e);
         break;
       case task_broad_types_stars:
 #ifdef SWIFT_DEBUG_CHECKS

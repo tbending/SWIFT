@@ -494,7 +494,24 @@ struct engine {
     /* Total number of particles in the system. */
     long long total_nr_parts;
 
-  } sinks;
+    /* The total number of inhibited particles in the system. */
+    long long nr_inhibited_parts;
+
+    /* Number of updates since the last rebuild */
+    long long updates_since_rebuild;
+
+    /* Number of particles updated in the previous step */
+    long long updates;
+
+    /* Minimal stars ti_end for the next time-step */
+    integertime_t ti_end_min;
+
+    /* Maximal stars ti_end for the next time-step */
+    integertime_t ti_end_max;
+
+    /* Maximal stars ti_beg for the next time-step */
+    integertime_t ti_beg_max;
+} sinks;
 
 #ifdef SWIFT_GRAVITY_FORCE_CHECKS
   /* Run brute force checks only on steps when all gparts active? */

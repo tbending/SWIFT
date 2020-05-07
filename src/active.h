@@ -746,7 +746,7 @@ __attribute__((always_inline)) INLINE static int bpart_is_starting(
  * @return 1 if the #sink is active, 0 otherwise.
  */
 __attribute__((always_inline)) INLINE static int sink_is_starting(
-    const struct bpart *bp, const struct engine *e) {
+    const struct sink *sink, const struct engine *e) {
 
   const timebin_t max_active_bin = e->max_active_bin;
   const timebin_t sink_bin = sink->time_bin;

@@ -524,7 +524,7 @@ void runner_do_kick2(struct runner *r, struct cell *c, int timer) {
 #endif
 
         /* Prepare the values to be drifted */
-        sinks_reset_predicted_values(sink);
+        sink_reset_predicted_values(sink);
       }
     }
 
@@ -824,7 +824,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, int timer) {
       struct sink *restrict sink = &sinks[k];
 
       /* need to be updated ? */
-      if (sink_is_active(bp, e)) {
+      if (sink_is_active(sink, e)) {
 
 #ifdef SWIFT_DEBUG_CHECKS
         /* Current end of time-step */
@@ -845,7 +845,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, int timer) {
         sink_updated++;
         g_updated++;
 
-        ti_sinks_holes_end_min =
+        ti_sinks_end_min =
             min(ti_current + ti_new_step, ti_sinks_end_min);
         ti_sinks_end_max =
             max(ti_current + ti_new_step, ti_sinks_end_max);
@@ -859,7 +859,7 @@ void runner_do_timestep(struct runner *r, struct cell *c, int timer) {
         /* sink particle is inactive but not inhibited */
       } else {
 
-        if (!sink_is_inhibited(bp, e)) {
+        if (!sink_is_inhibited(sink, e)) {
 
           const integertime_t ti_end =
               get_integer_time_end(ti_current, sink->time_bin);

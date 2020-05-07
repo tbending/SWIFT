@@ -2857,6 +2857,7 @@ void engine_make_hydroloop_tasks_mapper(void *map_data, int num_elements,
   const int periodic = e->s->periodic;
   const int with_feedback = (e->policy & engine_policy_feedback);
   const int with_stars = (e->policy & engine_policy_stars);
+  const int with_sinks = (e->policy & engine_policy_sink);
   const int with_black_holes = (e->policy & engine_policy_black_holes);
 
   struct space *s = e->s;

@@ -52,6 +52,7 @@
 #include "memuse.h"
 #include "part.h"
 #include "part_type.h"
+#include "sink_io.h"
 #include "star_formation_io.h"
 #include "stars_io.h"
 #include "tools.h"
@@ -265,7 +266,7 @@ void write_output_distributed(struct engine* e,
   const size_t Ngas = e->s->nr_parts;
   const size_t Nstars = e->s->nr_sparts;
   const size_t Nblackholes = e->s->nr_bparts;
-  const size_t Nsink = e->s->sinks.nr_parts;
+  const size_t Nsinks = e->s->sinks.nr_parts;
 
   size_t Ndm_background = 0;
   if (with_DM_background) {

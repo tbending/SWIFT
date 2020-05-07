@@ -26,6 +26,7 @@
 #include "black_holes.h"
 #include "const.h"
 #include "debug.h"
+#include "sink.h"
 #include "stars.h"
 #include "timeline.h"
 
@@ -229,7 +230,7 @@ __attribute__((always_inline)) INLINE static void kick_sink(
   sink->gpart->v_full[2] = sink->v[2];
 
   /* Kick extra variables */
-  sinks_kick_extra(sink, dt_kick_grav);
+  sink_kick_extra(sink, dt_kick_grav);
 }
 
 #endif /* SWIFT_KICK_H */

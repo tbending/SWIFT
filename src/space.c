@@ -1614,8 +1614,8 @@ void space_rebuild(struct space *s, int repartitioned, int verbose) {
         /* Swap the link with part/spart */
         if (s->gparts[k].type == swift_type_gas) {
           s->parts[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
-        } else if (s->gparts[k].type == swift_type_sinks) {
-          s->sinks[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
+        } else if (s->gparts[k].type == swift_type_sink) {
+          s->sinks.parts[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
         } else if (s->gparts[k].type == swift_type_stars) {
           s->sparts[-s->gparts[k].id_or_neg_offset].gpart = &s->gparts[k];
         } else if (s->gparts[k].type == swift_type_black_hole) {
@@ -1626,7 +1626,7 @@ void space_rebuild(struct space *s, int repartitioned, int verbose) {
           s->parts[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
               &s->gparts[nr_gparts];
         } else if (s->gparts[nr_gparts].type == swift_type_sink) {
-          s->sinks[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
+          s->sinks.parts[-s->gparts[nr_gparts].id_or_neg_offset].gpart =
             &s->gparts[nr_gparts];
         } else if (s->gparts[nr_gparts].type == swift_type_stars) {
           s->sparts[-s->gparts[nr_gparts].id_or_neg_offset].gpart =

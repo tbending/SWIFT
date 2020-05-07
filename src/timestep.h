@@ -329,7 +329,7 @@ __attribute__((always_inline)) INLINE static integertime_t get_sink_timestep(
   /* Limit timestep within the allowed range */
   new_dt = min(new_dt, e->dt_max);
   if (new_dt < e->dt_min) {
-    error("sink (id=%lld) wants a time-step (%e) below dt_min (%e)", bp->id,
+    error("sink (id=%lld) wants a time-step (%e) below dt_min (%e)", sink->id,
           new_dt, e->dt_min);
   }
 

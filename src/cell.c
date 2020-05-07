@@ -2617,8 +2617,8 @@ void cell_clear_drift_flags(struct cell *c, void *data) {
                          cell_flag_do_grav_drift | cell_flag_do_grav_sub_drift |
                          cell_flag_do_stars_drift |
                          cell_flag_do_stars_sub_drift |
-                         cell_flag_do_sinks_drift |
-                         cell_flag_do_sinks_sub_drift);
+                         cell_flag_do_sink_drift |
+                         cell_flag_do_sink_sub_drift);
 }
 
 /**
@@ -3541,7 +3541,7 @@ void cell_activate_subcell_sinks_tasks(struct cell *ci, struct cell *cj,
       }
     } else {
       /* We have reached the bottom of the tree: activate drift */
-      cell_activate_drift_sinks(ci, s);
+      cell_activate_drift_sink(ci, s);
       cell_activate_drift_part(ci, s);
     }
   }
@@ -4708,7 +4708,7 @@ int cell_unskip_sinks_tasks(struct cell *c, struct scheduler *s) {
   int rebuild = 0;
 
   if (c->sinks.drift != NULL && cell_is_active_sinks(c, e)) {
-    cell_activate_drift_sinks(c, s);
+    cell_activate_drift_sink(c, s);
   }
 
   /* Unskip all the other task types. */
@@ -5526,7 +5526,7 @@ void cell_drift_bpart(struct cell *c, const struct engine *e, int force) {
  * @param e The #engine (to get ti_current).
  * @param force Drift the particles irrespective of the #cell flags.
  */
-void cell_drift_sinks(struct cell *c, const struct engine *e, int force) {
+void cell_drift_sink(struct cell *c, const struct engine *e, int force) {
 
   const int periodic = e->s->periodic;
   const double dim[3] = {e->s->dim[0], e->s->dim[1], e->s->dim[2]};
@@ -5536,7 +5536,6 @@ void cell_drift_sinks(struct cell *c, const struct engine *e, int force) {
   struct sink *const sinks = c->sinks.parts;
 
   float dx_max = 0.f, dx2_max = 0.f;
-  float cell_h_max = 0.f;
 
   /* Drift irrespective of cell flags? */
   force = (force || cell_get_flag(c, cell_flag_do_sink_drift));
@@ -5630,7 +5629,7 @@ void cell_drift_sinks(struct cell *c, const struct engine *e, int force) {
 
           /* Re-check that the particle has not been removed
            * by another thread before we do the deed. */
-          if (!sink_is_inhibited(bp, e)) {
+          if (!sink_is_inhibited(sink, e)) {
 
             /* Remove the particle entirely */
             // cell_remove_sink(e, c, bp);
@@ -5651,8 +5650,8 @@ void cell_drift_sinks(struct cell *c, const struct engine *e, int force) {
       dx2_max = max(dx2_max, dx2);
 
       /* Get ready for a density calculation */
-      if (sink_is_active(bp, e)) {
-        sink_init_sink(bp);
+      if (sink_is_active(sink, e)) {
+        sink_init_sink(sink);
       }
     }
 

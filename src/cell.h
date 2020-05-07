@@ -746,19 +746,37 @@ struct cell {
     /*! Nr of #sink this cell can hold after addition of new one. */
     int count_total;
 
+    /*! Number of #sink updated in this cell. */
+    int updated;
+
+    /*! Maximum part movement in this cell since last construction. */
+    float dx_max_part;
+
+    /*! Values of dx_max before the drifts, used for sub-cell tasks. */
+    float dx_max_part_old;
+
     /*! Last (integer) time the cell's sink were drifted forward in time. */
     integertime_t ti_old_part;
 
-    /*! Maximum end of (integer) time step in this cell for sink tasks. */
+    /*! Minimum end of (integer) time step in this cell for sink tasks. */
     integertime_t ti_end_min;
+
+    /*! Maximum end of (integer) time step in this cell for sink tasks. */
+    integertime_t ti_end_max;
 
     /*! Maximum beginning of (integer) time step in this cell for sink
      * tasks.
      */
     integertime_t ti_beg_max;
 
-    /*! Is the #bpart data of this cell being used in a sub-cell? */
+    /*! The drift task for sinks */
+    struct task *drift;
+
+    /*! Is the #sink data of this cell being used in a sub-cell? */
     int hold;
+
+    /*! Spin lock for various uses (#sink case). */
+    swift_lock_type lock;
 
   } sinks;
 
@@ -915,16 +933,19 @@ void cell_clean(struct cell *c);
 void cell_check_part_drift_point(struct cell *c, void *data);
 void cell_check_gpart_drift_point(struct cell *c, void *data);
 void cell_check_spart_drift_point(struct cell *c, void *data);
+void cell_check_sink_drift_point(struct cell *c, void *data);
 void cell_check_multipole_drift_point(struct cell *c, void *data);
 void cell_reset_task_counters(struct cell *c);
 int cell_unskip_hydro_tasks(struct cell *c, struct scheduler *s);
 int cell_unskip_stars_tasks(struct cell *c, struct scheduler *s,
                             const int with_star_formation);
+int cell_unskip_sinks_tasks(struct cell *c, struct scheduler *s);
 int cell_unskip_black_holes_tasks(struct cell *c, struct scheduler *s);
 int cell_unskip_gravity_tasks(struct cell *c, struct scheduler *s);
 void cell_drift_part(struct cell *c, const struct engine *e, int force);
 void cell_drift_gpart(struct cell *c, const struct engine *e, int force);
 void cell_drift_spart(struct cell *c, const struct engine *e, int force);
+void cell_drift_sink(struct cell *c, const struct engine *e, int force);
 void cell_drift_bpart(struct cell *c, const struct engine *e, int force);
 void cell_drift_multipole(struct cell *c, const struct engine *e);
 void cell_drift_all_multipoles(struct cell *c, const struct engine *e);
@@ -952,6 +973,7 @@ void cell_activate_super_spart_drifts(struct cell *c, struct scheduler *s);
 void cell_activate_drift_part(struct cell *c, struct scheduler *s);
 void cell_activate_drift_gpart(struct cell *c, struct scheduler *s);
 void cell_activate_drift_spart(struct cell *c, struct scheduler *s);
+void cell_activate_drift_sink(struct cell *c, struct scheduler *s);
 void cell_activate_drift_bpart(struct cell *c, struct scheduler *s);
 void cell_activate_sync_part(struct cell *c, struct scheduler *s);
 void cell_activate_hydro_sorts(struct cell *c, int sid, struct scheduler *s);
