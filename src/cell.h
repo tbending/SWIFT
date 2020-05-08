@@ -743,6 +743,12 @@ struct cell {
 
     /*! Nr of #sink this cell can hold after addition of new one. */
     int count_total;
+
+    /*! Is the #sink data of this cell being used in a sub-cell? */
+    int hold;
+
+    /*! Spin lock for various uses (#sink case). */
+    swift_lock_type lock;
   } sinks;
 
 #ifdef WITH_MPI
@@ -849,6 +855,8 @@ int cell_mlocktree(struct cell *c);
 void cell_munlocktree(struct cell *c);
 int cell_slocktree(struct cell *c);
 void cell_sunlocktree(struct cell *c);
+int cell_sink_locktree(struct cell *c);
+void cell_sink_unlocktree(struct cell *c);
 int cell_blocktree(struct cell *c);
 void cell_bunlocktree(struct cell *c);
 int cell_pack(struct cell *c, struct pcell *pc, const int with_gravity);
