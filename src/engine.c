@@ -3862,7 +3862,7 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
   e->total_nr_parts = Ngas;
   e->total_nr_gparts = Ngparts;
   e->total_nr_sparts = Nstars;
-  e->sink.total_nr_parts = Nsinks;
+  e->sinks.total_nr_parts = Nsinks;
   e->total_nr_bparts = Nblackholes;
   e->total_nr_DM_background_gparts = Nbackground_gparts;
   e->proxy_ind = NULL;
