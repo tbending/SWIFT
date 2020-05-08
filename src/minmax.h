@@ -126,17 +126,17 @@
  *
  * This macro evaluates its arguments exactly once.
  */
-#define max5(x, y, z, w, u)                             \
-  ({                                                    \
-    const __typeof__(x) _x = (x);                       \
-    const __typeof__(y) _y = (y);                       \
-    const __typeof__(z) _z = (z);                       \
-    const __typeof__(w) _w = (w);                       \
-    const __typeof__(u) _u = (u);                       \
-    const __typeof__(x) _temp1 = max(_x, _y);           \
-    const __typeof__(x) _temp2 = max(_z, _w);           \
-    const __typeof__(x) _temp3 = max(_temp1, _temp2);   \
-    max(_temp3, _u);                                    \
+#define max5(x, y, z, w, u)                           \
+  ({                                                  \
+    const __typeof__(x) _x = (x);                     \
+    const __typeof__(y) _y = (y);                     \
+    const __typeof__(z) _z = (z);                     \
+    const __typeof__(w) _w = (w);                     \
+    const __typeof__(u) _u = (u);                     \
+    const __typeof__(x) _temp1 = max(_x, _y);         \
+    const __typeof__(x) _temp2 = max(_z, _w);         \
+    const __typeof__(x) _temp3 = max(_temp1, _temp2); \
+    max(_temp3, _u);                                  \
   })
 
 #endif /* SWIFT_MINMAX_H */

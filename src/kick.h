@@ -195,7 +195,6 @@ __attribute__((always_inline)) INLINE static void kick_bpart(
   black_holes_kick_extra(bp, dt_kick_grav);
 }
 
-
 /**
  * @brief Perform the 'kick' operation on a #sink
  *
@@ -212,7 +211,8 @@ __attribute__((always_inline)) INLINE static void kick_sink(
 #ifdef SWIFT_DEBUG_CHECKS
   if (sink->ti_kick != ti_start)
     error(
-        "sink-particle has not been kicked to the current time sink->ti_kick=%lld, "
+        "sink-particle has not been kicked to the current time "
+        "sink->ti_kick=%lld, "
         "ti_start=%lld, ti_end=%lld id=%lld",
         sink->ti_kick, ti_start, ti_end, sink->id);
 

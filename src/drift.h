@@ -197,7 +197,6 @@ __attribute__((always_inline)) INLINE static void drift_bpart(
   }
 }
 
-
 /**
  * @brief Perform the 'drift' operation on a #sink
  *

@@ -292,7 +292,6 @@ __attribute__((always_inline)) INLINE static integertime_t get_bpart_timestep(
   return new_dti;
 }
 
-
 /**
  * @brief Compute the new (integer) time-step of a given #sink.
  *
