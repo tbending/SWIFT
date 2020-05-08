@@ -1496,8 +1496,7 @@ int cell_sink_locktree(struct cell *c) {
     atomic_inc(&finger->sinks.hold);
 
     /* Unlock the cell. */
-    if (lock_unlock(&finger->sinks.lock) != 0)
-      error("Failed to unlock cell.");
+    if (lock_unlock(&finger->sinks.lock) != 0) error("Failed to unlock cell.");
   }
 
   /* If we reached the top of the tree, we're done. */
@@ -1655,7 +1654,6 @@ void cell_sunlocktree(struct cell *c) {
   TIMER_TOC(timer_locktree);
 }
 
-
 /**
  * @brief Unlock a cell's parents for access to #sink array.
  *
@@ -1673,7 +1671,6 @@ void cell_sink_unlocktree(struct cell *c) {
 
   TIMER_TOC(timer_locktree);
 }
-
 
 /**
  * @brief Unlock a cell's parents for access to #bpart array.
