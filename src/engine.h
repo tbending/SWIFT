@@ -274,6 +274,9 @@ struct engine {
   /* Total mass in the simulation */
   double total_mass;
 
+  /* Time of the last output of any kind */
+  integertime_t ti_last_io;
+
   /* The internal system of units */
   const struct unit_system *internal_units;
 

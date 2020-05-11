@@ -2926,6 +2926,9 @@ void engine_check_for_dumps(struct engine *e) {
 
   } /* While loop over output types */
 
+  /* Record the time of the last i/o */
+  e->ti_last_io = e->ti_current;
+
   /* Restore the information we stored */
   e->ti_current = ti_current;
   if (e->policy & engine_policy_cosmology)
@@ -2995,7 +2998,15 @@ void engine_dump_restarts(struct engine *e, int drifted_all, int force) {
       restart_remove_previous(e->restart_file);
 
       /* Drift all particles first (may have just been done). */
-      if (!drifted_all) engine_drift_all(e, /*drift_mpole=*/1);
+      if (!drifted_all) {
+
+        /* We drift either to the current time or to just after the
+           time of the last regular i/o */
+        const integertime_t ti_current = e->ti_current;
+        e->ti_current = max(e->ti_current, e->ti_last_io + 1);
+        engine_drift_all(e, /*drift_mpole=*/1);
+        e->ti_current = ti_current;
+      }
       restart_write(e, e->restart_file);
 
 #ifdef WITH_MPI
@@ -3851,6 +3862,7 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
   e->max_active_bin = num_time_bins;
   e->min_active_bin = 1;
   e->internal_units = internal_units;
+  e->ti_last_io = 0;
   e->a_first_snapshot =
       parser_get_opt_param_double(params, "Snapshots:scale_factor_first", 0.1);
   e->time_first_snapshot =
