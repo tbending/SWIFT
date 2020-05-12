@@ -1329,6 +1329,8 @@ int main(int argc, char *argv[]) {
   }
 #endif
 
+  e.hydro_properties->h_max = 0.35;
+
   /* Main simulation loop */
   /* ==================== */
   int force_stop = 0, resubmit = 0;
