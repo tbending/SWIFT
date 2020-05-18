@@ -5024,7 +5024,7 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params,
   double snaps_time_first;
   if (restart && e->output_list_snapshots) {
     free(e->output_list_snapshots->times);
-    free(e->output_list_snapshots->types);
+    free(e->output_list_snapshots);
   }
   e->output_list_snapshots = NULL;
   output_list_init(&e->output_list_snapshots, e, "Snapshots",
@@ -5041,7 +5041,7 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params,
   double stats_time_first;
   if (restart && e->output_list_stats) {
     free(e->output_list_stats->times);
-    free(e->output_list_stats->types);
+    free(e->output_list_stats);
   }
   e->output_list_stats = NULL;
   output_list_init(&e->output_list_stats, e, "Statistics",
@@ -5058,7 +5058,7 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params,
   double stf_time_first;
   if (restart && e->output_list_stf) {
     free(e->output_list_stf->times);
-    free(e->output_list_stf->types);
+    free(e->output_list_stf);
   }
   e->output_list_stf = NULL;
   output_list_init(&e->output_list_stf, e, "StructureFinding",
