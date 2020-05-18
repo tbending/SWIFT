@@ -217,8 +217,10 @@ INLINE static void star_formation_update_part_not_SFR(
  * @param xp The #xpart generating a star.
  * @param sp The new #spart.
  */
-void star_formation_separate_particles(const struct engine* e, struct part* p,
-                                       struct xpart* xp, struct spart* sp) {
+INLINE static void star_formation_separate_particles(const struct engine* e,
+                                                     struct part* p,
+                                                     struct xpart* xp,
+                                                     struct spart* sp) {
 #ifdef SWIFT_DEBUG_CHECKS
   if (p->x[0] != sp->x[0] || p->x[1] != sp->x[1] || p->x[2] != sp->x[2]) {
     error(
