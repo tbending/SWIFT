@@ -270,8 +270,10 @@ void runner_do_star_formation(struct runner *r, struct cell *c, int timer) {
 
         /* Update the dx_max */
         if (star_formation_need_update_dx_max) {
-          c->hydro.dx_max_part = max(cp->hydro.dx_max_part, c->hydro.dx_max_part);
-          c->hydro.dx_max_sort = max(cp->hydro.dx_max_sort, c->hydro.dx_max_sort);
+          c->hydro.dx_max_part =
+              max(cp->hydro.dx_max_part, c->hydro.dx_max_part);
+          c->hydro.dx_max_sort =
+              max(cp->hydro.dx_max_sort, c->hydro.dx_max_sort);
         }
       }
   } else {
@@ -368,17 +370,18 @@ void runner_do_star_formation(struct runner *r, struct cell *c, int timer) {
               /* Update the displacement information */
               if (star_formation_need_update_dx_max) {
                 const float dx2_part = xp->x_diff[0] * xp->x_diff[0] +
-                  xp->x_diff[1] * xp->x_diff[1] +
-                  xp->x_diff[2] * xp->x_diff[2];
+                                       xp->x_diff[1] * xp->x_diff[1] +
+                                       xp->x_diff[2] * xp->x_diff[2];
                 const float dx2_sort = xp->x_diff_sort[0] * xp->x_diff_sort[0] +
-                  xp->x_diff_sort[1] * xp->x_diff_sort[1] +
-                  xp->x_diff_sort[2] * xp->x_diff_sort[2];
+                                       xp->x_diff_sort[1] * xp->x_diff_sort[1] +
+                                       xp->x_diff_sort[2] * xp->x_diff_sort[2];
 
                 const float dx_part = sqrtf(dx2_part);
                 const float dx_sort = sqrtf(dx2_sort);
 
-                /* No need to climb up the tree as the star formation starts higher
-                   in the hierarchy than the hydro and goes to the bottom */
+                /* No need to climb up the tree as the star formation starts
+                   higher in the hierarchy than the hydro and goes to the bottom
+                 */
                 c->hydro.dx_max_part = max(c->hydro.dx_max_part, dx_part);
                 c->hydro.dx_max_sort = max(c->hydro.dx_max_sort, dx_sort);
               }

@@ -209,7 +209,6 @@ INLINE static void star_formation_update_part_not_SFR(
     struct part* p, struct xpart* xp, const struct engine* e,
     const struct star_formation* starform, const int with_cosmology) {}
 
-
 /**
  * @brief Separate the #spart and #part by randomly moving both of them.
  *
@@ -218,9 +217,8 @@ INLINE static void star_formation_update_part_not_SFR(
  * @param xp The #xpart generating a star.
  * @param sp The new #spart.
  */
-void star_formation_separate_particles(const struct engine* e,
-                                       struct part* p, struct xpart* xp,
-                                       struct spart* sp) {
+void star_formation_separate_particles(const struct engine* e, struct part* p,
+                                       struct xpart* xp, struct spart* sp) {
 #ifdef SWIFT_DEBUG_CHECKS
   if (p->x[0] != sp->x[0] || p->x[1] != sp->x[1] || p->x[2] != sp->x[2]) {
     error(
@@ -278,7 +276,6 @@ void star_formation_separate_particles(const struct engine* e,
   p->gpart->x[0] = p->x[0];
   p->gpart->x[1] = p->x[1];
   p->gpart->x[2] = p->x[2];
-
 }
 
 /**
