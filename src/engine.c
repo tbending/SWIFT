@@ -4000,7 +4000,7 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
     star_formation_logger_accumulator_init(&e->sfh);
   }
 
-  engine_init_output_lists(e, params);
+  engine_init_output_lists(e, params, /*restart=*/0);
 }
 
 /**
@@ -5016,10 +5016,16 @@ void engine_compute_next_fof_time(struct engine *e) {
  *
  * @param e The #engine.
  * @param params The #swift_params.
+ * @param restart Is this a restart [1] or run from ICs [0]?
  */
-void engine_init_output_lists(struct engine *e, struct swift_params *params) {
+void engine_init_output_lists(struct engine *e, struct swift_params *params,
+                              int restart) {
   /* Deal with snapshots */
   double snaps_time_first;
+  if (restart && e->output_list_snapshots) {
+    free(e->output_list_snapshots->times);
+    free(e->output_list_snapshots->types);
+  }
   e->output_list_snapshots = NULL;
   output_list_init(&e->output_list_snapshots, e, "Snapshots",
                    &e->delta_time_snapshot, &snaps_time_first);
@@ -5033,6 +5039,10 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params) {
 
   /* Deal with stats */
   double stats_time_first;
+  if (restart && e->output_list_stats) {
+    free(e->output_list_stats->times);
+    free(e->output_list_stats->types);
+  }
   e->output_list_stats = NULL;
   output_list_init(&e->output_list_stats, e, "Statistics",
                    &e->delta_time_statistics, &stats_time_first);
@@ -5046,6 +5056,10 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params) {
 
   /* Deal with stf */
   double stf_time_first;
+  if (restart && e->output_list_stf) {
+    free(e->output_list_stf->times);
+    free(e->output_list_stf->types);
+  }
   e->output_list_stf = NULL;
   output_list_init(&e->output_list_stf, e, "StructureFinding",
                    &e->delta_time_stf, &stf_time_first);
