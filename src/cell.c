@@ -2427,6 +2427,7 @@ void cell_clean(struct cell *c) {
 void cell_clear_drift_flags(struct cell *c, void *data) {
   cell_clear_flag(c, cell_flag_do_hydro_drift | cell_flag_do_hydro_sub_drift |
                          cell_flag_do_grav_drift | cell_flag_do_grav_sub_drift |
+                         cell_flag_do_bh_drift | cell_flag_do_bh_sub_drift |
                          cell_flag_do_stars_drift |
                          cell_flag_do_stars_sub_drift);
 }
@@ -5087,7 +5088,7 @@ void cell_drift_bpart(struct cell *c, const struct engine *e, int force) {
       if (bpart_is_inhibited(bp, e)) continue;
 
       /* Drift... */
-      drift_bpart(bp, dt_drift, ti_old_bpart, ti_current, e->black_holes_properties);
+      drift_bpart(bp, dt_drift, ti_old_bpart, ti_current);
 
 #ifdef SWIFT_DEBUG_CHECKS
       /* Make sure the particle does not drift by more than a box length. */

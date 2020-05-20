@@ -3566,19 +3566,23 @@ void engine_dump_snapshot(struct engine *e) {
   /* Be verbose about this */
   if (e->nodeID == 0) {
     if (e->policy & engine_policy_cosmology)
-      message("Dumping snapshot at a=%e",
+      message("Dumping snapshot (type=%d) at a=%e",
+              e->type_next_snapshot,
               exp(e->ti_current * e->time_base) * e->cosmology->a_begin);
     else
-      message("Dumping snapshot at t=%e",
+      message("Dumping snapshot (type=%d) at t=%e",
+              e->type_next_snapshot,
               e->ti_current * e->time_base + e->time_begin);
   }
 #else
   if (e->verbose) {
     if (e->policy & engine_policy_cosmology)
-      message("Dumping snapshot at a=%e",
+      message("Dumping snapshot (type=%d) at a=%e",
+              e->type_next_snapshot,
               exp(e->ti_current * e->time_base) * e->cosmology->a_begin);
     else
-      message("Dumping snapshot at t=%e",
+      message("Dumping snapshot (type=%d) at t=%e",
+              e->type_next_snapshot,
               e->ti_current * e->time_base + e->time_begin);
   }
 #endif
@@ -3603,12 +3607,12 @@ void engine_dump_snapshot(struct engine *e) {
 #else
     write_output_serial(e, e->internal_units, e->snapshot_units, e->nodeID,
                         e->nr_nodes, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
+#endif /* HAVE_PARALLEL_HDF5 */
   }
-#else
+#else /* not WITH_MPI */
   write_output_single(e, e->internal_units, e->snapshot_units);
-#endif
-#endif
+#endif /* not WITH_MPI */
+#endif /* HAVE_HDF5 */
 
   /* Flag that we dumped a snapshot */
   e->step_props |= engine_step_prop_snapshot;
@@ -3996,7 +4000,7 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
     star_formation_logger_accumulator_init(&e->sfh);
   }
 
-  engine_init_output_lists(e, params);
+  engine_init_output_lists(e, params, /*restart=*/0);
 }
 
 /**
@@ -4742,9 +4746,12 @@ void engine_compute_next_snapshot_time(struct engine *e) {
   /* Do outputlist file case */
   if (e->output_list_snapshots) {
     output_list_read_next_time(e->output_list_snapshots, e, "snapshots",
-                               &e->ti_next_snapshot);
+                               &e->ti_next_snapshot, &e->type_next_snapshot);
     return;
   }
+
+  /* Only deal with 'full' snapshots otherwise, for now */
+  e->type_next_snapshot = 1;
 
   /* Find upper-bound on last output */
   double time_end;
@@ -4810,8 +4817,9 @@ void engine_compute_next_snapshot_time(struct engine *e) {
 void engine_compute_next_statistics_time(struct engine *e) {
   /* Do output_list file case */
   if (e->output_list_stats) {
+    int dummy;
     output_list_read_next_time(e->output_list_stats, e, "stats",
-                               &e->ti_next_stats);
+                               &e->ti_next_stats, &dummy);
     return;
   }
 
@@ -4881,7 +4889,9 @@ void engine_compute_next_statistics_time(struct engine *e) {
 void engine_compute_next_stf_time(struct engine *e) {
   /* Do output_list file case */
   if (e->output_list_stf) {
-    output_list_read_next_time(e->output_list_stf, e, "stf", &e->ti_next_stf);
+    int dummy;
+    output_list_read_next_time(e->output_list_stf, e, "stf", &e->ti_next_stf,
+      &dummy);
     return;
   }
 
@@ -5006,10 +5016,16 @@ void engine_compute_next_fof_time(struct engine *e) {
  *
  * @param e The #engine.
  * @param params The #swift_params.
+ * @param restart Is this a restart [1] or run from ICs [0]?
  */
-void engine_init_output_lists(struct engine *e, struct swift_params *params) {
+void engine_init_output_lists(struct engine *e, struct swift_params *params,
+                              int restart) {
   /* Deal with snapshots */
   double snaps_time_first;
+  if (restart && e->output_list_snapshots) {
+    free(e->output_list_snapshots->times);
+    free(e->output_list_snapshots->types);
+  }
   e->output_list_snapshots = NULL;
   output_list_init(&e->output_list_snapshots, e, "Snapshots",
                    &e->delta_time_snapshot, &snaps_time_first);
@@ -5023,6 +5039,10 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params) {
 
   /* Deal with stats */
   double stats_time_first;
+  if (restart && e->output_list_stats) {
+    free(e->output_list_stats->times);
+    free(e->output_list_stats->types);
+  }
   e->output_list_stats = NULL;
   output_list_init(&e->output_list_stats, e, "Statistics",
                    &e->delta_time_statistics, &stats_time_first);
@@ -5036,6 +5056,10 @@ void engine_init_output_lists(struct engine *e, struct swift_params *params) {
 
   /* Deal with stf */
   double stf_time_first;
+  if (restart && e->output_list_stf) {
+    free(e->output_list_stf->times);
+    free(e->output_list_stf->types);
+  }
   e->output_list_stf = NULL;
   output_list_init(&e->output_list_stf, e, "StructureFinding",
                    &e->delta_time_stf, &stf_time_first);
