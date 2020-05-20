@@ -120,9 +120,9 @@ void output_list_read_file(struct output_list *outputlist, const char *filename,
     } else {
       if (sscanf(line, "%lf", time) != 1)
         error(
-            "Tried parsing double but found '%s' with illegal double "
+            "Tried parsing double + int but found '%s' with illegal "
             "characters in file '%s'.",
-            line, filename);      
+            line, filename);
     }
 
     /* Transform input into correct time (e.g. ages or scale factor) */
@@ -356,7 +356,7 @@ void output_list_struct_restore(struct output_list *list, FILE *stream) {
   list->times = (double *)malloc(sizeof(double) * list->size);
   restart_read_blocks(list->times, list->size, sizeof(double), stream, NULL,
                       "times");
-  
+
   /* If we are in multiple-level-mode, list->types will point to a non-zero,
    * albeit meaningless, memory address, otherwise, it's NULL. */
   if (list->types) {

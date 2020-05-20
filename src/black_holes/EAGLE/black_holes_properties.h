@@ -72,7 +72,8 @@ struct black_holes_props {
   /*! Eddington fraction threshold for recording */
   float f_Edd_recording;
 
-  /*! Apply angular momentum limiter from Rosas-Guevara et al. (2015) */
+  /*! Are we applying the angular-momentum-based multiplicative term from
+   * Rosas-Guevara et al. (2015)? */
   int with_angmom_limiter;
 
   /* ---- Properties of the feedback model ------- */
@@ -86,7 +87,7 @@ struct black_holes_props {
   /*! Calculate Bondi accretion rate for individual neighbours? */
   int multi_phase_bondi;
 
-  
+
   /* ---- Properties of the repositioning model --- */
 
   /*! Maximal mass of BH to reposition */
@@ -95,10 +96,11 @@ struct black_holes_props {
   /*! Maximal distance to reposition, in units of softening length */
   float max_reposition_distance_ratio;
 
-  /*! Maximal velocity offset of repositioning targets [c_sound] */
+  /*! Maximal velocity offset of particles to which the black hole can
+   * reposition, in units of the ambient sound speed of the black hole */
   float max_reposition_velocity_ratio;
 
-  /*! Minimum value of velocity repositioning threshold  */
+  /*! Minimum value of velocity repositioning threshold */
   float min_reposition_velocity_threshold;
 
   /*! Normalisation factor for repositioning velocity */
@@ -107,7 +109,7 @@ struct black_holes_props {
   /*! Repositioning velocity scaling with black hole mass */
   float reposition_exponent_xi;
 
-  
+
   /* ---- Properties of the merger model ---------- */
 
   /*! Mass ratio above which a merger is considered 'minor' */
@@ -122,7 +124,7 @@ struct black_holes_props {
   /*! Maximal distance over which BHs merge, in units of softening length */
   float max_merging_distance_ratio;
 
-  
+
   /* ---- Common conversion factors --------------- */
 
   /*! Conversion factor from temperature to internal energy */
@@ -237,19 +239,19 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
 			   "EAGLEAGN:min_reposition_velocity_threshold");
   /* Convert from km/s to internal units */
   bp->min_reposition_velocity_threshold *=
-      (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs)); 
+      (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));
 
   bp->reposition_coefficient_upsilon =
       parser_get_param_float(params, "EAGLEAGN:reposition_coefficient_upsilon");
 
   /* Convert from km/s to internal units */
   bp->reposition_coefficient_upsilon *=
-     (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs)); 
-  
+     (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));
+
   bp->reposition_exponent_xi =
       parser_get_opt_param_float(params, "EAGLEAGN:reposition_exponent_xi", 1.0);
 
-  
+
   /* Merger parameters ------------------------------------- */
 
   bp->minor_merger_threshold =
@@ -264,7 +266,7 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->max_merging_distance_ratio =
       parser_get_param_float(params, "EAGLEAGN:merger_max_distance_ratio");
 
-  
+
   /* Common conversion factors ----------------------------- */
 
   /* Calculate temperature to internal energy conversion factor (all internal

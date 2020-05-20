@@ -64,9 +64,10 @@ __attribute__((always_inline)) INLINE static void black_holes_first_init_bpart(
   bp->formation_time = -1.f;
   bp->cumulative_number_seeds = 1;
   bp->number_of_mergers = 0;
-  bp->number_of_swallows = 0;
-  bp->number_of_repositionings = 0;
-  bp->number_of_repos_attempts = 0;
+  bp->number_of_gas_swallows = 0;
+  bp->number_of_direct_gas_swallows = 0;
+  bp->number_of_repositions = 0;
+  bp->number_of_reposition_attempts = 0;
   bp->number_of_time_steps = 0;
   bp->last_high_Eddington_fraction_scale_factor = -1.f;
   bp->last_minor_merger_time = -1.;
@@ -167,8 +168,8 @@ __attribute__((always_inline)) INLINE static void black_holes_predict_extra(
     bp->reposition.delta_x[2] = -FLT_MAX;
     bp->reposition.min_potential = FLT_MAX;
 
-    /* Record that we had an actual repositioning event */
-    bp->number_of_repositionings++;
+    /* Count the jump */
+    bp->number_of_repositions++;
   }
 }
 
@@ -305,24 +306,26 @@ __attribute__((always_inline)) INLINE static void black_holes_swallow_part(
   bp->gpart->v_full[1] = bp->v[1];
   bp->gpart->v_full[2] = bp->v[2];
 
-  /* Update the BH metal masses */
-  struct chemistry_bpart_data* bp_chem = &bp->chemistry_data;
-  const struct chemistry_part_data* p_chem = &p->chemistry_data;
-  chemistry_add_part_to_bpart(bp_chem, p_chem, gas_mass);
-
-  /* This BH lost a neighbour */
-  bp->num_ngbs--;
-  bp->ngb_mass -= gas_mass;
-
-  /* Finally, update the swallowing counter for this BH */
-  const float dr = sqrt(dx[0]*dx[0] + dx[1]*dx[1] + dx[2]*dx[2]);
+  const float dr = sqrt(dx[0] * dx[0] + dx[1] * dx[1] + dx[2] * dx[2]);
   message("BH %lld swallowing gas particle %lld "
           "(Delta_v = [%f, %f, %f] U_V, "
           "Delta_x = [%f, %f, %f] U_L, "
           "Delta_v_rad = %f)",
           bp->id, p->id, -dv[0], -dv[1], -dv[2], -dx[0], -dx[1], -dx[2],
           (dv[0]*dx[0] + dv[1]*dx[1] + dv[2]*dx[2]) / dr);
-  bp->number_of_swallows++;
+
+  /* Update the BH metal masses */
+  struct chemistry_bpart_data* bp_chem = &bp->chemistry_data;
+  const struct chemistry_part_data* p_chem = &p->chemistry_data;
+  chemistry_add_part_to_bpart(bp_chem, p_chem, gas_mass);
+
+  /* This BH swallowed a gas particle */
+  bp->number_of_gas_swallows++;
+  bp->number_of_direct_gas_swallows++;
+
+  /* This BH lost a neighbour */
+  bp->num_ngbs--;
+  bp->ngb_mass -= gas_mass;
 }
 
 /**
@@ -394,6 +397,9 @@ __attribute__((always_inline)) INLINE static void black_holes_swallow_bpart(
   /* Add up all the BH seeds */
   bpi->cumulative_number_seeds += bpj->cumulative_number_seeds;
 
+  /* Add up all the gas particles we swallowed */
+  bpi->number_of_gas_swallows += bpj->number_of_gas_swallows;
+
   /* We had another merger */
   bpi->number_of_mergers++;
 }
@@ -433,7 +439,6 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
   const double delta_u = delta_T * props->temp_to_u_factor;
   const double alpha_visc = props->alpha_visc;
   const int with_angmom_limiter = props->with_angmom_limiter;
-
 
   /* (Subgrid) mass of the BH (internal units) */
   const double BH_mass = bp->subgrid_mass;
@@ -603,7 +608,7 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
   if (bp->reposition.min_potential != FLT_MAX) {
 
     /* Record that we have a (possible) repositioning situation */
-    bp->number_of_repos_attempts++;
+    bp->number_of_reposition_attempts++;
 
     /* Is the potential lower (i.e. the BH is at the bottom already)
      * OR is the BH massive enough that we don't reposition? */
@@ -636,10 +641,10 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
         repos_frac = 0.;
       if (repos_frac > 1)
         repos_frac = 1.;
-   
+
       bp->reposition.delta_x[0] *= repos_frac;
       bp->reposition.delta_x[1] *= repos_frac;
-      bp->reposition.delta_x[2] *= repos_frac;    
+      bp->reposition.delta_x[2] *= repos_frac;   
 
     } /* ends section for fractional repositioning */
   } /* ends section if we found eligible repositioning target(s) */
@@ -725,12 +730,13 @@ INLINE static void black_holes_create_from_gas(
   bp->total_accreted_mass = 0.f;
   bp->cumulative_number_seeds = 1;
   bp->number_of_mergers = 0;
-  bp->number_of_swallows = 0;
+  bp->number_of_gas_swallows = 0;
+  bp->number_of_direct_gas_swallows = 0;
   bp->number_of_time_steps = 0;
 
   /* We haven't repositioned yet, nor attempted it */
-  bp->number_of_repositionings = 0;
-  bp->number_of_repos_attempts = 0;
+  bp->number_of_repositions = 0;
+  bp->number_of_reposition_attempts = 0;
 
   /* Initial metal masses */
   const float gas_mass = hydro_get_mass(p);

@@ -99,7 +99,8 @@ struct bpart {
   /*! Curl of the velocity field around the black hole */
   float circular_velocity_gas[3];
 
-  /*! Suppression fraction from angular momentum factor */
+  /*! Multiplicative factor for accretion rates, from Rosas-Guevara et al.
+   * (2015) angular momentum based accretion disc model */
   float f_visc;
 
   /*! Total mass of the gas neighbours. */
@@ -114,18 +115,22 @@ struct bpart {
   /*! Total number of BH merger events (i.e. not including all progenies) */
   int number_of_mergers;
 
+  /*! Total number of gas particles swallowed (including particles swallowed
+   * by merged-in black holes) */
+  int number_of_gas_swallows;
+
   /*! Total number of gas particles swallowed (excluding particles swallowed
    * by merged-in black holes) */
-  int number_of_swallows;
+  int number_of_direct_gas_swallows;
 
   /*! Total number of times the black hole has been repositioned (excluding
    * repositionings of merged-in black holes) */
-  int number_of_repositionings;
+  int number_of_repositions;
 
   /*! Total number of times a black hole attempted repositioning (including
    * cases where it was aborted because the black hole was already at a
    * lower potential than all eligible neighbours) */
-  int number_of_repos_attempts;
+  int number_of_reposition_attempts;
 
   /*! Total number of time steps in which the black hole was active. */
   int number_of_time_steps;
