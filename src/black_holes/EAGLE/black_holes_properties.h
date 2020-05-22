@@ -47,7 +47,6 @@ struct black_holes_props {
   /*! Maximal change of h over one time-step */
   float log_max_h_change;
 
-
   /* ----- Initialisation properties  ------ */
 
   /*! Mass of a BH seed at creation time */
@@ -55,7 +54,6 @@ struct black_holes_props {
 
   /*! Should we use the subgrid mass specified in ICs? */
   int use_subgrid_mass_from_ics;
-
 
   /* ----- Properties of the accretion model ------ */
 
@@ -78,7 +76,6 @@ struct black_holes_props {
   /*! Eddington fraction threshold for recording */
   float f_Edd_recording;
 
-
   /* ---- Properties of the feedback model ------- */
 
   /*! Feedback coupling efficiency of the black holes. */
@@ -89,7 +86,6 @@ struct black_holes_props {
 
   /*! Number of gas neighbours to heat in a feedback event */
   float num_ngbs_to_heat;
-
 
   /* ---- Properties of the repositioning model --- */
 
@@ -112,7 +108,6 @@ struct black_holes_props {
   /*! Repositioning velocity scaling with black hole mass */
   float reposition_exponent_xi;
 
-
   /* ---- Properties of the merger model ---------- */
 
   /*! Mass ratio above which a merger is considered 'minor' */
@@ -126,7 +121,6 @@ struct black_holes_props {
 
   /*! Maximal distance over which BHs merge, in units of softening length */
   float max_merging_distance_ratio;
-
 
   /* ---- Common conversion factors --------------- */
 
@@ -215,7 +209,6 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->f_Edd_recording = parser_get_param_float(
       params, "EAGLEAGN:eddington_fraction_for_recording");
 
-
   /* Feedback parameters ---------------------------------- */
 
   bp->epsilon_f =
@@ -249,9 +242,8 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   /* Convert from km/s to internal units */
   bp->reposition_coefficient_upsilon *=
       (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));
-  bp->reposition_exponent_xi =
-      parser_get_opt_param_float(params, "EAGLEAGN:reposition_exponent_xi", 1.0);
-
+  bp->reposition_exponent_xi = parser_get_opt_param_float(
+      params, "EAGLEAGN:reposition_exponent_xi", 1.0);
 
   /* Merger parameters ------------------------------------- */
 
@@ -266,7 +258,6 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
 
   bp->max_merging_distance_ratio =
       parser_get_param_float(params, "EAGLEAGN:merger_max_distance_ratio");
-
 
   /* Common conversion factors ----------------------------- */
 

@@ -110,8 +110,7 @@ runner_iact_nonsym_bh_gas_density(
     /* Contribution to BH accretion rate
      *
      * i) Calculate denominator in Bondi formula */
-    const double gas_v_phys[3] = {dv[0] * cosmo->a_inv,
-                                  dv[1] * cosmo->a_inv,
+    const double gas_v_phys[3] = {dv[0] * cosmo->a_inv, dv[1] * cosmo->a_inv,
                                   dv[2] * cosmo->a_inv};
     const double gas_v_norm2 = gas_v_phys[0] * gas_v_phys[0] +
                                gas_v_phys[1] * gas_v_phys[1] +
@@ -123,15 +122,15 @@ runner_iact_nonsym_bh_gas_density(
 
     /* Make sure that the denominator is strictly positive */
     if (denominator2 <= 0)
-        error("Invalid denominator for gas particle %lld", pj->id);
+      error("Invalid denominator for gas particle %lld", pj->id);
     double denominator_inv = 1. / sqrt(denominator2);
 
     /* ii) Contribution of gas particle to the BH accretion rate
      *     (without constant pre-factor)
      *     N.B.: rhoj is the weighted contribution to BH gas density. */
     const float rhoj = mj * wi * cosmo->a3_inv;
-    bi->accretion_rate += rhoj * denominator_inv * denominator_inv *
-                          denominator_inv;
+    bi->accretion_rate +=
+        rhoj * denominator_inv * denominator_inv * denominator_inv;
   } /* End of accretion contribution calculation */
 
 #ifdef DEBUG_INTERACTIONS_BH
@@ -194,8 +193,7 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
       bh_props->max_reposition_distance_ratio *
-      bh_props->max_reposition_distance_ratio *
-      grav_props->epsilon_baryon_cur *
+      bh_props->max_reposition_distance_ratio * grav_props->epsilon_baryon_cur *
       grav_props->epsilon_baryon_cur;
 
   /* This gas neighbour is close enough that we can consider its potential
@@ -210,16 +208,15 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
       /* Compute relative peculiar velocity between the two BHs
        * Recall that in SWIFT v is (v_pec * a) */
       const float delta_v[3] = {bi->v[0] - pj->v[0], bi->v[1] - pj->v[1],
-        bi->v[2] - pj->v[2]};
+                                bi->v[2] - pj->v[2]};
       const float v2 = delta_v[0] * delta_v[0] + delta_v[1] * delta_v[1] +
                        delta_v[2] * delta_v[2];
 
       const float v2_pec = v2 * cosmo->a2_inv;
       const float v2_max = bh_props->max_reposition_velocity_ratio *
-                     bh_props->max_reposition_velocity_ratio *
+                           bh_props->max_reposition_velocity_ratio *
                            bi->sound_speed_gas * bi->sound_speed_gas;
-      if (v2_pec >= v2_max)
-        neighbour_is_slow_enough = 0;
+      if (v2_pec >= v2_max) neighbour_is_slow_enough = 0;
     }
 
     if (neighbour_is_slow_enough) {
@@ -312,8 +309,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
       bh_props->max_reposition_distance_ratio *
-      bh_props->max_reposition_distance_ratio *
-      grav_props->epsilon_baryon_cur *
+      bh_props->max_reposition_distance_ratio * grav_props->epsilon_baryon_cur *
       grav_props->epsilon_baryon_cur;
 
   /* This BH neighbour is close enough that we can consider its potential
@@ -328,8 +324,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
       const float v2_max = bh_props->max_reposition_velocity_ratio *
                            bh_props->max_reposition_velocity_ratio *
                            bi->sound_speed_gas * bi->sound_speed_gas;
-      if (v2_pec >= v2_max)
-        neighbour_is_slow_enough = 0;
+      if (v2_pec >= v2_max) neighbour_is_slow_enough = 0;
     }
 
     if (neighbour_is_slow_enough) {
@@ -360,8 +355,8 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
       kernel_gravity_softening_plummer_equivalent_inv *
       kernel_gravity_softening_plummer_equivalent_inv *
       bh_props->max_merging_distance_ratio *
-      bh_props->max_merging_distance_ratio *
-      grav_props->epsilon_baryon_cur * grav_props->epsilon_baryon_cur;
+      bh_props->max_merging_distance_ratio * grav_props->epsilon_baryon_cur *
+      grav_props->epsilon_baryon_cur;
 
   const float G_Newton = grav_props->G_Newton;
 
@@ -395,7 +390,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
 
         /* If BHs are within softening range, take this into account */
         float w_grav;
-        kernel_grav_pot_eval(r_12/grav_props->epsilon_baryon_cur, &w_grav);
+        kernel_grav_pot_eval(r_12 / grav_props->epsilon_baryon_cur, &w_grav);
         const float r_mod = w_grav / grav_props->epsilon_baryon_cur;
         v2_threshold = 2.f * G_Newton * M / (r_mod);
 
@@ -404,7 +399,7 @@ runner_iact_nonsym_bh_bh_swallow(const float r2, const float *dx,
         /* Standard formula if BH interactions are not softened */
         v2_threshold = 2.f * G_Newton * M / (r_12);
       }
-    }  /* Ends sections for different merger thresholds */
+    } /* Ends sections for different merger thresholds */
 
     if ((v2_pec < v2_threshold) && (r2 < max_dist_merge2)) {
 
