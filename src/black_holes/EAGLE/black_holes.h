@@ -481,7 +481,7 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
                                gas_v_phys[1] * gas_v_phys[1] +
                                gas_v_phys[2] * gas_v_phys[2];
 
-    const double denominator2 = v_diff_norm2 + gas_c_phys2;
+    const double denominator2 = gas_v_norm2 + gas_c_phys2;
     const double denominator_inv = 1. / sqrt(denominator2);
     Bondi_rate = 4. * M_PI * G * G * BH_mass * BH_mass * gas_rho_phys *
         denominator_inv * denominator_inv * denominator_inv;
