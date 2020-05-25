@@ -612,10 +612,11 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
       bp->reposition.delta_x[0] = -FLT_MAX;
       bp->reposition.delta_x[1] = -FLT_MAX;
       bp->reposition.delta_x[2] = -FLT_MAX;
-    } else if (props->reposition_coefficient_upsilon >= 0) {
+    } else if (props->set_reposition_speed >= 0) {
 
       /* If we are re-positioning, move the BH a fraction of delta_x, so
-       * that we have a well-defined re-positioning velocity */
+       * that we have a well-defined re-positioning velocity. We have
+       * checked already that reposition_coefficient_upsilon is positive. */
       const float repos_vel = props->reposition_coefficient_upsilon *
                     pow(bp->subgrid_mass / constants->const_solar_mass,
                         props->reposition_exponent_xi);
