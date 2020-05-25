@@ -111,9 +111,6 @@ __attribute__((always_inline)) INLINE static void black_holes_init_bpart(
   bp->reposition.potential = FLT_MAX;
   bp->accretion_rate = 0.f; /* Optionally accumulated ngb-by-ngb */
   bp->f_visc = FLT_MAX;
-
-  /* Record that the black hole has another active time step */
-  bp->number_of_time_steps++;
 }
 
 /**
@@ -417,6 +414,9 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
     const struct phys_const* constants, const struct cosmology* cosmo,
     const double time, const int with_cosmology, const double dt) {
 
+  /* Record that the black hole has another active time step */
+  bp->number_of_time_steps++;
+ 
   if (dt == 0. || bp->rho_gas == 0.) return;
 
   /* Gather some physical constants (all in internal units) */
@@ -457,7 +457,7 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
   /* We can now compute the Bondi accretion rate (internal units) */
   double Bondi_rate;
 
-  if (bp->accretion_rate > 0) {
+  if (props->multi_phase_bondi) {
 
     /* In this case, we are in 'multi-phase-Bondi' mode -- otherwise,
      * the accretion_rate is still zero (was initialised to this) */
