@@ -99,9 +99,9 @@ struct black_holes_props {
    * black holes can reposition */
   int with_reposition_velocity_threshold
 
-  /*! Maximal velocity offset of particles to which the black hole can
-   * reposition, in units of the ambient sound speed of the black hole */
-  float max_reposition_velocity_ratio;
+      /*! Maximal velocity offset of particles to which the black hole can
+       * reposition, in units of the ambient sound speed of the black hole */
+      float max_reposition_velocity_ratio;
 
   /*! Minimum value of the velocity repositioning threshold */
   float min_reposition_velocity_threshold;
@@ -109,8 +109,8 @@ struct black_holes_props {
   /*! Switch to enable repositioning at fixed (maximum) speed */
   int set_reposition_speed
 
-  /*! Normalisation factor for repositioning velocity */
-  float reposition_coefficient_upsilon;
+      /*! Normalisation factor for repositioning velocity */
+      float reposition_coefficient_upsilon;
 
   /*! Repositioning velocity scaling with black hole mass */
   float reposition_exponent_xi;
@@ -236,13 +236,11 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->max_reposition_distance_ratio =
       parser_get_param_float(params, "EAGLEAGN:max_reposition_distance_ratio");
 
-  bp->with_reposition_velocity_threshold = 
-      parser_get_param_int(params,
-                           "EAGLEAGN:with_reposition_velocity_threshold");
+  bp->with_reposition_velocity_threshold = parser_get_param_int(
+      params, "EAGLEAGN:with_reposition_velocity_threshold");
   if (bp->with_reposition_velocity_threshold) {
-    bp->max_reposition_velocity_ratio =
-        parser_get_param_float(params,
-                               "EAGLEAGN:max_reposition_velocity_ratio");
+    bp->max_reposition_velocity_ratio = parser_get_param_float(
+        params, "EAGLEAGN:max_reposition_velocity_ratio");
     /* Prevent nonsensical input */
     if (bp->max_reposition_velocity_ratio <= 0)
       error("max_reposition_velocity_ratio must be positive, not %f.",
@@ -254,16 +252,17 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
         (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));
   }
 
-  bp->set_reposition_speed = 
+  bp->set_reposition_speed =
       parser_get_param_int(params, "EAGLEAGN:set_reposition_speed");
   if (bp->set_reposition_speed) {
-    bp->reposition_coefficient_upsilon =
-        parser_get_param_float(params,
-                               "EAGLEAGN:reposition_coefficient_upsilon");
+    bp->reposition_coefficient_upsilon = parser_get_param_float(
+        params, "EAGLEAGN:reposition_coefficient_upsilon");
     /* Prevent the user from making silly wishes */
     if (bp->reposition_coefficient_upsilon <= 0)
-      error("reposition_coefficient_upsilon must be positive, not %f "
-            "km/s/M_sun.", bp->reposition_coefficient_upsilon);
+      error(
+          "reposition_coefficient_upsilon must be positive, not %f "
+          "km/s/M_sun.",
+          bp->reposition_coefficient_upsilon);
     /* Convert from km/s to internal units */
     bp->reposition_coefficient_upsilon *=
         (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));

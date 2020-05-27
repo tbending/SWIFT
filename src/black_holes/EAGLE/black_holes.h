@@ -416,7 +416,7 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
 
   /* Record that the black hole has another active time step */
   bp->number_of_time_steps++;
- 
+
   if (dt == 0. || bp->rho_gas == 0.) return;
 
   /* Gather some physical constants (all in internal units) */
@@ -617,10 +617,10 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
       /* If we are re-positioning, move the BH a fraction of delta_x, so
        * that we have a well-defined re-positioning velocity. We have
        * checked already that reposition_coefficient_upsilon is positive. */
-      const float repos_vel = 
+      const float repos_vel =
           props->reposition_coefficient_upsilon *
           pow(bp->subgrid_mass / constants->const_solar_mass,
-          props->reposition_exponent_xi);
+              props->reposition_exponent_xi);
 
       const double dx = bp->reposition.delta_x[0];
       const double dy = bp->reposition.delta_x[1];

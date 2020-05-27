@@ -221,15 +221,14 @@ runner_iact_nonsym_bh_gas_swallow(const float r2, const float *dx,
       /* If desired, limit the value of the threshold (v2_max) to be no
        * smaller than a user-defined value */
       if (bh_props->min_reposition_velocity_threshold > 0) {
-        const float v2_min_thresh = 
-          bh_props->min_reposition_velocity_threshold *
-          bh_props->min_reposition_velocity_threshold;
+        const float v2_min_thresh =
+            bh_props->min_reposition_velocity_threshold *
+            bh_props->min_reposition_velocity_threshold;
         v2_max = max(v2_max, v2_min_thresh);
       }
 
       /* Is the neighbour too fast to jump to? */
-      if (v2_pec >= v2_max)
-        neighbour_is_slow_enough = 0;
+      if (v2_pec >= v2_max) neighbour_is_slow_enough = 0;
     }
 
     if (neighbour_is_slow_enough) {
