@@ -56,6 +56,9 @@ struct black_holes_props {
   /*! Should we use the subgrid mass specified in ICs? */
   int use_subgrid_mass_from_ics;
 
+  /*! Should we enforce positive subgrid masses initially? */
+  int with_subgrid_mass_check;
+
 
   /* ----- Properties of the accretion model ------ */
 
@@ -195,7 +198,10 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->subgrid_seed_mass *= phys_const->const_solar_mass;
 
   bp->use_subgrid_mass_from_ics =
-      parser_get_opt_param_int(params, "EAGLEAGN:use_subgrid_mass_from_ics", 0);
+      parser_get_opt_param_int(params, "EAGLEAGN:use_subgrid_mass_from_ics", 1);
+  if (bp->use_subgrid_mass_from_ics)
+    bp->with_subgrid_mass_check = parser_get_opt_param_int(
+      params, "EAGLEAGN:with_subgrid_mass_check", 1);
 
   /* Accretion parameters ---------------------------------- */
 

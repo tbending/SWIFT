@@ -481,6 +481,7 @@ GEARFeedback:
 EAGLEAGN:
   subgrid_seed_mass_Msun:             1.5e5      # Black hole subgrid mass at creation time in solar masses.
   use_subgrid_mass_from_ics:          1          # Use subgrid masses specified in ICs [1], or initialise them to particle masses [0]?
+  with_subgrid_mass_check:            1          # (Optional) Verify that initial black hole subgrid masses are positive (default: 1). Only used if use_subgrid_mass_from_ics is 1.
   multi_phase_bondi:                  1          # Compute Bondi rates per neighbour particle?
   with_angmom_limiter:                1          # Are we applying the Rosas-Guevara (2015) viscous time-scale reduction term?
   viscous_alpha:                      1e6        # Normalisation constant of the Bondi viscuous time-scale accretion reduction term
