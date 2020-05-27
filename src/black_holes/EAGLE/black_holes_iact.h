@@ -98,13 +98,11 @@ runner_iact_nonsym_bh_gas_density(
   bi->velocity_gas[1] += mj * dv[1] * wi;
   bi->velocity_gas[2] += mj * dv[2] * wi;
 
-  if (bh_props->with_angmom_limiter) {
-    /* Contribution to the specific angular momentum of gas, which is later
-     * converted to the circular velocity at the smoothing length */
-    bi->circular_velocity_gas[0] += mj * wi * (dx[1] * dv[2] - dx[2] * dv[1]);
-    bi->circular_velocity_gas[1] += mj * wi * (dx[2] * dv[0] - dx[0] * dv[2]);
-    bi->circular_velocity_gas[2] += mj * wi * (dx[0] * dv[1] - dx[1] * dv[0]);
-  }
+  /* Contribution to the specific angular momentum of gas, which is later
+   * converted to the circular velocity at the smoothing length */
+  bi->circular_velocity_gas[0] += mj * wi * (dx[1] * dv[2] - dx[2] * dv[1]);
+  bi->circular_velocity_gas[1] += mj * wi * (dx[2] * dv[0] - dx[0] * dv[2]);
+  bi->circular_velocity_gas[2] += mj * wi * (dx[0] * dv[1] - dx[1] * dv[0]);
 
   if (bh_props->multi_phase_bondi) {
     /* Contribution to BH accretion rate
@@ -120,10 +118,12 @@ runner_iact_nonsym_bh_gas_density(
     const double gas_c_phys2 = gas_c_phys * gas_c_phys;
     const double denominator2 = gas_v_norm2 + gas_c_phys2;
 
+#ifdef SWIFT_DEBUG_CHECKS
     /* Make sure that the denominator is strictly positive */
     if (denominator2 <= 0)
       error("Invalid denominator for gas particle %lld", pj->id);
-    double denominator_inv = 1. / sqrt(denominator2);
+#endif
+    const double denominator_inv = 1. / sqrt(denominator2);
 
     /* ii) Contribution of gas particle to the BH accretion rate
      *     (without constant pre-factor)
@@ -131,6 +131,7 @@ runner_iact_nonsym_bh_gas_density(
     const float rhoj = mj * wi * cosmo->a3_inv;
     bi->accretion_rate +=
         rhoj * denominator_inv * denominator_inv * denominator_inv;
+
   } /* End of accretion contribution calculation */
 
 #ifdef DEBUG_INTERACTIONS_BH

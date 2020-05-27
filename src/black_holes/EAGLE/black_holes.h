@@ -57,18 +57,19 @@ __attribute__((always_inline)) INLINE static void black_holes_first_init_bpart(
     struct bpart* bp, const struct black_holes_props* props) {
 
   bp->time_bin = 0;
-  if (props->use_subgrid_mass_from_ics == 0) bp->subgrid_mass = bp->mass;
-  else
-    if (props->with_subgrid_mass_check && bp->subgrid_mass <= 0)
-      error("Black hole %lld has a subgrid mass of %f (internal units).\n"
-            "If this is because the ICs do not contain a 'SubgridMass' data "
-            "set, you should set the parameter "
-            "'EAGLEAGN:use_subgrid_mass_from_ics' to 0 to initialize the "
-            "black hole subgrid masses to the corresponding dynamical masses.\n"
-            "If the subgrid mass is intentionally set to this value, you can "
-            "disable this error by setting 'EAGLEAGN:with_subgrid_mass_check' "
-            "to 0.",
-            bp->id, bp->subgrid_mass);
+  if (props->use_subgrid_mass_from_ics == 0)
+    bp->subgrid_mass = bp->mass;
+  else if (props->with_subgrid_mass_check && bp->subgrid_mass <= 0)
+    error(
+        "Black hole %lld has a subgrid mass of %f (internal units).\n"
+        "If this is because the ICs do not contain a 'SubgridMass' data "
+        "set, you should set the parameter "
+        "'EAGLEAGN:use_subgrid_mass_from_ics' to 0 to initialize the "
+        "black hole subgrid masses to the corresponding dynamical masses.\n"
+        "If the subgrid mass is intentionally set to this value, you can "
+        "disable this error by setting 'EAGLEAGN:with_subgrid_mass_check' "
+        "to 0.",
+        bp->id, bp->subgrid_mass);
   bp->total_accreted_mass = 0.f;
   bp->accretion_rate = 0.f;
   bp->formation_time = -1.f;
@@ -474,7 +475,7 @@ __attribute__((always_inline)) INLINE static void black_holes_prepare_feedback(
      * the accretion_rate is still zero (was initialised to this) */
     const float hi_inv = 1.f / bp->h;
     const float hi_inv_dim = pow_dimension(hi_inv); /* 1/h^d */
-    ;
+
     Bondi_rate = bp->accretion_rate *
                  (4. * M_PI * G * G * BH_mass * BH_mass * hi_inv_dim);
   } else {
@@ -623,7 +624,8 @@ __attribute__((always_inline)) INLINE static void black_holes_end_reposition(
       bp->reposition.delta_x[0] = -FLT_MAX;
       bp->reposition.delta_x[1] = -FLT_MAX;
       bp->reposition.delta_x[2] = -FLT_MAX;
-    } else if (props->set_reposition_speed >= 0) {
+
+    } else if (props->set_reposition_speed) {
 
       /* If we are re-positioning, move the BH a fraction of delta_x, so
        * that we have a well-defined re-positioning velocity. We have

@@ -100,20 +100,20 @@ struct black_holes_props {
 
   /*! Switch to enable a relative velocity limit for particles to which the
    * black holes can reposition */
-  int with_reposition_velocity_threshold
+  int with_reposition_velocity_threshold;
 
-      /*! Maximal velocity offset of particles to which the black hole can
-       * reposition, in units of the ambient sound speed of the black hole */
-      float max_reposition_velocity_ratio;
+  /*! Maximal velocity offset of particles to which the black hole can
+   * reposition, in units of the ambient sound speed of the black hole */
+  float max_reposition_velocity_ratio;
 
   /*! Minimum value of the velocity repositioning threshold */
   float min_reposition_velocity_threshold;
 
   /*! Switch to enable repositioning at fixed (maximum) speed */
-  int set_reposition_speed
+  int set_reposition_speed;
 
-      /*! Normalisation factor for repositioning velocity */
-      float reposition_coefficient_upsilon;
+  /*! Normalisation factor for repositioning velocity */
+  float reposition_coefficient_upsilon;
 
   /*! Repositioning velocity scaling with black hole mass */
   float reposition_exponent_xi;
@@ -201,8 +201,8 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
   bp->use_subgrid_mass_from_ics =
       parser_get_opt_param_int(params, "EAGLEAGN:use_subgrid_mass_from_ics", 1);
   if (bp->use_subgrid_mass_from_ics)
-    bp->with_subgrid_mass_check = parser_get_opt_param_int(
-      params, "EAGLEAGN:with_subgrid_mass_check", 1);
+    bp->with_subgrid_mass_check =
+        parser_get_opt_param_int(params, "EAGLEAGN:with_subgrid_mass_check", 1);
 
   /* Accretion parameters ---------------------------------- */
 
