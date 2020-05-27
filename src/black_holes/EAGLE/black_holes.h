@@ -58,6 +58,17 @@ __attribute__((always_inline)) INLINE static void black_holes_first_init_bpart(
 
   bp->time_bin = 0;
   if (props->use_subgrid_mass_from_ics == 0) bp->subgrid_mass = bp->mass;
+  else
+    if (props->with_subgrid_mass_check && bp->subgrid_mass <= 0)
+      error("Black hole %lld has a subgrid mass of %f (internal units).\n"
+            "If this is because the ICs do not contain a 'SubgridMass' data "
+            "set, you should set the parameter "
+            "'EAGLEAGN:use_subgrid_mass_from_ics' to 0 to initialize the "
+            "black hole subgrid masses to the corresponding dynamical masses.\n"
+            "If the subgrid mass is intentionally set to this value, you can "
+            "disable this error by setting 'EAGLEAGN:with_subgrid_mass_check' "
+            "to 0.",
+            bp->id, bp->subgrid_mass);
   bp->total_accreted_mass = 0.f;
   bp->accretion_rate = 0.f;
   bp->formation_time = -1.f;
