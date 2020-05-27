@@ -244,13 +244,16 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
 
   bp->with_reposition_velocity_threshold = parser_get_param_int(
       params, "EAGLEAGN:with_reposition_velocity_threshold");
+
   if (bp->with_reposition_velocity_threshold) {
     bp->max_reposition_velocity_ratio = parser_get_param_float(
         params, "EAGLEAGN:max_reposition_velocity_ratio");
+
     /* Prevent nonsensical input */
     if (bp->max_reposition_velocity_ratio <= 0)
       error("max_reposition_velocity_ratio must be positive, not %f.",
             bp->max_reposition_velocity_ratio);
+
     bp->min_reposition_velocity_threshold = parser_get_param_float(
         params, "EAGLEAGN:min_reposition_velocity_threshold");
     /* Convert from km/s to internal units */
@@ -260,15 +263,18 @@ INLINE static void black_holes_props_init(struct black_holes_props *bp,
 
   bp->set_reposition_speed =
       parser_get_param_int(params, "EAGLEAGN:set_reposition_speed");
+
   if (bp->set_reposition_speed) {
     bp->reposition_coefficient_upsilon = parser_get_param_float(
         params, "EAGLEAGN:reposition_coefficient_upsilon");
+
     /* Prevent the user from making silly wishes */
     if (bp->reposition_coefficient_upsilon <= 0)
       error(
           "reposition_coefficient_upsilon must be positive, not %f "
           "km/s/M_sun.",
           bp->reposition_coefficient_upsilon);
+
     /* Convert from km/s to internal units */
     bp->reposition_coefficient_upsilon *=
         (1e5 / (us->UnitLength_in_cgs / us->UnitTime_in_cgs));
