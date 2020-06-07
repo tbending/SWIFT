@@ -1272,12 +1272,18 @@ void prepare_file(struct engine* e, const char* fileName,
 
     /* Prepare everything that is not cancelled */
 
+    /* Did the user specify a non-standard default for the entire particle
+     * type? */
+    const enum compression_levels compression_level_current_default = 
+        output_options_get_ptype_default(output_options, current_selection_name,
+          (enum part_type)ptype);
+
     for (int i = 0; i < num_fields; ++i) {
 
       /* Did the user cancel this field? */
       const int should_write = output_options_should_write_field(
           output_options, current_selection_name, list[i].name,
-          (enum part_type)ptype);
+          (enum part_type)ptype, compression_level_current_default);
 
       if (should_write)
         prepare_array_parallel(e, h_grp, fileName, xmfFile, partTypeGroupName,
@@ -1790,12 +1796,19 @@ void write_output_parallel(struct engine* e,
       output_list_get_current_select_output(output_list,
                                             current_selection_name);
     }
+
+    /* Did the user specify a non-standard default for the entire particle
+     * type? */
+    const enum compression_levels compression_level_current_default = 
+        output_options_get_ptype_default(output_options, current_selection_name,
+          (enum part_type)ptype);
+
     for (int i = 0; i < num_fields; ++i) {
 
       /* Did the user cancel this field? */
       const int should_write = output_options_should_write_field(
           output_options, current_selection_name, list[i].name,
-          (enum part_type)ptype);
+          (enum part_type)ptype, compression_level_current_default);
 
       if (should_write)
         write_array_parallel(e, h_grp, fileName, partTypeGroupName, list[i],

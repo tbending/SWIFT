@@ -131,7 +131,9 @@ void output_options_struct_restore(struct output_options* output_options,
  **/
 int output_options_should_write_field(struct output_options* output_options,
                                       char* snapshot_type, char* field_name,
-                                      enum part_type part_type) {
+                                      enum part_type part_type,
+                                      enum compression_levels
+                                          compression_level_curr_default) {
   /* Full name for the field path */
   char field[PARSER_MAX_LINE_SIZE];
   sprintf(field, "%.*s:%.*s_%s", FIELD_BUFFER_SIZE, snapshot_type,
@@ -140,7 +142,7 @@ int output_options_should_write_field(struct output_options* output_options,
   char compression_level[FIELD_BUFFER_SIZE];
   parser_get_opt_param_string(
       output_options->select_output, field, compression_level,
-      compression_level_names[compression_level_default]);
+      compression_level_names[compression_level_curr_default]);
 
   int should_write = strcmp(compression_level_names[compression_do_not_write],
                             compression_level);
@@ -153,4 +155,45 @@ int output_options_should_write_field(struct output_options* output_options,
 #endif
 
   return should_write;
+}
+
+
+enum compression_levels output_options_get_ptype_default(
+    struct output_options* output_options,
+    char* snapshot_type, enum part_type part_type) {
+
+  /* Full name for the default path */
+  char field[PARSER_MAX_LINE_SIZE];
+  sprintf(field, "%.*s:Default_%s", FIELD_BUFFER_SIZE, snapshot_type,
+          part_type_names[part_type]);
+
+  char compression_level[FIELD_BUFFER_SIZE];
+  parser_get_opt_param_string(
+      output_options->select_output, field, compression_level,
+      compression_level_names[compression_level_default]);
+
+  /* Need to find out which of the entries this corresponds to... */
+  enum compression_levels level_index;
+  for (level_index = (enum compression_levels) 0;
+       level_index < compression_level_count;
+       level_index = (enum compression_levels) (level_index + 1)) {
+    if (!strcmp(compression_level_names[level_index], compression_level))
+      break;
+  }
+
+#ifdef SWIFT_DEBUG_CHECKS
+  /* Check whether we could translate the level string to a known entry. */
+  if (level_index >= compression_level_maxind)
+    error("Could not resolve compression level \"%s\" as default compression "
+          "level of particle type %s in snapshot type %s.",
+          compression_level, part_type_names[part_type], snapshot_type);
+
+  message(
+      "Determined default compression level of %s in snapshot type %s "
+      "as \"%s\", corresponding to level code %d",
+      part_type_names[part_type], snapshot_type, compression_level,
+      level_index);
+#endif
+
+  return level_index;
 }
