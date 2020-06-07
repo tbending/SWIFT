@@ -133,7 +133,7 @@ int output_options_should_write_field(struct output_options* output_options,
                                       char* snapshot_type, char* field_name,
                                       enum part_type part_type,
                                       enum compression_levels
-                                          compression_level_curr_default) {
+                                          compression_level_current_default) {
   /* Full name for the field path */
   char field[PARSER_MAX_LINE_SIZE];
   sprintf(field, "%.*s:%.*s_%s", FIELD_BUFFER_SIZE, snapshot_type,
@@ -142,7 +142,7 @@ int output_options_should_write_field(struct output_options* output_options,
   char compression_level[FIELD_BUFFER_SIZE];
   parser_get_opt_param_string(
       output_options->select_output, field, compression_level,
-      compression_level_names[compression_level_curr_default]);
+      compression_level_names[compression_level_current_default]);
 
   int should_write = strcmp(compression_level_names[compression_do_not_write],
                             compression_level);
