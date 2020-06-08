@@ -481,7 +481,10 @@ void io_write_attribute_l(hid_t grp, const char* name, long data) {
  * @param str The string to write
  */
 void io_write_attribute_s(hid_t grp, const char* name, const char* str) {
-  io_writeStringAttribute(grp, name, str, strlen(str));
+  if (!strlen(str))
+    io_writeStringAttribute(grp, name, " ", 1);
+  else
+    io_writeStringAttribute(grp, name, str, strlen(str));
 }
 
 /**

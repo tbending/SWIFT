@@ -223,7 +223,7 @@ void parser_set_param(struct swift_params *params, const char *namevalue) {
   }
 
   /* Sanity check. */
-  if (strlen(name) == 0 || strlen(value) < 0 || strchr(value, ':') != NULL)
+  if (strlen(name) == 0 || strlen(value) == 0 || strchr(value, ':') != NULL)
     error(
         "Cannot parse compressed parameter string: '%s', check syntax "
         "should be section:parameter:value",
@@ -570,7 +570,7 @@ static void parse_section_param(char *line, int *isFirstParam,
   static void save_param_##PREFIX(struct swift_params *params,    \
                                   const char *name, TYPE value) { \
     char str[PARSER_MAX_LINE_SIZE];                               \
-    sprintf(str, "%s:" FMT, name, value);                         \
+    sprintf(str, "%s: " FMT, name, value);                        \
     parser_set_param(params, str);                                \
     params->data[params->paramCount - 1].used = 1;                \
     params->data[params->paramCount - 1].is_default = 0;          \
