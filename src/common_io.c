@@ -2280,103 +2280,182 @@ void io_check_output_fields(struct swift_params* params,
                             const long long N_total[swift_type_count],
                             int with_cosmology) {
 
-  /* Loop over each section */
+  /* Loop over each section, i.e. different class of output */
+  message("Checking %d sections and %d parameters for consistency...",
+     params->sectionCount, params->paramCount);
   for (int section_id = 0; section_id < params->sectionCount; section_id++) {
     char section_name[FIELD_BUFFER_SIZE];
     sprintf(section_name, "%s", params->section[section_id].name);
 
+    /* We also need the section name without a trailing colon... */
+    char section_name_no_colon[FIELD_BUFFER_SIZE];
+    strcpy(section_name_no_colon, section_name);
+    section_name_no_colon[strlen(section_name_no_colon) - 1] = 0;
+
+    message("Checking consistency in section %s...", section_name_no_colon);
+
+    /* First, scout out the full writing potential of each ptype */
+
+    /* How many fields should each ptype write by default? */
+    int ptype_num_fields_to_write[swift_type_count];
+    int ptype_num_fields_total[swift_type_count];
+
+    /* What is the default writing status for each ptype (on/off)? */
+    int ptype_default_write_status[swift_type_count];
+
+    /* Collect I/O field props for all ptypes in one go */ 
+    struct io_props full_list[swift_type_count][100];
+
+    for (int ptype = 0; ptype < swift_type_count; ptype++) {
+
+      message("Gathering data for ptype %d...", ptype);
+
+      /* Don't do anything if there is no particle of this kind */
+      if (N_total[ptype] == 0) continue;
+
+      int num_fields = 0;
+      struct io_props list[100];
+
+      /* Find out how many fields there are for each type, from the
+       * particle structures */
+      switch (ptype) {
+
+        case swift_type_gas:
+          hydro_write_particles(NULL, NULL, list, &num_fields);
+          num_fields += chemistry_write_particles(NULL, list + num_fields);
+          num_fields +=
+              cooling_write_particles(NULL, NULL, list + num_fields, NULL);
+          num_fields += tracers_write_particles(NULL, NULL, list + num_fields,
+                                                with_cosmology);
+          num_fields +=
+              star_formation_write_particles(NULL, NULL, list + num_fields);
+          num_fields += fof_write_parts(NULL, NULL, list + num_fields);
+          num_fields +=
+              velociraptor_write_parts(NULL, NULL, list + num_fields);
+          break;
+
+        case swift_type_dark_matter:
+          darkmatter_write_particles(NULL, list, &num_fields);
+          num_fields += fof_write_gparts(NULL, list + num_fields);
+          num_fields += velociraptor_write_gparts(NULL, list + num_fields);
+          break;
+
+        case swift_type_dark_matter_background:
+          darkmatter_write_particles(NULL, list, &num_fields);
+          num_fields += fof_write_gparts(NULL, list + num_fields);
+          num_fields += velociraptor_write_gparts(NULL, list + num_fields);
+          break;
+
+        case swift_type_stars:
+          stars_write_particles(NULL, list, &num_fields, with_cosmology);
+          num_fields += chemistry_write_sparticles(NULL, list + num_fields);
+          num_fields += tracers_write_sparticles(NULL, list + num_fields,
+                                                 with_cosmology);
+          num_fields +=
+              star_formation_write_sparticles(NULL, list + num_fields);
+          num_fields += fof_write_sparts(NULL, list + num_fields);
+          num_fields += velociraptor_write_sparts(NULL, list + num_fields);
+          break;
+
+        case swift_type_black_hole:
+          black_holes_write_particles(NULL, list, &num_fields,
+                                      with_cosmology);
+          num_fields += chemistry_write_bparticles(NULL, list + num_fields);
+          num_fields += fof_write_bparts(NULL, list + num_fields);
+          num_fields += velociraptor_write_bparts(NULL, list + num_fields);
+          break;
+
+        default:
+          error("Particle Type %d not yet supported. Aborting", ptype);
+      }
+
+      ptype_num_fields_total[ptype] = num_fields;
+
+      /* Transcribe the ptype-specific list into a combined list */
+      for (int ii = 0; ii < num_fields; ii++)
+        full_list[ptype][ii] = list[ii];
+
+      /* If default is 'write', then we have to deduct any fields that
+       * are switched off, and see whether we get down to zero. If the default
+       * is 'off', we have to count upwards from zero for each field that is
+       * switched back on. */
+      const enum compression_levels compression_level_current_default = 
+        output_options_get_ptype_default(params, section_name_no_colon,
+        (enum part_type) ptype);
+
+      message("... found default=%d (num_params=%d)",
+        compression_level_current_default, params->paramCount);
+
+      if (compression_level_current_default == compression_do_not_write) {
+        ptype_default_write_status[ptype] = 0; 
+        ptype_num_fields_to_write[ptype] = 0;
+      }
+      else {
+        ptype_default_write_status[ptype] = 1;
+        ptype_num_fields_to_write[ptype] = num_fields;
+      }
+
+    } /* ends loop over particle types */
+
+    message("Done going through ptypes. Now checking %d parameters...",
+      params->paramCount);
+
     /* Loop over each parameter */
     for (int param_id = 0; param_id < params->paramCount; param_id++) {
 
+      /* (Full) name of current parameter to check */
       const char* param_name = params->data[param_id].name;
+      message("Checking parameter %s...", param_name);
 
+      /* Generic holder for different section names to compare to */
       char comparison_section_name[FIELD_BUFFER_SIZE];
 
-      /* Skip if wrong section */
+      /* Check whether the file still contains the old, now inappropriate
+       * 'SelectOutput' section */
       sprintf(comparison_section_name, "%s", "SelectOutput:");
       if (strstr(param_name, comparison_section_name) != NULL) {
         error(
             "Output selection files no longer require the use of top level "
             "SelectOutput; see the documentation for changes.");
+      }
+
+      /* Skip if the parameter belongs to another output class */
+      sprintf(comparison_section_name, "%s", section_name);
+      if (strstr(param_name, comparison_section_name) == NULL) {
+        message("Parameter %s does not belong to class %s!",
+          param_name, section_name_no_colon);
         continue;
       }
 
-      /* Skip if top-level section */
-      sprintf(comparison_section_name, "%s", section_name);
-      if (strstr(param_name, comparison_section_name) == NULL) continue;
+      /* Skip if this is the 'Standard' parameter for its ptype */
+      if (strstr(param_name, ":Standard_") != NULL) {
+        message("Identified %s as being a Standard parameter...", param_name);
+        continue;
+      }
 
       /* Loop over all particle types to check the fields */
       int found = 0;
       for (int ptype = 0; ptype < swift_type_count; ptype++) {
 
+        /* Skip if we already found the param in a previous ptype */
+        if (found) continue;
+
         /* Skip if wrong particle type */
         sprintf(comparison_section_name, "_%s", part_type_names[ptype]);
         if (strstr(param_name, section_name) == NULL) continue;
 
-        int num_fields = 0;
-        struct io_props list[100];
-
-        /* Don't do anything if no particle of this kind */
+        /* Don't do anything if there is no particle of this kind */
         if (N_total[ptype] == 0) continue;
 
-        /* Gather particle fields from the particle structures */
-        switch (ptype) {
-
-          case swift_type_gas:
-            hydro_write_particles(NULL, NULL, list, &num_fields);
-            num_fields += chemistry_write_particles(NULL, list + num_fields);
-            num_fields +=
-                cooling_write_particles(NULL, NULL, list + num_fields, NULL);
-            num_fields += tracers_write_particles(NULL, NULL, list + num_fields,
-                                                  with_cosmology);
-            num_fields +=
-                star_formation_write_particles(NULL, NULL, list + num_fields);
-            num_fields += fof_write_parts(NULL, NULL, list + num_fields);
-            num_fields +=
-                velociraptor_write_parts(NULL, NULL, list + num_fields);
-            break;
-
-          case swift_type_dark_matter:
-            darkmatter_write_particles(NULL, list, &num_fields);
-            num_fields += fof_write_gparts(NULL, list + num_fields);
-            num_fields += velociraptor_write_gparts(NULL, list + num_fields);
-            break;
-
-          case swift_type_dark_matter_background:
-            darkmatter_write_particles(NULL, list, &num_fields);
-            num_fields += fof_write_gparts(NULL, list + num_fields);
-            num_fields += velociraptor_write_gparts(NULL, list + num_fields);
-            break;
-
-          case swift_type_stars:
-            stars_write_particles(NULL, list, &num_fields, with_cosmology);
-            num_fields += chemistry_write_sparticles(NULL, list + num_fields);
-            num_fields += tracers_write_sparticles(NULL, list + num_fields,
-                                                   with_cosmology);
-            num_fields +=
-                star_formation_write_sparticles(NULL, list + num_fields);
-            num_fields += fof_write_sparts(NULL, list + num_fields);
-            num_fields += velociraptor_write_sparts(NULL, list + num_fields);
-            break;
-
-          case swift_type_black_hole:
-            black_holes_write_particles(NULL, list, &num_fields,
-                                        with_cosmology);
-            num_fields += chemistry_write_bparticles(NULL, list + num_fields);
-            num_fields += fof_write_bparts(NULL, list + num_fields);
-            num_fields += velociraptor_write_bparts(NULL, list + num_fields);
-            break;
-
-          default:
-            error("Particle Type %d not yet supported. Aborting", ptype);
-        }
-
         /* For this particle type, loop over each possible output field */
-        for (int field_id = 0; field_id < num_fields; field_id++) {
+        for (int field_id = 0; field_id < ptype_num_fields_total[ptype];
+             field_id++) {
+
+          /* Full name of current field to test against
+           * (Note: `section_name` already includes a trailing `:`) */
           char field_name[PARSER_MAX_LINE_SIZE];
-          /* Note that section_name includes a : */
           sprintf(field_name, "%s%.*s_%s", section_name, FIELD_BUFFER_SIZE,
-                  list[field_id].name, part_type_names[ptype]);
+                  full_list[ptype][field_id].name, part_type_names[ptype]);
 
           if (strcmp(param_name, field_name) == 0) {
             found = 1;
@@ -2384,7 +2463,7 @@ void io_check_output_fields(struct swift_params* params,
             /* Perform a correctness check on the _value_ of that
              * parameter */
             char field_value[FIELD_BUFFER_SIZE];
-            parser_get_param_string(params, field_name, &field_value[0]);
+            parser_get_param_string(params, field_name, field_value);
 
             int value_is_valid = 0;
 
@@ -2399,23 +2478,70 @@ void io_check_output_fields(struct swift_params* params,
             }
 
             if (value_is_valid) {
-              /* Found value and it is correct, so move to the next one. */
+              /* Found value and it is correct. Move to the next one, but
+               * first do some bookkeeping for total number of fields to be
+               * written for current ptype */
+
+              /* Check whether value is 'on' (i.e. not 'off') */
+              const int is_on = strcmp(
+                 field_value,
+                 compression_level_names[compression_do_not_write]);
+
+              /* Check whether this parameter's behaviour is different from
+               * the default for its particle type. */ 
+
+              if (is_on && !ptype_default_write_status[ptype])
+                /* Particle should be written even though default is off:
+                 * increase field count */
+                ptype_num_fields_to_write[ptype] += 1;
+
+              if (!is_on && ptype_default_write_status[ptype])
+                /* Particle should not be written, even though default is on:
+                 * decrease field count */ 
+                ptype_num_fields_to_write[ptype] -= 1;
+
+              /* Stop looking for comparison fields in current ptype.
+               * All subsequent ptypes will still run through, but quickly
+               * because `found` is now set to 1. */
               break;
+
             } else {
               error("Choice of output selection parameter %s:%s is invalid.",
                     field_name, field_value);
             }
-          }
-        }
-      }
+          } /* ends section if we found the right ptype/field combo */
+        } /* ends loop through fields within current ptype */
+      } /* ends loop over ptypes, for current parameter */
+
       if (!found)
         message(
             "WARNING: Trying to change behaviour of field '%s' (read from "
-            "'%s') that does not exist. This may because you are not running "
-            "with all of the physics that you compiled the code with.",
+            "'%s') that does not exist. This may be because you are not "
+            "running with all of the physics that you compiled the code with.",
             param_name, params->fileName);
+ 
+    } /* ends loop over parameters */
+
+    /* Quick second loop over ptypes, to add 'do we write any fields' param */
+    for (int ptype = 0; ptype < swift_type_count; ptype++) {
+
+      /* Sanity check: is the number of fields to write non-negative? */
+      if (ptype_num_fields_to_write[ptype] < 0)
+          error("We seem to have subtracted too many fields for particle "
+                "type %d in output class %s (total to write is %d)",
+                ptype, section_name, ptype_num_fields_to_write[ptype]);
+
+      /* Only care about whether the number of fields is 0 or more */
+      const int write_any_fields = ptype_num_fields_to_write[ptype] ? 1 : 0;
+
+      char param_name_value[FIELD_BUFFER_SIZE];
+      sprintf(param_name_value, "%.*sWriteAnyFields_%s:%d", FIELD_BUFFER_SIZE,
+          section_name, part_type_names[ptype], write_any_fields);
+      parser_set_param(params, param_name_value);
     }
-  }
+
+  } /* Ends loop over sections, for different output classes */
+  message("Done checking select_output parameters.");
 }
 
 /**

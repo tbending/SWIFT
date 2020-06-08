@@ -849,7 +849,22 @@ void write_output_single(struct engine* e,
   for (int ptype = 0; ptype < swift_type_count; ++ptype) {
     numParticles[ptype] = (unsigned int)N_total[ptype];
     numParticlesHighWord[ptype] = (unsigned int)(N_total[ptype] >> 32);
+
+    /* Check whether all particle fields for this ptype are disabled 
+     * (parser access needs to be optional, since we might not have 
+     * initialised a Default section) */
+    char param_name[PARSER_MAX_LINE_SIZE];
+    sprintf(param_name, "%.*s:WriteAnyFields_%s", FIELD_BUFFER_SIZE,
+          current_selection_name, part_type_names[ptype]);
+    const int write_ptype = parser_get_opt_param_int(
+        output_options->select_output, param_name, 1);
+
+    /* Don't feel like writing this ptype right now? That's ok. Just adjust
+     * the particle number, and we'll take care of it. */
+    if (!write_ptype)
+      numParticles[ptype] = 0;
   }
+
   io_write_attribute(h_grp, "NumPart_ThisFile", LONGLONG, N_total,
                      swift_type_count);
   io_write_attribute(h_grp, "NumPart_Total", UINT, numParticles,
@@ -888,7 +903,9 @@ void write_output_single(struct engine* e,
   /* Loop over all particle types */
   for (int ptype = 0; ptype < swift_type_count; ptype++) {
 
-    /* Don't do anything if no particle of this kind */
+    /* Don't do anything if there are no particles of this kind, or
+     * if we have disabled the entire ptype (in which case we have set
+     * numParticles[ptype] to zero above) */
     if (numParticles[ptype] == 0) continue;
 
     /* Add the global information for that particle type to the XMF meta-file */
@@ -1182,13 +1199,13 @@ void write_output_single(struct engine* e,
         error("Particle Type %d not yet supported. Aborting", ptype);
     }
 
-    /* Write everything that is not cancelled */
-
     /* Did the user specify a non-standard default for the entire particle
      * type? */
     const enum compression_levels compression_level_current_default = 
-        output_options_get_ptype_default(output_options, current_selection_name,
-          (enum part_type)ptype);
+        output_options_get_ptype_default(output_options->select_output,
+          current_selection_name, (enum part_type) ptype);
+
+    /* Write everything that is not cancelled */
 
     for (int i = 0; i < num_fields; ++i) {
 

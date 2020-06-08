@@ -76,7 +76,7 @@ int output_options_should_write_field(struct output_options* output_options,
                                           comp_level_current_default);
 
 enum compression_levels output_options_get_ptype_default(
-    struct output_options* output_options,
+    struct swift_params* output_params,
     char* snapshot_type, enum part_type part_type);
 
 #endif
