@@ -2534,7 +2534,7 @@ void io_check_output_fields(struct swift_params* params,
       /* Only care about whether the number of fields is 0 or more */
       const int write_any_fields = ptype_num_fields_to_write[ptype] ? 1 : 0;
 
-      char param_name_value[FIELD_BUFFER_SIZE];
+      char param_name_value[PARSER_MAX_LINE_SIZE];
       sprintf(param_name_value, "%.*sWriteAnyFields_%s:%d", FIELD_BUFFER_SIZE,
           section_name, part_type_names[ptype], write_any_fields);
       parser_set_param(params, param_name_value);
