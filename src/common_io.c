@@ -2281,8 +2281,6 @@ void io_check_output_fields(struct swift_params* params,
                             int with_cosmology) {
 
   /* Loop over each section, i.e. different class of output */
-  message("Checking %d sections and %d parameters for consistency...",
-     params->sectionCount, params->paramCount);
   for (int section_id = 0; section_id < params->sectionCount; section_id++) {
     char section_name[FIELD_BUFFER_SIZE];
     sprintf(section_name, "%s", params->section[section_id].name);
@@ -2291,8 +2289,6 @@ void io_check_output_fields(struct swift_params* params,
     char section_name_no_colon[FIELD_BUFFER_SIZE];
     strcpy(section_name_no_colon, section_name);
     section_name_no_colon[strlen(section_name_no_colon) - 1] = 0;
-
-    message("Checking consistency in section %s...", section_name_no_colon);
 
     /* First, scout out the full writing potential of each ptype */
 
@@ -2307,8 +2303,6 @@ void io_check_output_fields(struct swift_params* params,
     struct io_props full_list[swift_type_count][100];
 
     for (int ptype = 0; ptype < swift_type_count; ptype++) {
-
-      message("Gathering data for ptype %d...", ptype);
 
       /* Don't do anything if there is no particle of this kind */
       if (N_total[ptype] == 0) continue;
@@ -2383,9 +2377,6 @@ void io_check_output_fields(struct swift_params* params,
         output_options_get_ptype_default(params, section_name_no_colon,
         (enum part_type) ptype);
 
-      message("... found default=%d (num_params=%d)",
-        compression_level_current_default, params->paramCount);
-
       if (compression_level_current_default == compression_do_not_write) {
         ptype_default_write_status[ptype] = 0; 
         ptype_num_fields_to_write[ptype] = 0;
@@ -2397,15 +2388,11 @@ void io_check_output_fields(struct swift_params* params,
 
     } /* ends loop over particle types */
 
-    message("Done going through ptypes. Now checking %d parameters...",
-      params->paramCount);
-
     /* Loop over each parameter */
     for (int param_id = 0; param_id < params->paramCount; param_id++) {
 
       /* (Full) name of current parameter to check */
       const char* param_name = params->data[param_id].name;
-      message("Checking parameter %s...", param_name);
 
       /* Generic holder for different section names to compare to */
       char comparison_section_name[FIELD_BUFFER_SIZE];
@@ -2421,17 +2408,12 @@ void io_check_output_fields(struct swift_params* params,
 
       /* Skip if the parameter belongs to another output class */
       sprintf(comparison_section_name, "%s", section_name);
-      if (strstr(param_name, comparison_section_name) == NULL) {
-        message("Parameter %s does not belong to class %s!",
-          param_name, section_name_no_colon);
+      if (strstr(param_name, comparison_section_name) == NULL)
         continue;
-      }
 
       /* Skip if this is the 'Standard' parameter for its ptype */
-      if (strstr(param_name, ":Standard_") != NULL) {
-        message("Identified %s as being a Standard parameter...", param_name);
+      if (strstr(param_name, ":Standard_") != NULL)
         continue;
-      }
 
       /* Loop over all particle types to check the fields */
       int found = 0;
@@ -2525,11 +2507,13 @@ void io_check_output_fields(struct swift_params* params,
     /* Quick second loop over ptypes, to add 'do we write any fields' param */
     for (int ptype = 0; ptype < swift_type_count; ptype++) {
 
+#ifdef SWIFT_DEBUG_CHECKS
       /* Sanity check: is the number of fields to write non-negative? */
       if (ptype_num_fields_to_write[ptype] < 0)
           error("We seem to have subtracted too many fields for particle "
                 "type %d in output class %s (total to write is %d)",
                 ptype, section_name, ptype_num_fields_to_write[ptype]);
+#endif
 
       /* Only care about whether the number of fields is 0 or more */
       const int write_any_fields = ptype_num_fields_to_write[ptype] ? 1 : 0;
@@ -2541,7 +2525,6 @@ void io_check_output_fields(struct swift_params* params,
     }
 
   } /* Ends loop over sections, for different output classes */
-  message("Done checking select_output parameters.");
 }
 
 /**

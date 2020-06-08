@@ -570,7 +570,7 @@ static void parse_section_param(char *line, int *isFirstParam,
   static void save_param_##PREFIX(struct swift_params *params,    \
                                   const char *name, TYPE value) { \
     char str[PARSER_MAX_LINE_SIZE];                               \
-    sprintf(str, "%s: " FMT, name, value);                         \
+    sprintf(str, "%s: " FMT, name, value);                        \
     parser_set_param(params, str);                                \
     params->data[params->paramCount - 1].used = 1;                \
     params->data[params->paramCount - 1].is_default = 0;          \
@@ -757,16 +757,12 @@ void parser_get_opt_param_string(struct swift_params *params, const char *name,
             name, def, retParam);
       /* this parameter has been used */
       params->data[i].used = 1;
-      message("Retrieved value '%s' for param '%s'", retParam, name);
       return;
     }
   }
-  message("def='%s'", def);
   save_param_string(params, name, def);
   params->data[params->paramCount - 1].is_default = 1;
   strcpy(retParam, def);
-  message("def='%s', retParam='%s'", def, retParam);
-
 }
 
 /* Macro defining functions that get primitive types as simple one-line YAML

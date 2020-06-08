@@ -75,8 +75,6 @@ void output_options_init(struct swift_params* parameter_file, int mpi_rank,
             MPI_COMM_WORLD);
 #endif
 
-  message("There are %d parameters in select_output",
-          select_output->paramCount);
   output_options->select_output = select_output;
 }
 
@@ -174,18 +172,12 @@ enum compression_levels output_options_get_ptype_default(
       output_params, field, compression_level,
       compression_level_names[compression_level_default]);
 
-  message("Returned compression level '%s', default = '%s'",
-    compression_level, compression_level_names[compression_level_default]);
-
   /* Need to find out which of the entries this corresponds to... */
   enum compression_levels level_index;
   for (level_index = 0; level_index < compression_level_count; level_index++) {
     if (!strcmp(compression_level_names[level_index], compression_level))
       break;
   }
-
-  message("Determined index %d for compression level '%s'", level_index,
-    compression_level);
 
 #ifdef SWIFT_DEBUG_CHECKS
   /* Check whether we could translate the level string to a known entry. */

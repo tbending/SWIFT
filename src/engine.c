@@ -3896,10 +3896,8 @@ void engine_init(struct engine *e, struct space *s, struct swift_params *params,
       parser_get_opt_param_double(params, "Snapshots:delta_time", -1.);
   e->ti_next_snapshot = 0;
   parser_get_param_string(params, "Snapshots:basename", e->snapshot_base_name);
-  message("Trying to set subdir...");
   parser_get_opt_param_string(params, "Snapshots:subdir", e->snapshot_subdir,
                               engine_default_snapshot_subdir);
-  message("set subdir!");
   e->snapshot_compression =
       parser_get_opt_param_int(params, "Snapshots:compression", 0);
   e->snapshot_distributed =
