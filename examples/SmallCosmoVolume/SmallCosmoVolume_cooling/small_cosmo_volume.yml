@@ -116,22 +116,3 @@ GrackleCooling:
   thermal_time_myr: 5                          # (optional) Time (in Myr) for adiabatic cooling after a feedback event.
   self_shielding_method: -1                    # (optional) Grackle (1->3 for Grackle's ones, 0 for none and -1 for GEAR)
   self_shielding_threshold_atom_per_cm3: 0.007 # Required only with GEAR's self shielding. Density threshold of the self shielding
-
-
-# GEAR chemistry model (Revaz and Jablonka 2018)
-GEARChemistry:
-  initial_metallicity: 1         # Initial metallicity of the gas (mass fraction)
-  scale_initial_metallicity: 1   # Should we scale the initial metallicity with the solar one?
-
-  # GEAR star formation model (Revaz and Jablonka 2018)
-GEARStarFormation:
-  star_formation_efficiency: 0.01   # star formation efficiency (c_*)
-  maximal_temperature:  3e4         # Upper limit to the temperature of a star forming particle
-  n_stars_per_particle: 4
-  min_mass_frac: 0.5
-
-# GEAR feedback model
-GEARFeedback:
-  supernovae_energy_erg: 0.1e51                            # Energy released by a single supernovae.
-  yields_table: chemistry-AGB+OMgSFeZnSrYBaEu-16072013.h5  # Table containing the yields.
-  discrete_yields: 0                                       # Should we use discrete yields or the IMF integrated one?
