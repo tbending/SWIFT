@@ -2716,7 +2716,6 @@ void io_write_output_field_parameter(const char* filename, int with_cosmology) {
   fprintf(file, "Default:\n");
   for (int ptype = 0; ptype < swift_type_count; ptype++) {
 
-    int num_fields = 0;
     struct io_props list[100];
     int num_fields = get_ptype_fields(ptype, list, with_cosmology,
                                       /*with_fof=*/1, /*with_stf=*/1);
