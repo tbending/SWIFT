@@ -1175,7 +1175,8 @@ void io_write_cell_offsets(hid_t h_grp, const int cdim[3], const double dim[3],
                      "counts");
     }
 
-    if (global_counts[swift_type_black_hole] > 0) {
+    if (global_counts[swift_type_black_hole] > 0 &&
+        num_fields[swift_type_black_hole] > 0) {
       io_write_array(h_grp_files, nr_cells, files, INT, "PartType5", "files");
       io_write_array(h_grp_offsets, nr_cells, offset_bpart, LONGLONG,
                      "PartType5", "offsets");
