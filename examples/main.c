@@ -852,6 +852,11 @@ int main(int argc, char *argv[]) {
 
   } else {
 
+    /* Verify that the fields to dump actually exist */
+    if (myrank == 0)
+      io_check_output_fields(output_options, with_cosmology, with_fof,
+                             with_structure_finding);
+
     /* Not restarting so look for the ICs. */
     /* Initialize unit system and constants */
     units_init_from_params(&us, params, "InternalUnitSystem");
@@ -1183,12 +1188,6 @@ int main(int argc, char *argv[]) {
     N_total[swift_type_sink] = s.nr_sinks;
     N_total[swift_type_black_hole] = s.nr_bparts;
 #endif
-
-    /* Verify that the fields to dump actually exist - this must be done after
-     * space_init so we know whether or not we have gas particles. */
-    if (myrank == 0)
-      io_check_output_fields(output_options->select_output, N_total,
-                             with_cosmology);
 
     /* Say a few nice things about the space we just created. */
     if (myrank == 0) {
