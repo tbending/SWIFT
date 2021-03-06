@@ -211,6 +211,7 @@ INLINE static void gravity_cache_populate(
     error("Padded gravity cache size invalid. Not a multiple of SIMD length.");
   if (c->count < gcount_padded)
     error("Size of the gravity cache is not large enough.");
+  if (c->nodeID != engine_rank) error("Populating from a foreign cell!");
 #endif
 
   /* Make the compiler understand we are in happy vectorization land */
@@ -319,6 +320,7 @@ INLINE static void gravity_cache_populate_no_mpole(
     error("Padded gravity cache size invalid. Not a multiple of SIMD length.");
   if (c->count < gcount_padded)
     error("Size of the gravity cache is not large enough.");
+  if (c->nodeID != engine_rank) error("Populating from a foreign cell!");
 #endif
 
   /* Make the compiler understand we are in happy vectorization land */
@@ -408,6 +410,7 @@ INLINE static void gravity_cache_populate_all_mpole(
     error("Padded gravity cache size invalid. Not a multiple of SIMD length.");
   if (c->count < gcount_padded)
     error("Size of the gravity cache is not large enough.");
+  if (c->nodeID != engine_rank) error("Populating from a foreign cell!");
 #endif
 
   /* Make the compiler understand we are in happy vectorization land */
