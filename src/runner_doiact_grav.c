@@ -382,6 +382,10 @@ static INLINE void runner_dopair_grav_pp_full_no_cache(
 #ifdef SWIFT_DEBUG_CHECKS
           if (r2 == 0.f && h2 == 0.)
             error("Interacting particles with 0 distance and 0 softening.");
+
+          /* Check that particles have been drifted to the current time */
+          if (gpj->ti_drift != e->ti_current)
+            error("gpj not drifted to current time");
 #endif
 
           /* Interact! */
@@ -662,6 +666,10 @@ static INLINE void runner_dopair_grav_pp_truncated_no_cache(
 #ifdef SWIFT_DEBUG_CHECKS
           if (r2 == 0.f && h2 == 0.)
             error("Interacting particles with 0 distance and 0 softening.");
+
+          /* Check that particles have been drifted to the current time */
+          if (gpj->ti_drift != e->ti_current)
+            error("gpj not drifted to current time");
 #endif
 
           /* Interact! */
@@ -816,8 +824,14 @@ static INLINE void runner_dopair_grav_pp_full(
       /* Check that particles have been drifted to the current time */
       if (gparts_i[pid].ti_drift != e->ti_current)
         error("gpi not drifted to current time");
+
       if (!foreign_j && pjd < gcount_j &&
           gparts_j[pjd].ti_drift != e->ti_current &&
+          !gpart_is_inhibited(&gparts_j[pjd], e))
+        error("gpj not drifted to current time");
+
+      if (foreign_j && pjd < gcount_j &&
+          gparts_foreign_j[pjd].ti_drift != e->ti_current &&
           !gpart_is_inhibited(&gparts_j[pjd], e))
         error("gpj not drifted to current time");
 
@@ -995,8 +1009,14 @@ static INLINE void runner_dopair_grav_pp_truncated(
       /* Check that particles have been drifted to the current time */
       if (gparts_i[pid].ti_drift != e->ti_current)
         error("gpi not drifted to current time");
+
       if (!foreign_j && pjd < gcount_j &&
           gparts_j[pjd].ti_drift != e->ti_current &&
+          !gpart_is_inhibited(&gparts_j[pjd], e))
+        error("gpj not drifted to current time");
+
+      if (foreign_j && pjd < gcount_j &&
+          gparts_foreign_j[pjd].ti_drift != e->ti_current &&
           !gpart_is_inhibited(&gparts_j[pjd], e))
         error("gpj not drifted to current time");
 
