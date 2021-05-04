@@ -142,6 +142,30 @@ struct part {
   /*! Imbalance statistic*/
   float I;
 
+  /*! Number of neighbours*/ // error with imbalance.N_neig
+  float N_neig_1;
+
+  /*! Maximum neighbour distance*/
+  float rij_max_1;
+
+  /*! Sum of r_ij (used to compute imbalance statistic)*/
+  float sum_rij_1[3];
+
+  /*! Imbalance statistic*/
+  float I_1;
+
+  /*! Number of neighbours*/ // error with imbalance.N_neig
+  float N_neig_2;
+
+  /*! Maximum neighbour distance*/
+  float rij_max_2;
+
+  /*! Sum of r_ij (used to compute imbalance statistic)*/
+  float sum_rij_2[3];
+
+  /*! Imbalance statistic*/
+  float I_2;
+
   /*! Imbalance flag */
   int I_flag;
 

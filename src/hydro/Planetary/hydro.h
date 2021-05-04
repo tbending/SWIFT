@@ -498,6 +498,20 @@ __attribute__((always_inline)) INLINE static void hydro_init_part(
   p->sum_rij[2] = 0.f;
   p->I = 0.f;
   p->I_flag = 0;
+
+  p->N_neig_1 = 0.f;
+  p->rij_max_1 = 0.f;
+  p->sum_rij_1[0] = 0.f;
+  p->sum_rij_1[1] = 0.f;
+  p->sum_rij_1[2] = 0.f;
+  p->I_1 = 0.f;
+
+  p->N_neig_2 = 0.f;
+  p->rij_max_2 = 0.f;
+  p->sum_rij_2[0] = 0.f;
+  p->sum_rij_2[1] = 0.f;
+  p->sum_rij_2[2] = 0.f;
+  p->I_2 = 0.f;
 }
 
 /**
@@ -547,9 +561,10 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
 
   /* Determine Imbalance flag*/
   //p->imbalance.N_neig += 1.f;
-  p->N_neig += 1.f; // self contribution to number of neighbours
-  const float N_neig_min = 3.f; //arbitrary choice? remember N_neig is neigbours from same material
+	const float N_neig_min = 3.f; //arbitrary choice? remember N_neig is neigbours from same material
   const float I_low = 0.7f;
+
+  p->N_neig += 1.f; // self contribution to number of neighbours
   if (p->N_neig > N_neig_min && p->rij_max > 0.f){
     float sum_rij_norm = 0.f;
     sum_rij_norm += p->sum_rij[0]*p->sum_rij[0];
@@ -558,10 +573,34 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
     p->I = sqrtf(sum_rij_norm);
     p->I /= sqrtf(p->N_neig - 1.f);
     p->I /= p->rij_max;
+  }
 
-    if (p->I > I_low){
-      p->I_flag = 1;
-    }
+  // new imbalance
+  p->N_neig_1 += 1.f;
+  if (p->N_neig_1 > N_neig_min && p->rij_max_1 > 0.f){
+    float sum_rij_norm = 0.f;
+    sum_rij_norm += p->sum_rij_1[0]*p->sum_rij_1[0];
+    sum_rij_norm += p->sum_rij_1[1]*p->sum_rij_1[1];
+    sum_rij_norm += p->sum_rij_1[2]*p->sum_rij_1[2];
+    p->I_1 = sqrtf(sum_rij_norm);
+    p->I_1 /= sqrtf(p->N_neig_1 - 1.f);
+    p->I_1 /= p->rij_max_1;
+  }
+
+  if (p->N_neig_2 > N_neig_min && p->rij_max_2 > 0.f){
+    float sum_rij_norm = 0.f;
+    sum_rij_norm += p->sum_rij_2[0]*p->sum_rij_2[0];
+    sum_rij_norm += p->sum_rij_2[1]*p->sum_rij_2[1];
+    sum_rij_norm += p->sum_rij_2[2]*p->sum_rij_2[2];
+    p->I_2 = sqrtf(sum_rij_norm);
+    p->I_2 /= sqrtf(p->N_neig_2 - 1.f);
+    p->I_2 /= p->rij_max_2;
+  }
+
+  p->I = p->I_1;
+  if (p->I > I_low){
+    p->I_flag = 1;
+  }
 
     /*if (p->id == 130483 || p->id == 129310){
       printf(
@@ -582,8 +621,6 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
       p->sum_rij[0], p->sum_rij[1], p->sum_rij[2], p->I);
     }*/
 
-    
-  }
   /*if (p->id == 854606 || p->id == 1748826){
   printf(
       "## I particle: "
