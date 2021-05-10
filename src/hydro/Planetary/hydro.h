@@ -562,7 +562,7 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
   /* Determine Imbalance flag*/
   //p->imbalance.N_neig += 1.f;
 	const float N_neig_min = 3.f; //arbitrary choice? remember N_neig is neigbours from same material
-  const float I_low = 0.7f;
+  //const float I_low = 0.7f;
 
   p->N_neig += 1.f; // self contribution to number of neighbours
   if (p->N_neig > N_neig_min && p->rij_max > 0.f){
@@ -598,9 +598,13 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
   }
 
   p->I = p->I_1;
-  if (p->I > I_low){
-    p->I_flag = 1;
-  }
+  p->I_flag = 1;
+  
+  /*p->I = max(p->I_1, 0.1f);
+  if (p->I >= 0.1f){
+    p->I_flag = 0;*/
+
+  
 
     /*if (p->id == 130483 || p->id == 129310){
       printf(
@@ -721,7 +725,7 @@ __attribute__((always_inline)) INLINE static void hydro_reset_gradient(
 __attribute__((always_inline)) INLINE static void hydro_end_gradient(
     struct part *p) {
 
-  if (p->I_flag == 1 && p->rho_new > 0.f){
+  /*if (p->I_flag == 1 && p->rho_new > 0.f){
     p->rho_new /= p->sum_wij_rho_new;
 
     float rho_combined = 0.f;
@@ -742,6 +746,15 @@ __attribute__((always_inline)) INLINE static void hydro_end_gradient(
 
     rho_combined = alpha_rho_sph*p->rho + alpha_rho_new*p->rho_new;
 
+    p->rho = rho_combined;
+  }*/
+  if (p->I_flag == 1 && p->rho_new > 0.f){
+    //p->rho_new /= p->sum_wij_rho_new;
+    //p->rho = p->rho_new;
+
+    p->rho_new /= p->sum_wij_rho_new;
+    float rho_combined = 0.f;
+    rho_combined = exp(-p->I*p->I)*p->rho + (1 - exp(-p->I*p->I))*p->rho_new;
     p->rho = rho_combined;
   }
 }

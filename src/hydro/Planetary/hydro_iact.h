@@ -313,16 +313,24 @@ __attribute__((always_inline)) INLINE static void runner_iact_gradient(
 
   /* If particle is boundary particle compute kernel averages */
   if (pi->I_flag == 1){
-    if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
+    /*if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
       pi->sum_wij_rho_new += wi;
       pi->rho_new += pj->rho * wi;
+    }*/
+    if (pi->mat_id == pj->mat_id){
+      pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
+      pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
     }
   }
 
   if (pj->I_flag == 1){
-    if (pi->I_flag == 0 && pj->mat_id == pi->mat_id){
+    /*if (pi->I_flag == 0 && pj->mat_id == pi->mat_id){
       pj->sum_wij_rho_new += wj;
       pj->rho_new += pi->rho * wj;
+    }*/
+    if (pj->mat_id == pi->mat_id){
+      pj->sum_wij_rho_new += wj * exp(-pi->I*pi->I);
+      pj->rho_new += pi->rho * wj * exp(-pi->I*pi->I);
     }
   }
 
@@ -360,9 +368,13 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_gradient(
 
   // If particle is boundary particle compute kernel averages
   if (pi->I_flag == 1){
-    if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
+    /*if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
       pi->sum_wij_rho_new += wi;
       pi->rho_new += pj->rho * wi;
+    }*/
+    if (pi->mat_id == pj->mat_id){
+      pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
+      pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
     }
   }
   
