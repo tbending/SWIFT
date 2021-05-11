@@ -142,33 +142,6 @@ struct part {
   /*! Imbalance statistic*/
   float I;
 
-  /*! Number of neighbours*/ // error with imbalance.N_neig
-  float N_neig_1;
-
-  /*! Maximum neighbour distance*/
-  float rij_max_1;
-
-  /*! Sum of r_ij (used to compute imbalance statistic)*/
-  float sum_rij_1[3];
-
-  /*! Imbalance statistic*/
-  float I_1;
-
-  /*! Number of neighbours*/ // error with imbalance.N_neig
-  float N_neig_2;
-
-  /*! Maximum neighbour distance*/
-  float rij_max_2;
-
-  /*! Sum of r_ij (used to compute imbalance statistic)*/
-  float sum_rij_2[3];
-
-  /*! Imbalance statistic*/
-  float I_2;
-
-  /*! Imbalance flag */
-  int I_flag;
-
   /*! New density computation*/
   float rho_new;
 
@@ -203,37 +176,6 @@ struct part {
       float rot_v[3];
 
     } density;
-
-    /**
-     * @brief Structure for the variables only used for the imbalance statistic
-     * 
-     *
-     */
-    struct {
-
-      /*! Number of neighbours*/
-      float N_neig;
-
-  		/*! Maximum neighbour distance*/
-  		float rij_max;
-
-  		/*! Imbalance statistic*/
-  		float I;
-
-  		/*! Imbalance flag */
-  		int I_flag;
-
-  		/*! Sum of r_ij (used to compute imbalance statistic)*/
-  		float sum_rij[3];
-
-  		/*! New density computation*/
-  		float rho_new;
-
-      /*! Sum of W_ij for rho_new */
-      float sum_wij_rho_new;
-
-    } imbalance;
-
     /**
      * @brief Structure for the variables only used in the force loop over
      * neighbours.

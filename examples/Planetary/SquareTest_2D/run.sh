@@ -8,7 +8,7 @@ then
 fi
 
 # Run SWIFT
-../../swift --hydro --threads=4 square.yml 2>&1 | tee output.log
+../../swift_c7_2d --hydro --threads=8 square.yml 2>&1 | tee output.log
 
 # Plot the solution
 python3 ../../HydroTests/SquareTest_2D/plotSolution.py 40

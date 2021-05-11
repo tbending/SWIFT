@@ -47,6 +47,7 @@
 #include "kernel_hydro.h"
 #include "minmax.h"
 #include "utilities.h"
+#include "math.h"
 
 /*
  * Note: Define PLANETARY_SPH_NO_BALSARA to disable the Balsara (1995) switch
@@ -483,35 +484,13 @@ __attribute__((always_inline)) INLINE static void hydro_init_part(
   p->density.rot_v[1] = 0.f;
   p->density.rot_v[2] = 0.f;
 
-  p->imbalance.N_neig = 0.f;
-  p->imbalance.rij_max = 0.f;
-  p->imbalance.I = 0.f;
-  p->imbalance.I_flag = 0;
-  p->imbalance.sum_rij[0] = 0.f;
-  p->imbalance.sum_rij[1] = 0.f;
-  p->imbalance.sum_rij[2] = 0.f;
-
   p->N_neig = 0.f;
   p->rij_max = 0.f;
   p->sum_rij[0] = 0.f;
   p->sum_rij[1] = 0.f;
   p->sum_rij[2] = 0.f;
   p->I = 0.f;
-  p->I_flag = 0;
-
-  p->N_neig_1 = 0.f;
-  p->rij_max_1 = 0.f;
-  p->sum_rij_1[0] = 0.f;
-  p->sum_rij_1[1] = 0.f;
-  p->sum_rij_1[2] = 0.f;
-  p->I_1 = 0.f;
-
-  p->N_neig_2 = 0.f;
-  p->rij_max_2 = 0.f;
-  p->sum_rij_2[0] = 0.f;
-  p->sum_rij_2[1] = 0.f;
-  p->sum_rij_2[2] = 0.f;
-  p->I_2 = 0.f;
+  
 }
 
 /**
@@ -559,12 +538,10 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
   /* Finish calculation of the (physical) velocity divergence */
   p->density.div_v *= h_inv_dim_plus_one * a_inv2 * rho_inv;
 
-  /* Determine Imbalance flag*/
-  //p->imbalance.N_neig += 1.f;
+  /* Determine Imbalance statistic*/
 	const float N_neig_min = 3.f; //arbitrary choice? remember N_neig is neigbours from same material
-  //const float I_low = 0.7f;
-
   p->N_neig += 1.f; // self contribution to number of neighbours
+
   if (p->N_neig > N_neig_min && p->rij_max > 0.f){
     float sum_rij_norm = 0.f;
     sum_rij_norm += p->sum_rij[0]*p->sum_rij[0];
@@ -574,36 +551,6 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
     p->I /= sqrtf(p->N_neig - 1.f);
     p->I /= p->rij_max;
   }
-
-  // new imbalance
-  p->N_neig_1 += 1.f;
-  if (p->N_neig_1 > N_neig_min && p->rij_max_1 > 0.f){
-    float sum_rij_norm = 0.f;
-    sum_rij_norm += p->sum_rij_1[0]*p->sum_rij_1[0];
-    sum_rij_norm += p->sum_rij_1[1]*p->sum_rij_1[1];
-    sum_rij_norm += p->sum_rij_1[2]*p->sum_rij_1[2];
-    p->I_1 = sqrtf(sum_rij_norm);
-    p->I_1 /= sqrtf(p->N_neig_1 - 1.f);
-    p->I_1 /= p->rij_max_1;
-  }
-
-  if (p->N_neig_2 > N_neig_min && p->rij_max_2 > 0.f){
-    float sum_rij_norm = 0.f;
-    sum_rij_norm += p->sum_rij_2[0]*p->sum_rij_2[0];
-    sum_rij_norm += p->sum_rij_2[1]*p->sum_rij_2[1];
-    sum_rij_norm += p->sum_rij_2[2]*p->sum_rij_2[2];
-    p->I_2 = sqrtf(sum_rij_norm);
-    p->I_2 /= sqrtf(p->N_neig_2 - 1.f);
-    p->I_2 /= p->rij_max_2;
-  }
-
-  p->I = p->I_1;
-  p->I_flag = 1;
-  
-  /*p->I = max(p->I_1, 0.1f);
-  if (p->I >= 0.1f){
-    p->I_flag = 0;*/
-
   
 
     /*if (p->id == 130483 || p->id == 129310){
@@ -689,9 +636,6 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_gradient(
     struct part *restrict p, struct xpart *restrict xp,
     const struct cosmology *cosmo, const struct hydro_props *hydro_props) {
 
-  p->imbalance.rho_new = 0.f;
-  p->imbalance.sum_wij_rho_new = 0.f;
-
   p->rho_new = 0.f;
   p->sum_wij_rho_new = 0.f;
   
@@ -724,38 +668,18 @@ __attribute__((always_inline)) INLINE static void hydro_reset_gradient(
  */
 __attribute__((always_inline)) INLINE static void hydro_end_gradient(
     struct part *p) {
+  
+  
+  if (p->I > 0.f){
+  /* Add self contribution to rho_new*/
+  p->sum_wij_rho_new += kernel_root * exp(-p->I*p->I);
+  p->rho_new += p->rho * kernel_root * exp(-p->I*p->I);
+  p->rho_new /= p->sum_wij_rho_new;
 
-  /*if (p->I_flag == 1 && p->rho_new > 0.f){
-    p->rho_new /= p->sum_wij_rho_new;
-
-    float rho_combined = 0.f;
-    float alpha_rho_sph = 0.f;
-    float alpha_rho_new = 0.f;
-
-    const float I_low = 0.7f;
-    const float I_high = 0.8f;
-    
-		if (p->I < I_low){
-			alpha_rho_new = 0.f;
-    } else if (p->I > I_high) {
-      alpha_rho_new = 1.f;
-    } else {
-			alpha_rho_new = (p->I - I_low)/(I_high - I_low);
-    }
-    alpha_rho_sph = 1.f - alpha_rho_new;
-
-    rho_combined = alpha_rho_sph*p->rho + alpha_rho_new*p->rho_new;
-
-    p->rho = rho_combined;
-  }*/
-  if (p->I_flag == 1 && p->rho_new > 0.f){
-    //p->rho_new /= p->sum_wij_rho_new;
-    //p->rho = p->rho_new;
-
-    p->rho_new /= p->sum_wij_rho_new;
-    float rho_combined = 0.f;
-    rho_combined = exp(-p->I*p->I)*p->rho + (1 - exp(-p->I*p->I))*p->rho_new;
-    p->rho = rho_combined;
+  /* Compute weighted sum */
+  float rho_combined = 0.f;
+  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*p->rho_new;
+  p->rho = rho_combined;
   }
 }
 

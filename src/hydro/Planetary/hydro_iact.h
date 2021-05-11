@@ -37,6 +37,7 @@
 #include "const.h"
 #include "hydro_parameters.h"
 #include "minmax.h"
+#include "math.h"
 
 /**
  * @brief Density interaction between two particles.
@@ -156,34 +157,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   //pj->imbalance.N_neig += 1.f;
   //pj->imbalance.rij_max = max(pj->imbalance.rij_max, r);
  
-  // new imbalance
-  if (pi->mat_id == pj->mat_id){
-  pi->N_neig_1 += 1.f;
-  pi->rij_max_1 = max(pi->rij_max_1, r);
-  pi->sum_rij_1[0] += (pj->x[0] - pi->x[0]);
-  pi->sum_rij_1[1] += (pj->x[1] - pi->x[1]);
-  pi->sum_rij_1[2] += (pj->x[2] - pi->x[2]);
-
-  pj->N_neig_1 += 1.f;
-  pj->rij_max_1 = max(pj->rij_max_1, r);
-  pj->sum_rij_1[0] += (pi->x[0] - pj->x[0]);
-  pj->sum_rij_1[1] += (pi->x[1] - pj->x[1]);
-  pj->sum_rij_1[2] += (pi->x[2] - pj->x[2]);
-  }
-
-  if (pi->mat_id != pj->mat_id){
-  pi->N_neig_2 += 1.f;
-  pi->rij_max_2 = max(pi->rij_max_2, r);
-  pi->sum_rij_2[0] += (pj->x[0] - pi->x[0]);
-  pi->sum_rij_2[1] += (pj->x[1] - pi->x[1]);
-  pi->sum_rij_2[2] += (pj->x[2] - pi->x[2]);
-
-  pj->N_neig_2 += 1.f;
-  pj->rij_max_2 = max(pj->rij_max_2, r);
-  pj->sum_rij_2[0] += (pi->x[0] - pj->x[0]);
-  pj->sum_rij_2[1] += (pi->x[1] - pj->x[1]);
-  pj->sum_rij_2[2] += (pi->x[2] - pj->x[2]);
-  }
 }
 
 /**
@@ -259,21 +232,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->sum_rij[2] += (pj->x[2] - pi->x[2]);
   }
 
-  //new imbalance
-  if (pi->mat_id == pj->mat_id){
-  pi->N_neig_1 += 1.f; // not error here?
-  pi->rij_max_1 = max(pi->rij_max_1, r);
-  pi->sum_rij_1[0] += (pj->x[0] - pi->x[0]);
-  pi->sum_rij_1[1] += (pj->x[1] - pi->x[1]);
-  pi->sum_rij_1[2] += (pj->x[2] - pi->x[2]);
-  }
-  if (pi->mat_id != pj->mat_id){
-  pi->N_neig_2 += 1.f; // not error here?
-  pi->rij_max_2 = max(pi->rij_max_2, r);
-  pi->sum_rij_2[0] += (pj->x[0] - pi->x[0]);
-  pi->sum_rij_2[1] += (pj->x[1] - pi->x[1]);
-  pi->sum_rij_2[2] += (pj->x[2] - pi->x[2]);
-  }
 }
 
 /**
@@ -311,29 +269,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_gradient(
   const float uj = r * hj_inv;
   kernel_deval(uj, &wj, &wj_dx);
 
-  /* If particle is boundary particle compute kernel averages */
-  if (pi->I_flag == 1){
-    /*if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
-      pi->sum_wij_rho_new += wi;
-      pi->rho_new += pj->rho * wi;
-    }*/
-    if (pi->mat_id == pj->mat_id){
-      pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
-      pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
-    }
+  /* Compute kernel averages */
+  
+  if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+    pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
+    pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
   }
-
-  if (pj->I_flag == 1){
-    /*if (pi->I_flag == 0 && pj->mat_id == pi->mat_id){
-      pj->sum_wij_rho_new += wj;
-      pj->rho_new += pi->rho * wj;
-    }*/
-    if (pj->mat_id == pi->mat_id){
-      pj->sum_wij_rho_new += wj * exp(-pi->I*pi->I);
-      pj->rho_new += pi->rho * wj * exp(-pi->I*pi->I);
-    }
+  
+  if (pj->mat_id == pi->mat_id && pj->I > 0.f){
+    pj->sum_wij_rho_new += wj * exp(-pi->I*pi->I);
+    pj->rho_new += pi->rho * wj * exp(-pi->I*pi->I);
   }
-
 }
 
 /**
@@ -366,18 +312,11 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_gradient(
   const float ui = r * h_inv;
   kernel_deval(ui, &wi, &wi_dx);
 
-  // If particle is boundary particle compute kernel averages
-  if (pi->I_flag == 1){
-    /*if (pj->I_flag == 0 && pi->mat_id == pj->mat_id){
-      pi->sum_wij_rho_new += wi;
-      pi->rho_new += pj->rho * wi;
-    }*/
-    if (pi->mat_id == pj->mat_id){
-      pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
-      pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
-    }
+  // Compute kernel averages
+  if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+    pi->sum_wij_rho_new += wi * exp(-pj->I*pj->I);
+    pi->rho_new += pj->rho * wi * exp(-pj->I*pj->I);
   }
-  
 }
 
 /**
