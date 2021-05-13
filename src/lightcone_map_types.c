@@ -38,6 +38,22 @@
 #endif
 
 
+static double angular_smoothing_scale(const double *pos, const double hsml) {
+  
+  /* Compute distance to particle */
+  double dist = 0;
+  for(int i=0; i<3; i+=1)
+    dist += pos[i]*pos[i];
+  dist = sqrt(dist);
+  
+  /* Avoid trig call for small angles (accurate to about 0.3%) */
+  if(dist > 10.0*hsml)
+    return hsml/dist;
+  else
+    return atan(hsml/dist);
+}
+
+
 void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
                               const struct gpart *gp, const double a_cross,
                               const double x_cross[3]) {
@@ -49,25 +65,26 @@ void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
   const struct spart *sparts = s->sparts;
   const struct bpart *bparts = s->bparts;
 
-  /* Angular smoothing radius for this particle */
-  const double radius = 0.0;
-
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
+    const double radius = angular_smoothing_scale(x_cross, p->h);
     lightcone_map_buffer_update(map, x_cross, radius, p->mass);
   } break;
   case swift_type_stars: {
     const struct spart *sp = &sparts[-gp->id_or_neg_offset];
+    const double radius = 0.0;
     lightcone_map_buffer_update(map, x_cross, radius, sp->mass);
   } break;
   case swift_type_black_hole: {      
     const struct bpart *bp = &bparts[-gp->id_or_neg_offset];
+    const double radius = 0.0;
     lightcone_map_buffer_update(map, x_cross, radius, bp->mass);
   } break;
   case swift_type_dark_matter:
   case swift_type_dark_matter_background:
   case swift_type_neutrino: {
+    const double radius = 0.0;
     lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
   } break;
   default:
@@ -85,12 +102,10 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
   const struct space *s = e->s;
   const struct part *parts = s->parts;
 
-  /* Angular smoothing radius for this particle */
-  const double radius = 0.0;
-
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
+    const double radius = angular_smoothing_scale(x_cross, p->h);
     lightcone_map_buffer_update(map, x_cross, radius, p->mass);
   } break;
   default:
@@ -103,12 +118,10 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
 void lightcone_map_neutrino_mass(struct lightcone_map *map, const struct engine *e,
                                  const struct gpart *gp, const double a_cross,
                                  const double x_cross[3]) {
-
-  /* Angular smoothing radius for this particle */
-  const double radius = 0.0;
   
   switch (gp->type) {
   case swift_type_neutrino: {
+    const double radius = 0.0;
     lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
   } break;
   default:
