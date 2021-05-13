@@ -189,6 +189,26 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
 
 
 /**
+ * @brief Compute healpix pixel index from a vector
+ *
+ * @param nside Healpix nside parameter
+ * @param pos The vector position of the pixel
+ */
+static size_t pixel_index(int nside, double *pos) {
+
+#ifdef HAVE_CHEALPIX
+  long ipring;
+  vec2pix_ring(nside, pos, &ipring);
+  size_t pixel = (size_t) ipring;
+#else
+  error("Need Healpix C API to make lightcone maps");
+  size_t pixel = 0;
+#endif  
+  return pixel;
+}
+
+
+/**
  * @brief Apply buffered updates to the healpix map
  *
  * @param map the #lightcone_map structure
@@ -215,7 +235,8 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      int dest = contr[i].pixel / map->pix_per_rank;
+      size_t pixel = pixel_index(map->nside, contr[i].pos);
+      int dest = pixel / map->pix_per_rank;
       if(dest >= comm_size) dest=comm_size-1;
       send_count[dest] += 1;
     }
@@ -248,7 +269,8 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      int dest = contr[i].pixel / map->pix_per_rank;
+      size_t pixel = pixel_index(map->nside, contr[i].pos);
+      int dest = pixel / map->pix_per_rank;
       if(dest >= comm_size) dest=comm_size-1;
 
       /* Copy entry to the send buffer */
@@ -282,8 +304,9 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   /* Apply received updates to the healpix map */
   const size_t pixel_offset = map->pix_per_rank * comm_rank;
   for(size_t i=0; i<total_nr_recv; i+=1) {
-    const size_t local_pixel = recvbuf[i].pixel - pixel_offset;
-    if(recvbuf[i].pixel < pixel_offset || local_pixel >= map->local_nr_pix)
+    size_t global_pixel = pixel_index(map->nside, recvbuf[i].pos);
+    const size_t local_pixel = global_pixel - pixel_offset;
+    if(global_pixel < pixel_offset || local_pixel >= map->local_nr_pix)
       error("pixel index out of range");
     map->data[local_pixel] += recvbuf[i].value;
   }
@@ -304,7 +327,7 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      const size_t pixel = contr[i].pixel;
+      const size_t pixel = pixel_index(map->nside, contr[i].pos);
       map->data[pixel] += contr[i].value;
     }
   } while(block);

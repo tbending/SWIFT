@@ -38,12 +38,14 @@
  */
 struct lightcone_map_contribution {
 
-  /*! Healpix pixel identifier */
-  size_t pixel;
+  /*! Vector location */
+  double pos[3];
   
+  /*! Smoothing radius */
+  double radius;
+
   /*! Amount to contribute to the pixel */
   double value;
-
 };
 
 
@@ -94,10 +96,14 @@ struct lightcone_map {
  *
  */
 __attribute__((always_inline)) INLINE static void lightcone_map_buffer_update(struct lightcone_map *map,
-                                                                              const size_t pixel,
+                                                                              const double *pos,
+                                                                              const double radius,
                                                                               const double value) {
   struct lightcone_map_contribution contr;
-  contr.pixel = pixel;
+  contr.pos[0] = pos[0];
+  contr.pos[1] = pos[1];
+  contr.pos[2] = pos[2];
+  contr.radius = radius;
   contr.value = value;
   particle_buffer_append(&map->buffer, &contr);
 }
