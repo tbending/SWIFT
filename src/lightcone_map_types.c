@@ -32,11 +32,6 @@
 /* This object's header */
 #include "lightcone_map_types.h"
 
-/* Healpix C API */
-#ifdef HAVE_CHEALPIX
-#include <chealpix.h>
-#endif
-
 
 static double angular_smoothing_scale(const double *pos, const double hsml) {
   
