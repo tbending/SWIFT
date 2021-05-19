@@ -29,6 +29,7 @@
 #endif
 
 /* Local headers */
+#include "healpix_smoothing.h"
 #include "particle_buffer.h"
 #include "parser.h"
 #include "units.h"
@@ -46,6 +47,7 @@ struct lightcone_map_contribution {
 
   /*! Amount to contribute to the pixel */
   double value;
+
 };
 
 
@@ -56,6 +58,9 @@ struct lightcone_map {
 
   /*! Healpix nside parameter */
   int nside;
+
+  /*! Pointer to struct with C++ Healpix_base class instance  */
+  struct healpix_smoothing_info *smoothing_info;
 
   /*! Buffer to store contributions to the healpix map */
   struct particle_buffer buffer;

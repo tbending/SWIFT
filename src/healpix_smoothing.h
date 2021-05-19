@@ -1,14 +1,18 @@
-//extern "C" {
 
-  void healpix_smoothing_init(int nside);
+struct healpix_smoothing_info;
 
-  size_t healpix_smoothing_get_npix(void);
+struct healpix_smoothing_info *healpix_smoothing_init(int nside);
 
-  size_t healpix_smoothing_pixel_index(double *pos);
+void healpix_smoothing_clean(struct healpix_smoothing_info *smooth_info);
 
-  double healpix_smoothing_get_max_pixrad(void);
+size_t healpix_smoothing_get_npix(struct healpix_smoothing_info *smooth_info);
 
-  void healpix_smoothing_add_to_map(double *pos, double radius,
-                                    double value, size_t local_pix_offset,
-                                    size_t local_nr_pix, double *map_data);
-//}
+size_t healpix_smoothing_pixel_index(struct healpix_smoothing_info *smooth_info, double *pos);
+
+double healpix_smoothing_get_max_pixrad(struct healpix_smoothing_info *smooth_info);
+
+void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
+                                  double *pos, double radius,
+                                  double value, size_t local_pix_offset,
+                                  size_t local_nr_pix, double *map_data);
+
