@@ -191,19 +191,6 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
 
 
 /**
- * @brief Compute healpix pixel index from a vector
- *
- * @param nside Healpix nside parameter
- * @param pos The vector position of the pixel
- */
-static size_t pixel_index(struct lightcone_map *map, double *pos) {
-
-  return healpix_smoothing_pixel_index(map->smoothing_info, pos);
-
-}
-
-
-/**
  * @brief Apply buffered updates to the healpix map
  *
  * @param map the #lightcone_map structure
@@ -230,7 +217,7 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      size_t pixel = pixel_index(map, contr[i].pos);
+      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
       int dest = pixel / map->pix_per_rank;
       if(dest >= comm_size) dest=comm_size-1;
       send_count[dest] += 1;
@@ -264,7 +251,7 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      size_t pixel = pixel_index(map, contr[i].pos);
+      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
       int dest = pixel / map->pix_per_rank;
       if(dest >= comm_size) dest=comm_size-1;
 
@@ -296,14 +283,17 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   exchange_structs(send_count, sendbuf, recv_count, recvbuf,
                    sizeof(struct lightcone_map_contribution));
 
-  /* Apply received updates to the healpix map */
+  /* Apply received updates to the healpix map
+
+     TODO: parallelise with threadpool + atomic updates?
+           use small angle approximation?
+  */
   const size_t pixel_offset = map->pix_per_rank * comm_rank;
   for(size_t i=0; i<total_nr_recv; i+=1) {
-    size_t global_pixel = pixel_index(map, recvbuf[i].pos);
-    const size_t local_pixel = global_pixel - pixel_offset;
-    if(global_pixel < pixel_offset || local_pixel >= map->local_nr_pix)
-      error("pixel index out of range");
-    map->data[local_pixel] += recvbuf[i].value;
+    healpix_smoothing_add_to_map(map->smoothing_info, recvbuf[i].pos,
+                                 recvbuf[i].radius, recvbuf[i].value,
+                                 pixel_offset, map->local_nr_pix,
+                                 map->data);
   }
 
   /* Tidy up */
@@ -322,8 +312,9 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
     for(size_t i=0; i<num_elements; i+=1) {
-      const size_t pixel = pixel_index(map, contr[i].pos);
-      map->data[pixel] += contr[i].value;
+      healpix_smoothing_add_to_map(map->smoothing_info, contr[i].pos,
+                                   contr[i].radius, contr[i].value,
+                                   0, map->local_nr_pix, map->data);
     }
   } while(block);
   particle_buffer_empty(&map->buffer);
