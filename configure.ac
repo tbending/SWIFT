@@ -745,10 +745,6 @@ AC_SUBST([GSL_LIBS])
 AC_SUBST([GSL_INCS])
 AM_CONDITIONAL([HAVEGSL],[test -n "$GSL_LIBS"])
 
-# Check for HEALPix C API. AC_SUBSTs CHEALPIX_LIBS and CHEALPIX_CFLAGS and #defines HAVE_CHEALPIX
-GV_FIND_LIBRARY([chealpix], [CHEALPIX], [chealpix], [chealpix], [ang2vec])
-have_chealpix=$USE_CHEALPIX
-
 # Check for HEALPix C++ API
 have_healpix_cxx="no"
 AC_ARG_WITH([healpix_cxx],
@@ -2631,7 +2627,6 @@ AC_MSG_RESULT([
    METIS/ParMETIS       : $have_metis / $have_parmetis
    FFTW3 enabled        : $have_fftw
    GSL enabled          : $have_gsl
-   HEALPix enabled      : $have_chealpix
    HEALPix C++ enabled  : $have_healpix_cxx
    libNUMA enabled      : $have_numa
    GRACKLE enabled      : $have_grackle

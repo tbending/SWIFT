@@ -36,11 +36,7 @@
 #include "memuse.h"
 #include "particle_buffer.h"
 #include "restart.h"
-
-/* Healpix C API header */
-#ifdef HAVE_CHEALPIX
-#include <chealpix.h>
-#endif
+#include "healpix_smoothing.h"
 
 /* HDF5 */
 #ifdef HAVE_HDF5
@@ -61,16 +57,14 @@ void lightcone_map_init(struct lightcone_map *map, const int nside,
   comm_size = 1;
 #endif
 
+  healpix_smoothing_init(nside);
+
   /* Initialise the data buffer for this map */
   particle_buffer_init(&map->buffer, sizeof(struct lightcone_map_contribution),
                        elements_per_block, "lightcone_map");
 
-  /* Determine number of pixels in the map */
-#ifdef HAVE_CHEALPIX
-  map->total_nr_pix = (size_t) nside2npix((long) nside);
-#else
-  error("Can't make healpix maps without healpix library!");
-#endif
+  /* Determine number of pixels in the map */  
+  map->total_nr_pix = healpix_smoothing_get_npix();
 
   /* Determine which pixels are stored on which rank:
      put pix_per_rank on each node with any extra assigned to
@@ -196,15 +190,8 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
  */
 static size_t pixel_index(int nside, double *pos) {
 
-#ifdef HAVE_CHEALPIX
-  long ipring;
-  vec2pix_ring(nside, pos, &ipring);
-  size_t pixel = (size_t) ipring;
-#else
-  error("Need Healpix C API to make lightcone maps");
-  size_t pixel = 0;
-#endif  
-  return pixel;
+  return healpix_smoothing_pixel_index(pos);
+
 }
 
 
