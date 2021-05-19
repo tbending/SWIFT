@@ -52,6 +52,7 @@ AM_CONFIG_HEADER(config.h)
 # Find and test the compiler.
 AX_CHECK_ENABLE_DEBUG
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_CC_C_O
 AC_OPENMP
 
@@ -744,9 +745,60 @@ AC_SUBST([GSL_LIBS])
 AC_SUBST([GSL_INCS])
 AM_CONDITIONAL([HAVEGSL],[test -n "$GSL_LIBS"])
 
-# Check for HEALPix. AC_SUBSTs CHEALPIX_LIBS and CHEALPIX_CFLAGS and #defines HAVE_CHEALPIX
+# Check for HEALPix C API. AC_SUBSTs CHEALPIX_LIBS and CHEALPIX_CFLAGS and #defines HAVE_CHEALPIX
 GV_FIND_LIBRARY([chealpix], [CHEALPIX], [chealpix], [chealpix], [ang2vec])
 have_chealpix=$USE_CHEALPIX
+
+# Check for HEALPix C++ API
+have_healpix_cxx="no"
+AC_ARG_WITH([healpix_cxx],
+    [AS_HELP_STRING([--with-healpix-cxx=PATH],
+       [root directory where HEALPix C++ library is installed @<:@yes/no@:>@]
+    )],
+    [with_healpix_cxx="$withval"],
+    [with_healpix_cxx="test"]
+)
+if test "x$with_healpix_cxx" != "xno"; then
+   if test "x$with_healpix_cxx" != "xyes" -a "x$with_healpix_cxx" != "xtest" -a "x$with_healpix_cxx" != "x"; then
+      HEALPIX_CXX_LIBS="-L$with_healpix_cxx/lib -lhealpix_cxx"
+      HEALPIX_CXX_INCS="-I$with_healpix_cxx/include"
+   else
+      HEALPIX_CXX_LIBS="-lhealpix_cxx"
+      HEALPIX_CXX_INCS=""
+   fi
+   if test "x$with_healpix_cxx" = "xtest"; then
+      AC_LANG_PUSH(C++)
+      tmp_ldflags=${LDFLAGS}
+      LDFLAGS="${LDFLAGS} ${HEALPIX_CXX_LIBS}"
+      have_healpix_cxx="yes"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
+         [[#include "healpix_cxx/healpix_base.h"]],
+         [Healpix_Base2 hb = Healpix_Base2(8, RING);])],
+         [AC_DEFINE(HAVE_HEALPIX_CXX,1,[Define if you have the Healpix C++ API])],[have_healpix_cxx="no"])
+      LDFLAGS=${tmp_ldflags}
+      AC_LANG_POP()
+   else
+      AC_LANG_PUSH(C++)
+      tmp_ldflags=${LDFLAGS}
+      LDFLAGS="${LDFLAGS} ${HEALPIX_CXX_LIBS}"
+      AC_LINK_IFELSE([AC_LANG_PROGRAM(
+         [[#include "healpix_cxx/healpix_base.h"]],
+         [Healpix_Base2 hb = Healpix_Base2(8, RING);])],
+         [AC_DEFINE(HAVE_HEALPIX_CXX,1,[Define if you have the Healpix C++ API])],
+         [AC_MSG_ERROR(something is wrong with the HEALPIX_CXX library!)])
+      LDFLAGS=${tmp_ldflags}
+      AC_LANG_POP()
+      have_healpix_cxx="yes"
+   fi
+   if test "$have_healpix_cxx" = "no"; then
+      HEALPIX_CXX_LIBS=""
+      HEALPIX_CXX_INCS=""
+   fi
+fi
+AC_SUBST([HEALPIX_CXX_LIBS])
+AC_SUBST([HEALPIX_CXX_INCS])
+AM_CONDITIONAL([HAVEHEALPIX_CXX],[test -n "$HEALPIX_CXX_LIBS"])
+
 
 # Check for pthreads.
 AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -2580,6 +2632,7 @@ AC_MSG_RESULT([
    FFTW3 enabled        : $have_fftw
    GSL enabled          : $have_gsl
    HEALPix enabled      : $have_chealpix
+   HEALPix C++ enabled  : $have_healpix_cxx
    libNUMA enabled      : $have_numa
    GRACKLE enabled      : $have_grackle
    Special allocators   : $have_special_allocator
