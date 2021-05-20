@@ -64,15 +64,17 @@ extern "C" {
   
     // Get a normalized direction vector for this particle
     vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
-    part_vec.Normalize();
 
     // Small particles get added to a single pixel
     if(radius < smooth_info->max_pixrad) {
       int64 pixel = smooth_info->healpix_base.vec2pix(part_vec);
       if((pixel >= local_pix_offset) && (pixel < local_pix_offset+local_nr_pix))
-        map_data[pixel-local_pix_offset] += value;
+        atomic_add_d(&map_data[pixel-local_pix_offset], value);
       return;
     }
+
+    // Need normalised position vector if particle spans multiple pixels
+    part_vec.Normalize();
 
     // Find all pixels with centres within the angular radius
     // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
@@ -85,7 +87,6 @@ extern "C" {
 
       // Get direction vector to centre of this pixel
       vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixel);
-      pixel_vec.Normalize();
 
       // Find angle between this pixel centre and the particle
       const double angle = acos(dotprod(pixel_vec, part_vec));
@@ -100,7 +101,6 @@ extern "C" {
     
       // Get direction vector to centre of this pixel
       vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixel);
-      pixel_vec.Normalize();
 
       // Find angle between this pixel centre and the particle
       const double angle = acos(dotprod(pixel_vec, part_vec));
