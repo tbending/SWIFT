@@ -652,7 +652,17 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_gradient(
   p->sum_wij_exp_P = 0.f;
   p->sum_wij_exp_rho = 0.f;
   p->sum_wij_exp = 0.f;
-  
+
+  /* Compute the pressure */
+  const float pressure =
+      gas_pressure_from_internal_energy(p->rho, p->u, p->mat_id);
+      
+  /* Compute the temperature */
+  const float temperature =
+      gas_temperature_from_internal_energy(p->rho, p->u, p->mat_id);
+
+  p->P = pressure;
+  p->T = temperature;
 }
 
 /**
@@ -691,11 +701,18 @@ __attribute__((always_inline)) INLINE static void hydro_end_gradient(
   /* Add self contribution to rho_new*/
   p->sum_wij_exp += kernel_root * exp(-p->I*p->I);
   p->sum_wij_exp_rho += p->rho * kernel_root * exp(-p->I*p->I);
+  p->sum_wij_exp_P += p->P * kernel_root * exp(-p->I*p->I);
+  p->sum_wij_exp_T += p->T * kernel_root * exp(-p->I*p->I);
   p->sum_wij_exp_rho /= p->sum_wij_exp;
+  p->sum_wij_exp_P /= p->sum_wij_exp;
+  p->sum_wij_exp_T /= p->sum_wij_exp;
 
   /* Compute weighted sum */
+  float new_density =
+      gas_density_from_pressure_and_temperature(p->sum_wij_exp_P, p->sum_wij_exp_T, p->mat_id);
+
   float rho_combined = 0.f;
-  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*p->sum_wij_exp_rho;
+  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*new_density;
   p->rho = rho_combined;
   }
 }

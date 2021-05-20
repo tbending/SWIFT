@@ -155,6 +155,11 @@ struct part {
 
   /* Initial internal energy (for Sod Shock test)*/
   //float u_0;
+  /* Pressure */
+  float P;
+
+  /* Temperature */
+  float T;
 
   /* Store density/force specific stuff. */
   union {

@@ -330,11 +330,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_gradient(
   if (pi->mat_id == pj->mat_id && pi->I > 0.f){
     pi->sum_wij_exp += wi * exp(-pj->I*pj->I);
     pi->sum_wij_exp_rho += pj->rho * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp_P += pj->P * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp_T += pj->T * wi * exp(-pj->I*pj->I);
   }
   
   if (pj->mat_id == pi->mat_id && pj->I > 0.f){
     pj->sum_wij_exp += wj * exp(-pi->I*pi->I);
     pj->sum_wij_exp_rho += pi->rho * wj * exp(-pi->I*pi->I);
+    pj->sum_wij_exp_P += pi->P * wj * exp(-pi->I*pi->I);
+    pj->sum_wij_exp_T += pi->T * wj * exp(-pi->I*pi->I);
   }
 }
 
@@ -372,6 +376,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_gradient(
   if (pi->mat_id == pj->mat_id && pi->I > 0.f){
     pi->sum_wij_exp += wi * exp(-pj->I*pj->I);
     pi->sum_wij_exp_rho += pj->rho * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp_P += pj->P * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp_T += pj->T * wi * exp(-pj->I*pj->I);
   }
 }
 

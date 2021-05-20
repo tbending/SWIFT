@@ -56,45 +56,47 @@ INLINE static int find_value_in_monot_incr_array(const float x,
     return index_low;
 }
 
-// probably not necessary
-//INLINE static float imbalance_statistic_q(const float N) {
+/**
+ * @brief Search for a value in a monotonically increasing array to find the
+ *      index such that table[i,j] = array[i*n_col + j] < value < 
+ *      table[i + 1, j] = array[(i + 1)*n_col + j]
+ *
+ * @param x The value to find
+ * @param array The array to search
+ * @param n_row The number of rows of the table
+ * @param n_col The number of columns of the table 
+ * @param j The column index to perform the search 
+ *
+ * Return -1 and n for x below and above the array edge values respectively.
+ */
+INLINE static int vertical_find_value_in_monot_incr_array(const float x,
+                                                 const float *array,
+                                                 const int n_row,
+                                                 const int n_col,
+                                                 const int j
+                                                 ) {
+    
+                                
+  int i_mid, i_low = 0, i_high = n_row - 1;  // nrow - 1 or n_row?
 
-  // montecarlo N = 1M, N_neig 5 to 50
-  /* quantile 99 */
-  /*const float a = -1.53377904f;
-  const float b = 0.23923416f;
-  const float c = 1.5047929f;*/
+  // Until table[i_low,j] < x < table[i_high=i_low + 1, j]
+  while (i_high - i_low > 1) {
+    i_mid = (i_high + i_low) / 2;  // Middle index
 
-  /* quantile 95 */ /*
-  const float a = -0.31934966f;
-  const float b = 0.31051137f;
-  const float c = 1.24962448f;*/
+    // Replace the low or high i with the middle
+    if (array[i_mid*n_col + j] <= x)
+      i_low = i_mid;
+    else
+      i_high = i_mid;
+  }
 
-  /* quantile 90 */
-  /*const float a = 0.04169535f;
-  const float b = 0.33453515f;
-  const float c = 1.1176431f;*/
-
-  /* quantile 80 */
-  /*const float a = 0.3720982f;
-  const float b = 0.32889313f;
-  const float c = 0.96356348f;*/
-
-  /* quantile 70 */
-  /*const float a = 0.69223044f;
-  const float b = 0.28108532f;
-  const float c = 0.85737999f;
-
-
-  const float N_inv = 1.f / N;
-  float q99 = 0.f;
-
-  q99 = a*N_inv*N_inv + b*N_inv + c;
-
-  return q99;
-
-}*/
-
-
+  // Set index with the found i_low or an error value if outside the array
+  if (x < array[j])
+    return -1;
+  else if (array[(n_row - 1)*n_col + j] <= x)
+    return n_row;
+  else
+    return i_low;
+}
 
 #endif /* SWIFT_UTILITIES_H */
