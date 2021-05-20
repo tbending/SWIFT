@@ -143,10 +143,18 @@ struct part {
   float I;
 
   /*! New density computation*/
-  float rho_new;
+  float sum_wij_exp_rho;
+  float sum_wij_exp_P;
+  float sum_wij_exp_T;
 
   /*! Sum of W_ij for rho_new */
-  float sum_wij_rho_new;
+  float sum_wij_exp;
+
+  /* sum w_ij*/
+  float sum_wij;
+
+  /* Initial internal energy (for Sod Shock test)*/
+  //float u_0;
 
   /* Store density/force specific stuff. */
   union {

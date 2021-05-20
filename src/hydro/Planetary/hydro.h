@@ -490,6 +490,12 @@ __attribute__((always_inline)) INLINE static void hydro_init_part(
   p->sum_rij[1] = 0.f;
   p->sum_rij[2] = 0.f;
   p->I = 0.f;
+  p->sum_wij = 0.f;
+  
+
+  //if (p->u_0 == 0.f){
+  //p->u_0 = p->u;
+  //}
   
 }
 
@@ -539,17 +545,23 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
   p->density.div_v *= h_inv_dim_plus_one * a_inv2 * rho_inv;
 
   /* Determine Imbalance statistic*/
-	const float N_neig_min = 3.f; //arbitrary choice? remember N_neig is neigbours from same material
+	const float N_neig_min = 2.f; //arbitrary choice? remember N_neig is neigbours from same material
   p->N_neig += 1.f; // self contribution to number of neighbours
-
+  p->sum_wij += kernel_root;
   if (p->N_neig > N_neig_min && p->rij_max > 0.f){
     float sum_rij_norm = 0.f;
     sum_rij_norm += p->sum_rij[0]*p->sum_rij[0];
     sum_rij_norm += p->sum_rij[1]*p->sum_rij[1];
     sum_rij_norm += p->sum_rij[2]*p->sum_rij[2];
     p->I = sqrtf(sum_rij_norm);
-    p->I /= sqrtf(p->N_neig - 1.f);
-    p->I /= p->rij_max;
+    //p->I /= sqrtf(p->N_neig - 1.f);
+    
+    //p->I /= p->rij_max;
+    p->I *= sqrtf(48)*0.5*h_inv;
+    p->I /= p->N_neig;
+    //p->I /= p->sum_wij;
+
+    //p->I *= 4.f;
   }
   
 
@@ -636,8 +648,10 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_gradient(
     struct part *restrict p, struct xpart *restrict xp,
     const struct cosmology *cosmo, const struct hydro_props *hydro_props) {
 
-  p->rho_new = 0.f;
-  p->sum_wij_rho_new = 0.f;
+  p->sum_wij_exp_T = 0.f;
+  p->sum_wij_exp_P = 0.f;
+  p->sum_wij_exp_rho = 0.f;
+  p->sum_wij_exp = 0.f;
   
 }
 
@@ -668,17 +682,20 @@ __attribute__((always_inline)) INLINE static void hydro_reset_gradient(
  */
 __attribute__((always_inline)) INLINE static void hydro_end_gradient(
     struct part *p) {
-  
-  
+
+  //if (p->id == 586885){
+  //  printf("u_0: %.7g\n", p->u_0);
+  //}
+
   if (p->I > 0.f){
   /* Add self contribution to rho_new*/
-  p->sum_wij_rho_new += kernel_root * exp(-p->I*p->I);
-  p->rho_new += p->rho * kernel_root * exp(-p->I*p->I);
-  p->rho_new /= p->sum_wij_rho_new;
+  p->sum_wij_exp += kernel_root * exp(-p->I*p->I);
+  p->sum_wij_exp_rho += p->rho * kernel_root * exp(-p->I*p->I);
+  p->sum_wij_exp_rho /= p->sum_wij_exp;
 
   /* Compute weighted sum */
   float rho_combined = 0.f;
-  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*p->rho_new;
+  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*p->sum_wij_exp_rho;
   p->rho = rho_combined;
   }
 }
