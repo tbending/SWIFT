@@ -77,6 +77,9 @@ void lightcone_map_init(struct lightcone_map *map, const int nside,
     map->local_nr_pix = map->pix_per_rank;
   else
     map->local_nr_pix = map->total_nr_pix - (comm_size-1)*map->pix_per_rank;
+
+  /* Store offset from local array index to global healpix pixel index  */
+  map->local_pix_offset = map->pix_per_rank * comm_rank;
   
   /* Pixel data is initially not allocated */
   map->data = NULL;
@@ -191,11 +194,40 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
 
 
 /**
+ * @brief Mapper function for updating the healpix map
+ *
+ * @param map_data Pointer to an array of #lightcone_map_contribution
+ * @param num_elements Number of elements in map_data
+ * @param extra_data Pointer to the #lightcone_map struct
+ *
+ */
+void healpix_smoothing_mapper(void *map_data, int num_elements,
+                              void *extra_data) {
+  
+  /* Find the array of updates to apply */
+  const struct lightcone_map_contribution *contr = 
+    (struct lightcone_map_contribution *) map_data;
+
+  /* Get a pointer to the lightcone_map struct to update */
+  struct lightcone_map *map = (struct lightcone_map *) extra_data;
+
+  /* Apply the updates */
+  for(size_t i=0; i<num_elements; i+=1) {
+    healpix_smoothing_add_to_map(map->smoothing_info, contr[i].pos,
+                                 contr[i].radius, contr[i].value,
+                                 map->local_pix_offset, map->local_nr_pix,
+                                 map->data);
+  }
+}
+
+
+/**
  * @brief Apply buffered updates to the healpix map
  *
  * @param map the #lightcone_map structure
  */
 void lightcone_map_update_from_buffer(struct lightcone_map *map,
+                                      struct threadpool *tp,
                                       const int verbose) {
   
 #ifdef WITH_MPI
@@ -283,18 +315,10 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   exchange_structs(send_count, sendbuf, recv_count, recvbuf,
                    sizeof(struct lightcone_map_contribution));
 
-  /* Apply received updates to the healpix map
-
-     TODO: parallelise with threadpool + atomic updates?
-           use small angle approximation?
-  */
-  const size_t pixel_offset = map->pix_per_rank * comm_rank;
-  for(size_t i=0; i<total_nr_recv; i+=1) {
-    healpix_smoothing_add_to_map(map->smoothing_info, recvbuf[i].pos,
-                                 recvbuf[i].radius, recvbuf[i].value,
-                                 pixel_offset, map->local_nr_pix,
-                                 map->data);
-  }
+  /* Apply received updates to the healpix map */
+  threadpool_map(tp, healpix_smoothing_mapper, recvbuf, total_nr_recv,
+                 sizeof(struct lightcone_map_contribution), 
+                 threadpool_auto_chunk_size, map);
 
   /* Tidy up */
   free(send_count);
@@ -311,11 +335,9 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   size_t num_elements;
   do {
     particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
-    for(size_t i=0; i<num_elements; i+=1) {
-      healpix_smoothing_add_to_map(map->smoothing_info, contr[i].pos,
-                                   contr[i].radius, contr[i].value,
-                                   0, map->local_nr_pix, map->data);
-    }
+    threadpool_map(tp, healpix_smoothing_mapper, contr, num_elements,
+                   sizeof(struct lightcone_map_contribution), 
+                   threadpool_auto_chunk_size, map);
   } while(block);
   particle_buffer_empty(&map->buffer);
     

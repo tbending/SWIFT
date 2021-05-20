@@ -12,7 +12,7 @@ size_t healpix_smoothing_pixel_index(struct healpix_smoothing_info *smooth_info,
 double healpix_smoothing_get_max_pixrad(struct healpix_smoothing_info *smooth_info);
 
 void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
-                                  double *pos, double radius,
-                                  double value, size_t local_pix_offset,
-                                  size_t local_nr_pix, double *map_data);
+                                  const double *pos, const double radius,
+                                  const double value, const size_t local_pix_offset,
+                                  const size_t local_nr_pix, double *map_data);
 

@@ -32,6 +32,7 @@
 #include "healpix_smoothing.h"
 #include "particle_buffer.h"
 #include "parser.h"
+#include "threadpool.h"
 #include "units.h"
 
 /**
@@ -74,6 +75,9 @@ struct lightcone_map {
   /*! Number of pixels stored on this node */
   size_t local_nr_pix;
   
+  /*! Offset of the firts pixel stored on this rank */
+  size_t local_pix_offset;
+
   /*! Number of pixels per rank (last node has any extra) */
   size_t pix_per_rank;
 
@@ -129,7 +133,8 @@ void lightcone_map_allocate_pixels(struct lightcone_map *map, const int zero_pix
 
 void lightcone_map_free_pixels(struct lightcone_map *map);
 
-void lightcone_map_update_from_buffer(struct lightcone_map *map, const int verbose);
+void lightcone_map_update_from_buffer(struct lightcone_map *map, struct threadpool *tp,
+                                      const int verbose);
 
 #ifdef HAVE_HDF5
 void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const char *name,

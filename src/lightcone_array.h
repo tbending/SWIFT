@@ -29,6 +29,7 @@
 #include "parser.h"
 #include "part_type.h"
 #include "particle_buffer.h"
+#include "threadpool.h"
 #include "timeline.h"
 
 /* Avoid cyclic inclusions */
@@ -73,6 +74,7 @@ void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
 int lightcone_array_trigger_map_update(struct lightcone_array_props *props);
 
 void lightcone_array_flush(struct lightcone_array_props *props,
+                           struct threadpool *tp,
                            const struct cosmology *cosmo,
                            const struct unit_system *internal_units,
                            const struct unit_system *snapshot_units,

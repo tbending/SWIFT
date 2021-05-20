@@ -675,14 +675,15 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
  * @param shell_nr index of the shell to update
  *
  */
-void lightcone_flush_map_updates_for_shell(struct lightcone_props *props, int shell_nr) {
+void lightcone_flush_map_updates_for_shell(struct lightcone_props *props,
+                                           struct threadpool *tp, int shell_nr) {
 
   const int nr_maps   = props->nr_maps;
   if(props->shell[shell_nr].state == shell_current) {
     if(props->verbose && engine_rank==0)
       message("lightcone %d: applying lightcone map updates for shell %d", props->index, shell_nr);
     for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
-      lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), props->verbose);
+      lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), tp, props->verbose);
   }
 }
 
@@ -693,7 +694,8 @@ void lightcone_flush_map_updates_for_shell(struct lightcone_props *props, int sh
  * @param props the #lightcone_props structure.
  *
  */
-void lightcone_flush_map_updates(struct lightcone_props *props) {    
+void lightcone_flush_map_updates(struct lightcone_props *props,
+                                 struct threadpool *tp) {    
 
   ticks tic = getticks();
 
@@ -702,7 +704,7 @@ void lightcone_flush_map_updates(struct lightcone_props *props) {
 
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-    lightcone_flush_map_updates_for_shell(props, shell_nr);
+    lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
   }
 
   if (props->verbose && engine_rank==0)
@@ -722,6 +724,7 @@ void lightcone_flush_map_updates(struct lightcone_props *props) {
  *
  */
 void lightcone_dump_completed_shells(struct lightcone_props *props,
+                                     struct threadpool *tp,
                                      const struct cosmology *c,
                                      const struct unit_system *internal_units,
                                      const struct unit_system *snapshot_units,
@@ -764,7 +767,7 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         num_shells_written += 1;
 
         /* Apply any buffered updates for this shell, if we didn't already */
-        if(need_flush)lightcone_flush_map_updates_for_shell(props, shell_nr);
+        if(need_flush)lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
 
         /* Get the name of the file to write */
         char fname[FILENAME_BUFFER_SIZE];

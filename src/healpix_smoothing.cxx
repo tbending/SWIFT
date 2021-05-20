@@ -6,6 +6,7 @@
 #include "healpix_cxx/healpix_base.h"
 #include "healpix_cxx/datatypes.h"
 
+#include "atomic.h"
 
 // 2D Wendland C2 kernel (omitting normalisation)
 // TODO: use same kernel as Swift?
@@ -57,9 +58,9 @@ extern "C" {
   }
 
   void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
-                                    double *pos, double radius,
-                                    double value, size_t local_pix_offset,
-                                    size_t local_nr_pix, double *map_data) {
+                                    const double *pos, const double radius,
+                                    const double value, const size_t local_pix_offset,
+                                    const size_t local_nr_pix, double *map_data) {
   
     // Get a normalized direction vector for this particle
     vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
@@ -109,8 +110,7 @@ extern "C" {
 
       // Add contribution to the local part of the map
       if((pixel >= local_pix_offset) && (pixel < local_pix_offset+local_nr_pix))
-        map_data[pixel-local_pix_offset] += weight*value;
-      
+        atomic_add_d(&(map_data[pixel-local_pix_offset]), weight*value);
     }
   }
 
