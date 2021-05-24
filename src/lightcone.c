@@ -222,10 +222,6 @@ void lightcone_struct_dump(const struct lightcone_props *props, FILE *stream) {
   /* Don't write out particle buffers - must flush before dumping restart. */
   memset(tmp.buffer, 0, sizeof(struct particle_buffer)*swift_type_count);
 
-  /* Don't write out function pointers */
-  for(int i=0; i<props->nr_maps; i+=1)
-    tmp.map_type[i].update_map = NULL;
-
   /* Don't write array pointers */
   tmp.shell = NULL;
   tmp.map_type = NULL;
@@ -425,8 +421,10 @@ void lightcone_init(struct lightcone_props *props,
   char **map_names;
   parser_get_param_string_array(params, YML_NAME("map_names"), &props->nr_maps, &map_names);
   props->map_type = malloc(props->nr_maps*sizeof(struct lightcone_map_type));
-  for(int i=0; i<props->nr_maps; i+=1)
-    strncpy(props->map_type[i].name, map_names[i], PARSER_MAX_LINE_SIZE);
+  for(int i=0; i<props->nr_maps; i+=1) {
+    int len = snprintf(props->map_type[i].name, PARSER_MAX_LINE_SIZE, "%s", map_names[i]);
+    if(len >= PARSER_MAX_LINE_SIZE || len < 0) error("Map type name truncated or encoding error");
+  }
   parser_free_param_string_array(props->nr_maps, map_names);
 
   /* Read in the shell radii for this lightcone */
@@ -788,6 +786,12 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
 #endif
         hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
         if(file_id < 0)error("Unable to create file %s", fname);
+
+        /* Write the system of Units used in the spashot */
+        io_write_unit_system(file_id, snapshot_units, "Units");
+
+        /* Write the system of Units used internally */
+        io_write_unit_system(file_id, internal_units, "InternalCodeUnits");
 
         /* Write the lightcone maps for this shell */
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
