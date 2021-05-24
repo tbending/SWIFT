@@ -221,6 +221,89 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 }
 
 
+struct buffer_count_data {
+  size_t *count;
+  size_t *offset;
+  struct lightcone_map *map;
+  struct lightcone_map_contribution *data;
+};
+
+
+#ifdef WITH_MPI
+static void count_elements_to_send(void *map_data, int num_elements,
+                                   void *extra_data) {
+
+  /* Get MPI number of ranks */
+  int comm_size = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+  
+  /* Unpack extra data */
+  struct buffer_count_data *send_data = (struct buffer_count_data *) extra_data;
+  struct lightcone_map *map = send_data->map;
+
+  /* Array of pointers to buffer blocks to process on this call */
+  struct particle_buffer_block **blocks = (struct particle_buffer_block **) map_data;
+
+  /* Loop over blocks to process */
+  for(int block_nr=0; block_nr<num_elements; block_nr+=1) {
+
+    /* Data in this block is an array of lightcone_map_contribution */
+    struct lightcone_map_contribution *contr =
+      (struct lightcone_map_contribution *) blocks[block_nr]->data;
+    for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
+  
+      /* Determine which rank this contribution goes to */
+      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
+      int dest = pixel / map->pix_per_rank;
+      if(dest >= comm_size) dest=comm_size-1;
+      
+      /* Increment the count */
+      atomic_add(&(send_data->count[dest]), 1);
+    }
+  }
+}
+
+
+static void store_elements_to_send(void *map_data, int num_elements,
+                                   void *extra_data) {
+  
+  /* Get MPI number of ranks */
+  int comm_size = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+
+  /* Unpack extra data */
+  struct buffer_count_data *send_data = (struct buffer_count_data *) extra_data;
+  struct lightcone_map *map = send_data->map;
+
+  /* Array of buffer blocks to process on this call */
+  struct particle_buffer_block **blocks = (struct particle_buffer_block **) map_data;
+
+  /* Loop over blocks to process */
+  for(int block_nr=0; block_nr<num_elements; block_nr+=1) {
+
+    /* Data in this block is an array of lightcone_map_contribution */
+    struct lightcone_map_contribution *contr =
+      (struct lightcone_map_contribution *) blocks[block_nr]->data;
+    for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
+      
+      /* Determine which rank this contribution goes to */
+      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
+      int dest = pixel / map->pix_per_rank;
+      if(dest >= comm_size) dest=comm_size-1;
+
+      /* Reserve a location to write this contribution to */
+      size_t index = atomic_add(&(send_data->count[dest]), 1);
+
+      /* Store the contribution to the send buffer */
+      struct lightcone_map_contribution *from = contr+i;
+      struct lightcone_map_contribution *to = send_data->data+send_data->offset[dest]+index;
+      memcpy(to, from, sizeof(struct lightcone_map_contribution));
+    }
+  }
+}
+#endif
+
+
 /**
  * @brief Apply buffered updates to the healpix map
  *
@@ -237,24 +320,19 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
 
-  /* Array to store number of updates to send to each rank*/
-  size_t *send_count = malloc(comm_size*sizeof(size_t));
-  for(int i=0; i<comm_size; i+=1)
-    send_count[i] = 0;
+  /* Data to pass to threadpool map function */
+  struct buffer_count_data send_data;
+  send_data.map = map;
 
-  /* Loop over buffered updates and count number to send to each rank */
-  struct particle_buffer_block *block = NULL;
-  struct lightcone_map_contribution *contr;
-  size_t num_elements;
-  do {
-    particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
-    for(size_t i=0; i<num_elements; i+=1) {
-      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
-      int dest = pixel / map->pix_per_rank;
-      if(dest >= comm_size) dest=comm_size-1;
-      send_count[dest] += 1;
-    }
-  } while(block);
+  /* Array to store number of updates to send to each rank*/
+  send_data.count = malloc(comm_size*sizeof(size_t));
+  for(int i=0; i<comm_size; i+=1)
+    send_data.count[i] = 0;
+  send_data.offset = NULL;
+  send_data.data = NULL;
+
+  /* Count elements to send to each rank */
+  particle_buffer_threadpool_map(&map->buffer, tp, count_elements_to_send, &send_data);
     
   /* Find total number of updates */
   size_t total_nr_send = particle_buffer_num_elements(&map->buffer);
@@ -272,36 +350,23 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
     malloc(sizeof(struct lightcone_map_contribution)*total_nr_send);
 
   /* Compute offsets into send buffer */
-  size_t *send_offset = malloc(comm_size*sizeof(size_t));
-  send_offset[0] = 0;
+  send_data.offset = malloc(comm_size*sizeof(size_t));
+  send_data.offset[0] = 0;
   for(int i=1; i<comm_size; i+=1)
-    send_offset[i] = send_offset[i-1] + send_count[i-1];
+    send_data.offset[i] = send_data.offset[i-1] + send_data.count[i-1];
 
   /* Populate the send buffer */
   for(int i=0; i<comm_size; i+=1)
-    send_count[i] = 0;
-  do {
-    particle_buffer_iterate(&map->buffer, &block, &num_elements, (void **) &contr);
-    for(size_t i=0; i<num_elements; i+=1) {
-      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
-      int dest = pixel / map->pix_per_rank;
-      if(dest >= comm_size) dest=comm_size-1;
+    send_data.count[i] = 0;
+  send_data.data = sendbuf;
+  particle_buffer_threadpool_map(&map->buffer, tp, store_elements_to_send, &send_data);
 
-      /* Copy entry to the send buffer */
-      struct lightcone_map_contribution *from = contr+i;
-      struct lightcone_map_contribution *to   = sendbuf+send_offset[dest]+send_count[dest];
-      memcpy(to, from, sizeof(struct lightcone_map_contribution));
-      
-      send_count[dest] += 1;
-    }
-  } while(block);
-  
   /* Empty the particle buffer now that we copied the data from it */
   particle_buffer_empty(&map->buffer);
 
   /* Determine number of elements to receive */
   size_t *recv_count = malloc(comm_size*sizeof(size_t));
-  MPI_Alltoall(send_count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t),
+  MPI_Alltoall(send_data.count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t),
                MPI_BYTE, MPI_COMM_WORLD);
   size_t total_nr_recv = 0;
   for(int i=0; i<comm_size; i+=1)
@@ -312,17 +377,16 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
     malloc(sizeof(struct lightcone_map_contribution)*total_nr_recv);
   
   /* Exchange data */
-  exchange_structs(send_count, sendbuf, recv_count, recvbuf,
+  exchange_structs(send_data.count, sendbuf, recv_count, recvbuf,
                    sizeof(struct lightcone_map_contribution));
 
   /* Apply received updates to the healpix map */
   threadpool_map(tp, healpix_smoothing_mapper, recvbuf, total_nr_recv,
-                 sizeof(struct lightcone_map_contribution), 
-                 threadpool_auto_chunk_size, map);
+                 sizeof(struct lightcone_map_contribution), 1, map);
 
   /* Tidy up */
-  free(send_count);
-  free(send_offset);
+  free(send_data.count);
+  free(send_data.offset);
   free(sendbuf);
   free(recv_count);
   free(recvbuf);

@@ -1,4 +1,5 @@
 #include "lock.h"
+#include "threadpool.h"
 
 #ifndef SWIFT_PARTICLE_BUFFER_H
 #define SWIFT_PARTICLE_BUFFER_H
@@ -37,5 +38,10 @@ void particle_buffer_iterate(struct particle_buffer *buffer,
 size_t particle_buffer_num_elements(struct particle_buffer *buffer);
 
 size_t particle_buffer_memory_use(struct particle_buffer *buffer);
+
+void particle_buffer_threadpool_map(struct particle_buffer *buffer,
+                                    struct threadpool *tp,
+                                    threadpool_map_function map_function,
+                                    void *extra_data);
 
 #endif /* SWIFT_PARTICLE_BUFFER_H */
