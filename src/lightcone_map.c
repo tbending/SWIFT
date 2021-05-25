@@ -43,19 +43,27 @@
 #include <hdf5.h>
 #endif
 
+
+#ifdef WITH_MPI
+static int pixel_to_rank(struct lightcone_map *map, size_t pixel) {
+  int rank = pixel / map->pix_per_rank;
+  if(rank >= map->comm_size)rank = map->comm_size-1;
+  return rank;
+}
+#endif
+
 void lightcone_map_init(struct lightcone_map *map, const int nside,
                         const double r_min, const double r_max,
                         const size_t elements_per_block,
                         enum unit_conversion_factor units) {
   
-  int comm_rank, comm_size;
+  int comm_rank = 0, comm_size = 1;
 #ifdef WITH_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#else
-  comm_rank = 0;
-  comm_size = 1;
 #endif
+  map->comm_size = comm_size;
+  map->comm_rank = comm_rank;
 
   /* Initialise C++ code for smoothing on the sphere */
   map->smoothing_info = healpix_smoothing_init(nside);
@@ -232,10 +240,6 @@ struct buffer_count_data {
 #ifdef WITH_MPI
 static void count_elements_to_send(void *map_data, int num_elements,
                                    void *extra_data) {
-
-  /* Get MPI number of ranks */
-  int comm_size = 0;
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
   
   /* Unpack extra data */
   struct buffer_count_data *send_data = (struct buffer_count_data *) extra_data;
@@ -252,13 +256,15 @@ static void count_elements_to_send(void *map_data, int num_elements,
       (struct lightcone_map_contribution *) blocks[block_nr]->data;
     for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
   
-      /* Determine which rank this contribution goes to */
-      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
-      int dest = pixel / map->pix_per_rank;
-      if(dest >= comm_size) dest=comm_size-1;
-      
-      /* Increment the count */
-      atomic_add(&(send_data->count[dest]), 1);
+      /* Determine which ranks this contribution goes to */
+      size_t first_pixel, last_pixel;
+      healpix_smoothing_get_pixel_range(map->smoothing_info, contr[i].pos,
+                                        contr[i].radius, &first_pixel, &last_pixel);
+      int first_dest = pixel_to_rank(map, first_pixel);
+      int last_dest = pixel_to_rank(map, last_pixel);
+      /* Increment the count for these destinations */
+      for(int dest=first_dest; dest<=last_dest; dest+=1)      
+        atomic_add(&(send_data->count[dest]), 1);
     }
   }
 }
@@ -267,10 +273,6 @@ static void count_elements_to_send(void *map_data, int num_elements,
 static void store_elements_to_send(void *map_data, int num_elements,
                                    void *extra_data) {
   
-  /* Get MPI number of ranks */
-  int comm_size = 0;
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-
   /* Unpack extra data */
   struct buffer_count_data *send_data = (struct buffer_count_data *) extra_data;
   struct lightcone_map *map = send_data->map;
@@ -285,19 +287,23 @@ static void store_elements_to_send(void *map_data, int num_elements,
     struct lightcone_map_contribution *contr =
       (struct lightcone_map_contribution *) blocks[block_nr]->data;
     for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
-      
-      /* Determine which rank this contribution goes to */
-      size_t pixel = healpix_smoothing_pixel_index(map->smoothing_info, contr[i].pos);
-      int dest = pixel / map->pix_per_rank;
-      if(dest >= comm_size) dest=comm_size-1;
 
-      /* Reserve a location to write this contribution to */
-      size_t index = atomic_add(&(send_data->count[dest]), 1);
+      /* Determine which ranks this contribution goes to */
+      size_t first_pixel, last_pixel;
+      healpix_smoothing_get_pixel_range(map->smoothing_info, contr[i].pos,
+                                        contr[i].radius, &first_pixel, &last_pixel);
+      int first_dest = pixel_to_rank(map, first_pixel);
+      int last_dest = pixel_to_rank(map, last_pixel);
 
-      /* Store the contribution to the send buffer */
-      struct lightcone_map_contribution *from = contr+i;
-      struct lightcone_map_contribution *to = send_data->data+send_data->offset[dest]+index;
-      memcpy(to, from, sizeof(struct lightcone_map_contribution));
+      /* Loop over destination ranks */
+      for(int dest=first_dest; dest<=last_dest; dest+=1) {
+        /* Reserve a location to write this contribution to */
+        size_t index = atomic_add(&(send_data->count[dest]), 1);
+        /* Store the contribution to the send buffer */
+        struct lightcone_map_contribution *from = contr+i;
+        struct lightcone_map_contribution *to = send_data->data+send_data->offset[dest]+index;
+        memcpy(to, from, sizeof(struct lightcone_map_contribution));
+      }
     }
   }
 }
@@ -316,9 +322,8 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
 #ifdef WITH_MPI
 
   /* Get MPI rank, number of ranks */
-  int comm_rank, comm_size;
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  const int comm_rank = map->comm_rank;
+  const int comm_size = map->comm_size;
 
   /* Data to pass to threadpool map function */
   struct buffer_count_data send_data;
@@ -444,8 +449,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   /* Select the part of the dataset in the file to write to */
 #ifdef WITH_MPI
 #ifdef HAVE_PARALLEL_HDF5
-  int comm_rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
+  const int comm_rank = map->comm_rank;
   const size_t pixel_offset = map->pix_per_rank * comm_rank;
   const hsize_t start[1] = {(hsize_t) pixel_offset};
   const hsize_t count[1] = {(hsize_t) map->local_nr_pix};

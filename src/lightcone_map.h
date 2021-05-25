@@ -93,6 +93,9 @@ struct lightcone_map {
   /*! Units of this map */
   enum unit_conversion_factor units;
 
+  /*! MPI communicator info */
+  int comm_rank, comm_size;
+
 };
 
 

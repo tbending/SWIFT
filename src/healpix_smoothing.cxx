@@ -57,6 +57,37 @@ extern "C" {
     return (size_t) smooth_info->healpix_base.vec2pix(part_vec);
   }
 
+  void healpix_smoothing_get_pixel_range(struct healpix_smoothing_info *smooth_info,
+                                         const double *pos, const double radius,
+                                         size_t *first_pixel, size_t *last_pixel) {
+    
+    // Get a normalized direction vector for this particle
+    vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
+
+    // Small particles get added to a single pixel
+    if(radius < smooth_info->max_pixrad) {
+      int64 pixel = smooth_info->healpix_base.vec2pix(part_vec);
+      *first_pixel = pixel;
+      *last_pixel = pixel;
+      return;
+    }
+
+    // Need normalised position vector if particle spans multiple pixels
+    part_vec.Normalize();
+
+    // Find all pixels with centres within the angular radius
+    // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
+    std::vector<int64> pixels;
+    smooth_info->healpix_base.query_disc(pointing(part_vec), radius, pixels);
+    *first_pixel = pixels[0];
+    *last_pixel = pixels[0];
+    for(int64 pixel : pixels) {
+      if(pixel < *first_pixel)*first_pixel = pixel;
+      if(pixel > *last_pixel)*last_pixel = pixel;
+    }
+    return;
+  }
+
   void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
                                     const double *pos, const double radius,
                                     const double value, const size_t local_pix_offset,
