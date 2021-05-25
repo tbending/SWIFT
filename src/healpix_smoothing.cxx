@@ -112,6 +112,9 @@ extern "C" {
     std::vector<int64> pixels;
     smooth_info->healpix_base.query_disc(pointing(part_vec), radius, pixels);
   
+    // Check for the case where a particle was sent to an MPI rank it doesn't contribute to
+    if(pixels.size() == 0)return;
+
     // Loop over pixels within the radius
     double tot = 0.0;
     for(int64 pixel : pixels) {

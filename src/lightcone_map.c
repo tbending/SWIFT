@@ -338,16 +338,28 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
 
   /* Count elements to send to each rank */
   particle_buffer_threadpool_map(&map->buffer, tp, count_elements_to_send, &send_data);
-    
-  /* Find total number of updates */
-  size_t total_nr_send = particle_buffer_num_elements(&map->buffer);
+  
+  /* Find number of updates buffered locally */
+  size_t total_nr_buffered = particle_buffer_num_elements(&map->buffer);
+
+  /* Find total number of updates to send - this may be more than the number of
+     buffered particles because some particles contribute to multiple MPI ranks */
+  size_t total_nr_send = 0;
+  for(int i=0; i<comm_size; i+=1)
+    total_nr_send += send_data.count[i];
+
+  /* Report number of updates */
   if(verbose) {
     long long num_updates_local = total_nr_send;
     long long num_updates_total;
     MPI_Reduce(&num_updates_local, &num_updates_total, 1, MPI_LONG_LONG,
                MPI_SUM, 0, MPI_COMM_WORLD);
+    long long num_buffered_local = total_nr_buffered;
+    long long num_buffered_total;
+    MPI_Reduce(&num_buffered_local, &num_buffered_total, 1, MPI_LONG_LONG,
+               MPI_SUM, 0, MPI_COMM_WORLD);
     if(comm_rank==0)
-      message("total lightcone map updates to apply: %lld", num_updates_total);
+      message("lightcone map updates: %lld buffered, %lld to send", num_buffered_total, num_updates_total);
   }
 
   /* Allocate send buffer */
