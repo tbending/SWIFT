@@ -28,6 +28,12 @@
 #include <hdf5.h>
 #endif
 
+/* Define this to compute expected sum of pixels for consistency check:
+   this lets us check that the sum of the updates buffered when particles
+   cross the lightcone equals the sum over pixels in the final map.
+   This is a test of the communication and smoothing routines. */
+#define LIGHTCONE_MAP_CHECK_TOTAL
+
 /* Local headers */
 #include "healpix_smoothing.h"
 #include "particle_buffer.h"
@@ -96,8 +102,10 @@ struct lightcone_map {
   /*! Whether to smooth this map */
   int smooth;
 
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
   /*! Sum of the quantity accumulated to this map, used for consistency check */
   double sum;
+#endif
 
   /*! MPI communicator info */
   int comm_rank, comm_size;
@@ -126,7 +134,10 @@ __attribute__((always_inline)) INLINE static void lightcone_map_buffer_update(st
   particle_buffer_append(&map->buffer, &contr);
 
   /* Sum values added to map for consistency check */
-  map->sum += value;
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+  atomic_add_d(&map->sum, value);
+#endif
+
 }
 
 
