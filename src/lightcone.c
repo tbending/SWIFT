@@ -417,6 +417,9 @@ void lightcone_init(struct lightcone_props *props,
   /* Healpix nside parameter */
   props->nside = parser_get_param_double(params, YML_NAME("nside"));
 
+  /* Whether we smooth the maps */
+  int smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
+
   /* Names of the healpix maps to make for this lightcone */
   char **map_names;
   parser_get_param_string_array(params, YML_NAME("map_names"), &props->nr_maps, &map_names);
@@ -486,7 +489,8 @@ void lightcone_init(struct lightcone_props *props,
     for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
       lightcone_map_init(&(props->shell[shell_nr].map[map_nr]), props->nside,
                          props->shell[shell_nr].rmin, props->shell[shell_nr].rmax,
-                         props->buffer_chunk_size, props->map_type[map_nr].units);
+                         props->buffer_chunk_size, props->map_type[map_nr].units,
+                         smooth);
     }
   }
   if(engine_rank==0)message("lightcone %d: there are %d lightcone shells and %d maps per shell",

@@ -55,7 +55,8 @@ static int pixel_to_rank(struct lightcone_map *map, size_t pixel) {
 void lightcone_map_init(struct lightcone_map *map, const int nside,
                         const double r_min, const double r_max,
                         const size_t elements_per_block,
-                        enum unit_conversion_factor units) {
+                        enum unit_conversion_factor units,
+                        const int smooth) {
   
   int comm_rank = 0, comm_size = 1;
 #ifdef WITH_MPI
@@ -100,6 +101,8 @@ void lightcone_map_init(struct lightcone_map *map, const int nside,
   map->r_min = r_min;
   map->r_max = r_max;
   map->units = units;
+  map->smooth = smooth;
+
 }
 
 
@@ -221,8 +224,13 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 
   /* Apply the updates */
   for(size_t i=0; i<num_elements; i+=1) {
+    double radius;
+    if(map->smooth)
+      radius = contr[i].radius;
+    else
+      radius = 0.0;
     healpix_smoothing_add_to_map(map->smoothing_info, contr[i].pos,
-                                 contr[i].radius, contr[i].value,
+                                 radius, contr[i].value,
                                  map->local_pix_offset, map->local_nr_pix,
                                  map->data);
   }
@@ -359,7 +367,7 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
     MPI_Reduce(&num_buffered_local, &num_buffered_total, 1, MPI_LONG_LONG,
                MPI_SUM, 0, MPI_COMM_WORLD);
     if(comm_rank==0)
-      message("lightcone map updates: %lld buffered, %lld to send", num_buffered_total, num_updates_total);
+      message("%lld updates buffered, %lld to send", num_buffered_total, num_updates_total);
   }
 
   /* Allocate send buffer */

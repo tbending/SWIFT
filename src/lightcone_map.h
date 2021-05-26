@@ -93,6 +93,9 @@ struct lightcone_map {
   /*! Units of this map */
   enum unit_conversion_factor units;
 
+  /*! Whether to smooth this map */
+  int smooth;
+
   /*! MPI communicator info */
   int comm_rank, comm_size;
 
@@ -124,7 +127,8 @@ __attribute__((always_inline)) INLINE static void lightcone_map_buffer_update(st
 void lightcone_map_init(struct lightcone_map *map, const int nside,
                         const double r_min, const double r_max,
                         const size_t elements_per_block,
-                        enum unit_conversion_factor units);
+                        enum unit_conversion_factor units,
+                        const int smooth);
 
 void lightcone_map_clean(struct lightcone_map *map);
 
