@@ -113,38 +113,33 @@ extern "C" {
     smooth_info->healpix_base.query_disc(pointing(part_vec), radius, pixels);
   
     // Check for the case where a particle was sent to an MPI rank it doesn't contribute to
-    if(pixels.size() == 0)return;
+    const size_t npix = pixels.size();
+    if(npix == 0)return;
+
+    // Vector to store pixel weights
+    std::vector<double> weight(npix);
 
     // Loop over pixels within the radius
     double tot = 0.0;
-    for(int64 pixel : pixels) {
+    for(size_t i=0; i<npix; i+=1) {
 
       // Get direction vector to centre of this pixel
-      vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixel);
+      vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixels[i]);
 
       // Find angle between this pixel centre and the particle
       const double angle = acos(dotprod(pixel_vec, part_vec));
 
       // Evaluate the kernel at this radius
-      tot += projected_kernel(angle, radius);
+      weight[i] += projected_kernel(angle, radius);
+      tot += weight[i];
 
     }
   
     // Now accumulate contributions to pixels
-    for(int64 pixel : pixels) {
-    
-      // Get direction vector to centre of this pixel
-      vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixel);
-
-      // Find angle between this pixel centre and the particle
-      const double angle = acos(dotprod(pixel_vec, part_vec));
-
-      // Evaluate the kernel at this radius
-      const double weight = projected_kernel(angle, radius) / tot;
-
-      // Add contribution to the local part of the map
-      if((pixel >= local_pix_offset) && (pixel < local_pix_offset+local_nr_pix))
-        atomic_add_d(&(map_data[pixel-local_pix_offset]), weight*value);
+    for(size_t i=0; i<npix; i+=1) {
+      if((pixels[i] >= local_pix_offset) && (pixels[i] < local_pix_offset+local_nr_pix)) {
+        atomic_add_d(&(map_data[pixels[i]-local_pix_offset]), weight[i]/tot*value);
+      }
     }
   }
 
