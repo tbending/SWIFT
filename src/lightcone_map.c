@@ -102,6 +102,7 @@ void lightcone_map_init(struct lightcone_map *map, const int nside,
   map->r_max = r_max;
   map->units = units;
   map->smooth = smooth;
+  map->sum = 0.0;
 
 }
 
@@ -491,6 +492,12 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   io_write_attribute_s(dset_id, "pixel_ordering_scheme", "ring");
   io_write_attribute_d(dset_id, "comoving_inner_radius", map->r_min);
   io_write_attribute_d(dset_id, "comoving_outer_radius", map->r_max);
+
+  /* For consistency check: write sum of quantities accumulated to this map */
+#ifdef WITH_MPI
+  MPI_Allreduce(MPI_IN_PLACE, &map->sum, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+  io_write_attribute_d(dset_id, "expected_sum", map->sum);
 
   /* Write unit conversion factors for this data set */
   char buffer[FIELD_BUFFER_SIZE] = {0};

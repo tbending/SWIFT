@@ -96,6 +96,9 @@ struct lightcone_map {
   /*! Whether to smooth this map */
   int smooth;
 
+  /*! Sum of the quantity accumulated to this map, used for consistency check */
+  double sum;
+
   /*! MPI communicator info */
   int comm_rank, comm_size;
 
@@ -121,6 +124,9 @@ __attribute__((always_inline)) INLINE static void lightcone_map_buffer_update(st
   contr.radius = radius;
   contr.value = value;
   particle_buffer_append(&map->buffer, &contr);
+
+  /* Sum values added to map for consistency check */
+  map->sum += value;
 }
 
 
