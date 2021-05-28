@@ -224,14 +224,22 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
   /* Get a pointer to the lightcone_map struct to update */
   struct lightcone_map *map = (struct lightcone_map *) extra_data;
 
-  /* Apply the updates */
+  /* Loop over updates to apply */
   for(size_t i=0; i<num_elements; i+=1) {
+
+    /* Unpack angular coordinates */
+    const double theta = int_to_angle(contr[i].itheta);
+    const double phi   = int_to_angle(contr[i].iphi);
+
+    /* Determine smoothing radius */
     double radius;
     if(map->smooth)
       radius = contr[i].radius;
     else
       radius = 0.0;
-    healpix_smoothing_add_to_map(map->smoothing_info, contr[i].pos,
+
+    /* Add this contribution to the map */
+    healpix_smoothing_add_to_map(map->smoothing_info, theta, phi,
                                  radius, contr[i].value,
                                  map->local_pix_offset, map->local_nr_pix,
                                  map->data);
@@ -266,10 +274,21 @@ static void count_elements_to_send(void *map_data, int num_elements,
       (struct lightcone_map_contribution *) blocks[block_nr]->data;
     for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
   
+      /* Unpack angular coordinates */
+      double theta = int_to_angle(contr[i].itheta);
+      double phi   = int_to_angle(contr[i].iphi);
+
+      /* Determine smoothing radius */
+      double radius;
+      if(map->smooth)
+        radius = contr[i].radius;
+      else
+        radius = 0.0;
+
       /* Determine which ranks this contribution goes to */
       size_t first_pixel, last_pixel;
-      healpix_smoothing_get_pixel_range(map->smoothing_info, contr[i].pos,
-                                        contr[i].radius, &first_pixel, &last_pixel);
+      healpix_smoothing_get_pixel_range(map->smoothing_info, theta, phi,
+                                        radius, &first_pixel, &last_pixel);
       int first_dest = pixel_to_rank(map, first_pixel);
       int last_dest = pixel_to_rank(map, last_pixel);
       /* Increment the count for these destinations */
@@ -297,14 +316,25 @@ static void store_elements_to_send(void *map_data, int num_elements,
     struct lightcone_map_contribution *contr =
       (struct lightcone_map_contribution *) blocks[block_nr]->data;
     for(size_t i=0; i<blocks[block_nr]->num_elements; i+=1) {
+      
+      /* Unpack angular coordinates */
+      double theta = int_to_angle(contr[i].itheta);
+      double phi   = int_to_angle(contr[i].iphi);
+
+      /* Determine smoothing radius */
+      double radius;
+      if(map->smooth)
+        radius = contr[i].radius;
+      else
+        radius = 0.0;
 
       /* Determine which ranks this contribution goes to */
       size_t first_pixel, last_pixel;
-      healpix_smoothing_get_pixel_range(map->smoothing_info, contr[i].pos,
-                                        contr[i].radius, &first_pixel, &last_pixel);
+      healpix_smoothing_get_pixel_range(map->smoothing_info, theta, phi,
+                                        radius, &first_pixel, &last_pixel);
       int first_dest = pixel_to_rank(map, first_pixel);
       int last_dest = pixel_to_rank(map, last_pixel);
-
+      
       /* Loop over destination ranks */
       for(int dest=first_dest; dest<=last_dest; dest+=1) {
         /* Reserve a location to write this contribution to */

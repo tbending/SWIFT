@@ -756,10 +756,10 @@ AC_ARG_WITH([healpix_cxx],
 )
 if test "x$with_healpix_cxx" != "xno"; then
    if test "x$with_healpix_cxx" != "xyes" -a "x$with_healpix_cxx" != "xtest" -a "x$with_healpix_cxx" != "x"; then
-      HEALPIX_CXX_LIBS="-L$with_healpix_cxx/lib -lhealpix_cxx"
+      HEALPIX_CXX_LIBS="-L$with_healpix_cxx/lib -lhealpix_cxx -lsharp"
       HEALPIX_CXX_INCS="-I$with_healpix_cxx/include"
    else
-      HEALPIX_CXX_LIBS="-lhealpix_cxx"
+      HEALPIX_CXX_LIBS="-lhealpix_cxx -lsharp"
       HEALPIX_CXX_INCS=""
    fi
    if test "x$with_healpix_cxx" = "xtest"; then

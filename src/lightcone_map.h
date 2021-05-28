@@ -20,6 +20,10 @@
 #ifndef SWIFT_LIGHTCONE_MAP_H
 #define SWIFT_LIGHTCONE_MAP_H
 
+/* Standard headers */
+#include <math.h>
+#include <limits.h>
+
 /* Config parameters. */
 #include "../config.h"
 
@@ -35,6 +39,7 @@
 #define LIGHTCONE_MAP_CHECK_TOTAL
 
 /* Local headers */
+#include "error.h"
 #include "healpix_smoothing.h"
 #include "particle_buffer.h"
 #include "parser.h"
@@ -46,14 +51,14 @@
  */
 struct lightcone_map_contribution {
 
-  /*! Vector location */
-  double pos[3];
+  /*! Position on the sphere: spherical coordinates encoded as ints */
+  int itheta, iphi;
   
   /*! Smoothing radius */
-  double radius;
+  float radius;
 
   /*! Amount to contribute to the pixel */
-  double value;
+  float value;
 
 };
 
@@ -114,6 +119,37 @@ struct lightcone_map {
 
 
 /**
+ * @brief Store an angle in the range 0 to 2pi in an int
+ *
+ * @param theta The angle to store
+ *
+ */
+__attribute__((always_inline)) INLINE static int angle_to_int(double theta) {
+  
+  if((theta < 0.0) || (theta > 2*M_PI))error("angle must be in range 0 to 2pi");
+
+  const int nmax = (INT_MAX-1); /* -1 so we don't overflow for theta=2pi */
+  const double dtheta = (2.0*M_PI)/(((double) nmax)+1.0);
+  const double inv_dtheta = 1.0 / dtheta;
+  return (int) (theta*inv_dtheta);
+}
+
+
+/**
+ * @brief Convert an int back to an angle
+ *
+ * @param i The int to be interpreted as an angle
+ *
+ */
+__attribute__((always_inline)) INLINE static double int_to_angle(int i) {
+  
+  const int nmax = (INT_MAX-1);
+  const double dtheta = (2.0*M_PI)/(((double) nmax)+1.0);
+  return dtheta*i+0.5*dtheta;
+}
+
+
+/**
  * @brief Add a value to the buffer for a healpix map
  *
  * @param map the #lightcone_map to update
@@ -125,10 +161,13 @@ __attribute__((always_inline)) INLINE static void lightcone_map_buffer_update(st
                                                                               const double *pos,
                                                                               const double radius,
                                                                               const double value) {
+
+  double theta, phi;
+  healpix_smoothing_vec2ang(map->smoothing_info, pos, &theta, &phi);
+
   struct lightcone_map_contribution contr;
-  contr.pos[0] = pos[0];
-  contr.pos[1] = pos[1];
-  contr.pos[2] = pos[2];
+  contr.itheta = angle_to_int(theta);
+  contr.iphi   = angle_to_int(phi);
   contr.radius = radius;
   contr.value = value;
   particle_buffer_append(&map->buffer, &contr);

@@ -51,34 +51,45 @@ extern "C" {
     return smooth_info->healpix_base.max_pixrad();
   }
 
-  size_t healpix_smoothing_pixel_index(struct healpix_smoothing_info *smooth_info, double *pos) {
+  size_t healpix_smoothing_vec2pix(struct healpix_smoothing_info *smooth_info, 
+                                   const double *pos) {
     
     vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
     return (size_t) smooth_info->healpix_base.vec2pix(part_vec);
   }
 
-  void healpix_smoothing_get_pixel_range(struct healpix_smoothing_info *smooth_info,
-                                         const double *pos, const double radius,
-                                         size_t *first_pixel, size_t *last_pixel) {
+  void healpix_smoothing_vec2ang(struct healpix_smoothing_info *smooth_info,
+                                 const double *pos, double *theta, double *phi) {
     
-    // Get a normalized direction vector for this particle
-    vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
+    pointing p = pointing(vec3(pos[0], pos[1], pos[2]));
+    *theta = p.theta;
+    *phi = p.phi;
+  }
+
+  size_t healpix_smoothing_ang2pix(struct healpix_smoothing_info *smooth_info,
+                                   const double theta, const double phi) {
+    pointing p = pointing(theta, phi);
+    return (size_t) smooth_info->healpix_base.ang2pix(p);
+  }
+
+  void healpix_smoothing_get_pixel_range(struct healpix_smoothing_info *smooth_info,
+                                         const double theta, const double phi, 
+                                         const double radius, size_t *first_pixel,
+                                         size_t *last_pixel) {
+    pointing p = pointing(theta, phi);
 
     // Small particles get added to a single pixel
     if(radius < smooth_info->max_pixrad) {
-      int64 pixel = smooth_info->healpix_base.vec2pix(part_vec);
+      int64 pixel = smooth_info->healpix_base.ang2pix(p);
       *first_pixel = pixel;
       *last_pixel = pixel;
       return;
     }
 
-    // Need normalised position vector if particle spans multiple pixels
-    part_vec.Normalize();
-
     // Find all pixels with centres within the angular radius
     // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
     std::vector<int64> pixels;
-    smooth_info->healpix_base.query_disc(pointing(part_vec), radius, pixels);
+    smooth_info->healpix_base.query_disc(p, radius, pixels);
     *first_pixel = pixels[0];
     *last_pixel = pixels[0];
     for(int64 pixel : pixels) {
@@ -89,28 +100,24 @@ extern "C" {
   }
 
   void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
-                                    const double *pos, const double radius,
+                                    const double theta, const double phi, const double radius,
                                     const double value, const size_t local_pix_offset,
                                     const size_t local_nr_pix, double *map_data) {
-  
-    // Get a normalized direction vector for this particle
-    vec3 part_vec = vec3(pos[0], pos[1], pos[2]);
 
+    pointing p = pointing(theta, phi);
+  
     // Small particles get added to a single pixel
     if(radius < smooth_info->max_pixrad) {
-      int64 pixel = smooth_info->healpix_base.vec2pix(part_vec);
+      int64 pixel = smooth_info->healpix_base.ang2pix(p);
       if((pixel >= local_pix_offset) && (pixel < local_pix_offset+local_nr_pix))
         atomic_add_d(&map_data[pixel-local_pix_offset], value);
       return;
     }
 
-    // Need normalised position vector if particle spans multiple pixels
-    part_vec.Normalize();
-
     // Find all pixels with centres within the angular radius
     // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
     std::vector<int64> pixels;
-    smooth_info->healpix_base.query_disc(pointing(part_vec), radius, pixels);
+    smooth_info->healpix_base.query_disc(p, radius, pixels);
   
     // Check for the case where a particle was sent to an MPI rank it doesn't contribute to
     const size_t npix = pixels.size();
@@ -118,6 +125,9 @@ extern "C" {
 
     // Vector to store pixel weights
     std::vector<double> weight(npix);
+
+    // Particle direction vector
+    vec3 part_vec = p.to_vec3();
 
     // Loop over pixels within the radius
     double tot = 0.0;
