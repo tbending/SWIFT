@@ -131,10 +131,10 @@ struct part {
 
   // Next variables fail when inside struct imbalance
   /*! Number of neighbours*/ // error with imbalance.N_neig
-  float N_neig;
+  float N_ngb; // to be deleted
 
   /*! Maximum neighbour distance*/
-  float rij_max;
+  float rij_max; // to be deleted
 
   /*! Sum of r_ij (used to compute imbalance statistic)*/
   float sum_rij[3];

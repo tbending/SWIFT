@@ -118,78 +118,38 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   pj->density.rot_v[0] += facj * curlvr[0];
   pj->density.rot_v[1] += facj * curlvr[1];
   pj->density.rot_v[2] += facj * curlvr[2];
-
-  /* Imbalance factor */
-  /*if (pi->mat_id == pj->mat_id){
-  pi->N_neig += 1.f;
-  pi->rij_max = max(pi->rij_max, r);
-  //pi->sum_rij[0] += (pj->x[0] - pi->x[0]);
-  //pi->sum_rij[1] += (pj->x[1] - pi->x[1]);
-  //pi->sum_rij[2] += (pj->x[2] - pi->x[2]);
-  pi->sum_rij[0] += -dx[0];
-  pi->sum_rij[1] += -dx[1];
-  pi->sum_rij[2] += -dx[2];
-
-  pj->N_neig += 1.f;
-  pj->rij_max = max(pj->rij_max, r);
-  //pj->sum_rij[0] += (pi->x[0] - pj->x[0]);
-  //pj->sum_rij[1] += (pi->x[1] - pj->x[1]);
-  //pj->sum_rij[2] += (pi->x[2] - pj->x[2]);
-  pj->sum_rij[0] += dx[0];
-  pj->sum_rij[1] += dx[1];
-  pj->sum_rij[2] += dx[2];
-  }*/
   
-  // new imbalance
-  if (pi->mat_id == pj->mat_id){
-  pi->N_neig += 1.f;
-  pi->sum_wij += wi;
-  pi->rij_max = max(pi->rij_max, r);
-  pi->sum_rij[0] += -dx[0];
-  pi->sum_rij[1] += -dx[1];
-  pi->sum_rij[2] += -dx[2];
+  /* Compute imbalance statistic */
+  wi = sqrtf(wi);
+  wj = sqrtf(wj);
 
-  pj->N_neig += 1.f;
-  pj->sum_wij += wj;
+  pi->N_ngb += 1.f; 
+  pi->sum_wij += wi*mj;
+  pi->rij_max = max(pi->rij_max, r);
+
+  pj->N_ngb += 1.f;
+  pj->sum_wij += wj*mi;
   pj->rij_max = max(pj->rij_max, r);
-  pj->sum_rij[0] += dx[0];
-  pj->sum_rij[1] += dx[1];
-  pj->sum_rij[2] += dx[2];
+
+  if (pi->mat_id == pj->mat_id){
+  pi->sum_rij[0] += -dx[0]*wi*mj;
+  pi->sum_rij[1] += -dx[1]*wi*mj;
+  pi->sum_rij[2] += -dx[2]*wi*mj;
+
+  pj->sum_rij[0] += dx[0]*wj*mi;
+  pj->sum_rij[1] += dx[1]*wj*mi;
+  pj->sum_rij[2] += dx[2]*wj*mi;
   }
 
   if (pi->mat_id != pj->mat_id){
-  pi->N_neig += 1.f;
-  pi->sum_wij += wi;
-  pi->rij_max = max(pi->rij_max, r);
-  pi->sum_rij[0] += dx[0];
-  pi->sum_rij[1] += dx[1];
-  pi->sum_rij[2] += dx[2];
+  pi->sum_rij[0] += dx[0]*wi*mj;
+  pi->sum_rij[1] += dx[1]*wi*mj;
+  pi->sum_rij[2] += dx[2]*wi*mj;
 
-  pj->N_neig += 1.f;
-  pj->sum_wij += wj;
-  pj->rij_max = max(pj->rij_max, r);
-  pj->sum_rij[0] += -dx[0];
-  pj->sum_rij[1] += -dx[1];
-  pj->sum_rij[2] += -dx[2];
+  pj->sum_rij[0] += -dx[0]*wj*mi;
+  pj->sum_rij[1] += -dx[1]*wj*mi;
+  pj->sum_rij[2] += -dx[2]*wj*mi;
   }
- 
-  /*if (pi->id == 854606){
-    printf(
-      "Print loop: "
-      "id, pi[0], pi[1], pi[2], pj->id, pj[0], pj[1], pj[2], r\n"
-      "%lld, %.7g, %.7g, %.7g, "
-      "%lld, %.7g, %.7g, %.7g, "
-      "%.7g \n",
-      pi->id, pi->x[0], pi->x[1], pi->x[2],
-      pj->id, pj->x[0], pj->x[1], pj->x[2], r);
-    printf(
-      "Print loop 2: "
-      "id, sum_rij[0], sum_rij[1], sum_rij[2], rij_max\n"
-      "%lld, %.7g, %.7g, %.7g, "
-      "%.7g \n",
-      pi->id, pi->imbalance.sum_rij[0], pi->imbalance.sum_rij[1], pi->imbalance.sum_rij[2],
-      pi->imbalance.rij_max);
-  }*/
   
 }
 
@@ -255,36 +215,23 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->density.rot_v[1] += faci * curlvr[1];
   pi->density.rot_v[2] += faci * curlvr[2];
 
-  /* Imbalance factor */
-  /*if (pi->mat_id == pj->mat_id){
-  pi->N_neig += 1.f; // not error here?
+  /* Compute imbalance statistic */
+  wi = sqrtf(wi);
+  
+  pi->N_ngb += 1.f; 
+  pi->sum_wij += wi*mj;
   pi->rij_max = max(pi->rij_max, r);
-  //pi->sum_rij[0] += (pj->x[0] - pi->x[0]);
-  //pi->sum_rij[1] += (pj->x[1] - pi->x[1]);
-  //pi->sum_rij[2] += (pj->x[2] - pi->x[2]);
-  pi->sum_rij[0] += -dx[0];
-  pi->sum_rij[1] += -dx[1];
-  pi->sum_rij[2] += -dx[2];
-  }*/
-
-  // new imbalance
 
   if (pi->mat_id == pj->mat_id){
-  pi->N_neig += 1.f; // not error here?
-  pi->sum_wij += wi;
-  pi->rij_max = max(pi->rij_max, r);
-  pi->sum_rij[0] += -dx[0];
-  pi->sum_rij[1] += -dx[1];
-  pi->sum_rij[2] += -dx[2];
+  pi->sum_rij[0] += -dx[0]*wi*mj;
+  pi->sum_rij[1] += -dx[1]*wi*mj;
+  pi->sum_rij[2] += -dx[2]*wi*mj;
   }
 
   if (pi->mat_id != pj->mat_id){
-  pi->N_neig += 1.f; // not error here?
-  pi->sum_wij += wi;
-  pi->rij_max = max(pi->rij_max, r);
-  pi->sum_rij[0] += dx[0];
-  pi->sum_rij[1] += dx[1];
-  pi->sum_rij[2] += dx[2];
+  pi->sum_rij[0] += dx[0]*wi*mj;
+  pi->sum_rij[1] += dx[1]*wi*mj;
+  pi->sum_rij[2] += dx[2]*wi*mj;
   }
   
 
@@ -328,17 +275,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_gradient(
   /* Compute kernel averages */
   
   if (pi->mat_id == pj->mat_id && pi->I > 0.f){
-    pi->sum_wij_exp += wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_rho += pj->rho * wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_P += pj->P * wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_T += pj->T * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp += wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_P += pj->P * wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_T += pj->T * wi * expf(-pj->I*pj->I);
   }
   
   if (pj->mat_id == pi->mat_id && pj->I > 0.f){
-    pj->sum_wij_exp += wj * exp(-pi->I*pi->I);
-    pj->sum_wij_exp_rho += pi->rho * wj * exp(-pi->I*pi->I);
-    pj->sum_wij_exp_P += pi->P * wj * exp(-pi->I*pi->I);
-    pj->sum_wij_exp_T += pi->T * wj * exp(-pi->I*pi->I);
+    pj->sum_wij_exp += wj * expf(-pi->I*pi->I);
+    pj->sum_wij_exp_rho += pi->rho * wj * expf(-pi->I*pi->I);
+    pj->sum_wij_exp_P += pi->P * wj * expf(-pi->I*pi->I);
+    pj->sum_wij_exp_T += pi->T * wj * expf(-pi->I*pi->I);
   }
 }
 
@@ -374,10 +321,10 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_gradient(
 
   // Compute kernel averages
   if (pi->mat_id == pj->mat_id && pi->I > 0.f){
-    pi->sum_wij_exp += wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_rho += pj->rho * wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_P += pj->P * wi * exp(-pj->I*pj->I);
-    pi->sum_wij_exp_T += pj->T * wi * exp(-pj->I*pj->I);
+    pi->sum_wij_exp += wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_P += pj->P * wi * expf(-pj->I*pj->I);
+    pi->sum_wij_exp_T += pj->T * wi * expf(-pj->I*pj->I);
   }
 }
 

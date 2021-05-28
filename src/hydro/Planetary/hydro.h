@@ -484,18 +484,13 @@ __attribute__((always_inline)) INLINE static void hydro_init_part(
   p->density.rot_v[1] = 0.f;
   p->density.rot_v[2] = 0.f;
 
-  p->N_neig = 0.f;
+  p->N_ngb = 0.f;
   p->rij_max = 0.f;
   p->sum_rij[0] = 0.f;
   p->sum_rij[1] = 0.f;
   p->sum_rij[2] = 0.f;
   p->I = 0.f;
   p->sum_wij = 0.f;
-  
-
-  //if (p->u_0 == 0.f){
-  //p->u_0 = p->u;
-  //}
   
 }
 
@@ -544,57 +539,26 @@ __attribute__((always_inline)) INLINE static void hydro_end_density(
   /* Finish calculation of the (physical) velocity divergence */
   p->density.div_v *= h_inv_dim_plus_one * a_inv2 * rho_inv;
 
-  /* Determine Imbalance statistic*/
-	const float N_neig_min = 2.f; //arbitrary choice? remember N_neig is neigbours from same material
-  p->N_neig += 1.f; // self contribution to number of neighbours
-  p->sum_wij += kernel_root;
-  if (p->N_neig > N_neig_min && p->rij_max > 0.f){
+  /* Finish calculation Imbalance statistic*/
+	const float N_ngb_min = 2.f; //arbitrary choice? 
+  p->N_ngb += 1.f; // self contribution to number of neighbours
+  //p->sum_wij += kernel_root*p->mass; // with kernel
+  p->sum_wij += sqrtf(kernel_root)*p->mass; // with sqrt kernel
+  if (p->N_ngb > N_ngb_min && p->rij_max > 0.f){
     float sum_rij_norm = 0.f;
     sum_rij_norm += p->sum_rij[0]*p->sum_rij[0];
     sum_rij_norm += p->sum_rij[1]*p->sum_rij[1];
     sum_rij_norm += p->sum_rij[2]*p->sum_rij[2];
     p->I = sqrtf(sum_rij_norm);
-    //p->I /= sqrtf(p->N_neig - 1.f);
-    
-    //p->I /= p->rij_max;
-    p->I *= sqrtf(48)*0.5*h_inv;
-    p->I /= p->N_neig;
-    //p->I /= p->sum_wij;
+   
+    p->I *= h_inv; 
+    p->I /= p->sum_wij;
 
-    //p->I *= 4.f;
+    // cubic spline kernel
+    //p->I *= 0.5*sqrtf(48); // without kernel
+    //p->I *= sqrtf(48); // with kernel
+    p->I *= 4.9f; // with sqrt kernel
   }
-  
-
-    /*if (p->id == 130483 || p->id == 129310){
-      printf(
-      "Print 1: "
-      "id, x, y, z, rho, h, mat_id\n"
-      "%lld, %.7g, %.7g, %.7g, "
-      "%.7g, %.7g, %d\n",
-      p->id, p->x[0], p->x[1], p->x[2],
-      p->rho, p->h, p->mat_id);
-
-      printf(
-      "Print 2: "
-      "id, N_neig, rij_max, sum_rij[0], sum_rij[1], sum_rij[2], I\n"
-      "%lld, "
-      "%.7g, %.7g, %.7g, %.7g, %.7g, %.7g \n",
-      p->id,
-      p->N_neig, p->rij_max,
-      p->sum_rij[0], p->sum_rij[1], p->sum_rij[2], p->I);
-    }*/
-
-  /*if (p->id == 854606 || p->id == 1748826){
-  printf(
-      "## I particle: "
-      "id, x, y, z, m, u, P, rho, h, mat_id, N_neig, I\n"
-      "%lld, %.7g, %.7g, %.7g, "
-      "%.7g, %.7g, %.7g, %.7g, %.7g, %d, "
-      "%.7g, %.7g \n",
-      p->id, p->x[0], p->x[1], p->x[2], p->mass,
-      p->u, p->force.pressure, p->rho, p->h, p->mat_id,
-      p->N_neig, p->imbalance.I);
-  }*/
   
 }
 
@@ -693,16 +657,13 @@ __attribute__((always_inline)) INLINE static void hydro_reset_gradient(
 __attribute__((always_inline)) INLINE static void hydro_end_gradient(
     struct part *p) {
 
-  //if (p->id == 586885){
-  //  printf("u_0: %.7g\n", p->u_0);
-  //}
-
   if (p->I > 0.f){
-  /* Add self contribution to rho_new*/
-  p->sum_wij_exp += kernel_root * exp(-p->I*p->I);
-  p->sum_wij_exp_rho += p->rho * kernel_root * exp(-p->I*p->I);
-  p->sum_wij_exp_P += p->P * kernel_root * exp(-p->I*p->I);
-  p->sum_wij_exp_T += p->T * kernel_root * exp(-p->I*p->I);
+  /* Add self contribution to rho_new */
+  p->sum_wij_exp += kernel_root * expf(-p->I*p->I);
+  p->sum_wij_exp_rho += p->rho * kernel_root * expf(-p->I*p->I);
+  p->sum_wij_exp_P += p->P * kernel_root * expf(-p->I*p->I);
+  p->sum_wij_exp_T += p->T * kernel_root * expf(-p->I*p->I);
+  /* End computation */
   p->sum_wij_exp_rho /= p->sum_wij_exp;
   p->sum_wij_exp_P /= p->sum_wij_exp;
   p->sum_wij_exp_T /= p->sum_wij_exp;
@@ -712,7 +673,7 @@ __attribute__((always_inline)) INLINE static void hydro_end_gradient(
       gas_density_from_pressure_and_temperature(p->sum_wij_exp_P, p->sum_wij_exp_T, p->mat_id);
 
   float rho_combined = 0.f;
-  rho_combined = exp(-p->I*p->I)*p->rho + (1.f - exp(-p->I*p->I))*new_density;
+  rho_combined = expf(-p->I*p->I)*p->rho + (1.f - expf(-p->I*p->I))*new_density;
   p->rho = rho_combined;
   }
 }

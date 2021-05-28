@@ -222,14 +222,10 @@ INLINE static void hydro_write_particles(const struct part* parts,
       convert_part_potential, "Gravitational potentials of the particles");
   list[11] = 
       io_make_output_field("NN", FLOAT, 1, UNIT_CONV_NO_UNITS, 0.f,
-                           parts, N_neig, "Number of neighbours");
+                           parts, N_ngb, "Number of neighbours");
   list[12] = 
       io_make_output_field("I", FLOAT, 1, UNIT_CONV_NO_UNITS, 0.f,
                            parts, I, "Imbalance statistic");
-  /*list[13] = io_make_output_field(
-      "InitialInternalEnergies", FLOAT, 1, UNIT_CONV_ENERGY_PER_UNIT_MASS,
-      -3.f * hydro_gamma_minus_one, parts, u_0,
-      "Initial Thermal energies per unit mass of the particles");*/
 }
 
 /**
