@@ -266,6 +266,11 @@ static void count_elements_to_send(void *map_data, int num_elements,
   /* Array of pointers to buffer blocks to process on this call */
   struct particle_buffer_block **blocks = (struct particle_buffer_block **) map_data;
 
+  /* Allocate storage for temporary count */
+  size_t *count = malloc(sizeof(size_t)*map->comm_size);
+  for(int i=0; i<map->comm_size; i+=1)
+    count[i] = 0;
+
   /* Loop over blocks to process */
   for(int block_nr=0; block_nr<num_elements; block_nr+=1) {
 
@@ -293,9 +298,16 @@ static void count_elements_to_send(void *map_data, int num_elements,
       int last_dest = pixel_to_rank(map, last_pixel);
       /* Increment the count for these destinations */
       for(int dest=first_dest; dest<=last_dest; dest+=1)      
-        atomic_add(&(send_data->count[dest]), 1);
+        count[dest] += 1;
     }
   }
+
+  /* Update global count */
+  for(int i=0; i<map->comm_size; i+=1)
+    atomic_add(&(send_data->count[i]), count[i]);
+
+  /* Free temporary count */
+  free(count);
 }
 
 
