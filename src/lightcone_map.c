@@ -470,7 +470,8 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
 
   /* Apply received updates to the healpix map */
   threadpool_map(tp, healpix_smoothing_mapper, recvbuf, total_nr_recv,
-                 sizeof(struct lightcone_map_contribution), 1, map);
+                 sizeof(struct lightcone_map_contribution), 
+                 threadpool_auto_chunk_size, map);
 
   /* Tidy up */
   free(send_count);
