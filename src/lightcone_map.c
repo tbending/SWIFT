@@ -304,11 +304,11 @@ static void count_elements_to_send_mapper(void *map_data, int num_elements,
       size_t first_pixel, last_pixel;
       healpix_smoothing_get_pixel_range(map->smoothing_info, theta, phi,
                                         radius, &first_pixel, &last_pixel);
-      int first_dest = pixel_to_rank(map, first_pixel);
-      int last_dest = pixel_to_rank(map, last_pixel);
+      contr[i].first_dest = pixel_to_rank(map, first_pixel);
+      contr[i].last_dest = pixel_to_rank(map, last_pixel);
 
       /* Update the counts for this block */
-      for(int dest=first_dest; dest<=last_dest; dest+=1)
+      for(int dest=contr[i].first_dest; dest<=contr[i].last_dest; dest+=1)
         count[dest] += 1;
     }
     
@@ -317,19 +317,11 @@ static void count_elements_to_send_mapper(void *map_data, int num_elements,
 }
 
 
-struct mapper_extra_data {
-  struct lightcone_map *map;
-  struct lightcone_map_contribution *sendbuf;
-};
-
-
 static void store_elements_to_send_mapper(void *map_data, int num_elements,
                                           void *extra_data) {
   
   /* Unpack data we need */
-  struct mapper_extra_data *data = (struct mapper_extra_data *) extra_data;
-  struct lightcone_map *map = data->map;
-  struct lightcone_map_contribution *sendbuf = data->sendbuf;
+  struct lightcone_map_contribution *sendbuf = (struct lightcone_map_contribution *) extra_data;
   struct buffer_block_info *block_info = (struct buffer_block_info *) map_data;
   
   /* Loop over blocks to process on this call */
@@ -346,23 +338,9 @@ static void store_elements_to_send_mapper(void *map_data, int num_elements,
       (struct lightcone_map_contribution *) block->data;
     for(size_t i=0; i<block->num_elements; i+=1) {
 
-      /* Unpack angular coordinates */
-      double theta = int_to_angle(contr[i].itheta);
-      double phi   = int_to_angle(contr[i].iphi);
-
-      /* Determine smoothing radius */
-      double radius;
-      if(map->smooth)
-        radius = contr[i].radius;
-      else
-        radius = 0.0;
-
       /* Determine which ranks this contribution goes to */
-      size_t first_pixel, last_pixel;
-      healpix_smoothing_get_pixel_range(map->smoothing_info, theta, phi,
-                                        radius, &first_pixel, &last_pixel);
-      int first_dest = pixel_to_rank(map, first_pixel);
-      int last_dest = pixel_to_rank(map, last_pixel);
+      const int first_dest = contr[i].first_dest;
+      const int last_dest = contr[i].last_dest;
 
       /* Store this contribution to the send buffer (possibly multiple times) */
       for(int dest=first_dest; dest<=last_dest; dest+=1) {
@@ -461,11 +439,8 @@ void lightcone_map_update_from_buffer(struct lightcone_map *map,
     malloc(sizeof(struct lightcone_map_contribution)*total_nr_send);
   
   /* Populate the send buffer */
-  struct mapper_extra_data data;
-  data.map = map;
-  data.sendbuf = sendbuf;
   threadpool_map(tp, store_elements_to_send_mapper, block_info, nr_blocks,
-                 sizeof(struct buffer_block_info), 1, &data);
+                 sizeof(struct buffer_block_info), 1, sendbuf);
 
   /* We no longer need the array of blocks */
   for(size_t block_nr=0; block_nr<nr_blocks; block_nr+=1) {

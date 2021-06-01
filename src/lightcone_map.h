@@ -59,6 +59,10 @@ struct lightcone_map_contribution {
   
   /*! Smoothing radius */
   float radius;
+
+  /*! MPI ranks to send this contribution to */
+  unsigned short first_dest, last_dest;
+
 };
 
 
