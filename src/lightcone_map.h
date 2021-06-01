@@ -51,15 +51,14 @@
  */
 struct lightcone_map_contribution {
 
+  /*! Amount to contribute to the pixel */
+  double value;
+
   /*! Position on the sphere: spherical coordinates encoded as ints */
   int itheta, iphi;
   
   /*! Smoothing radius */
   float radius;
-
-  /*! Amount to contribute to the pixel */
-  float value;
-
 };
 
 
