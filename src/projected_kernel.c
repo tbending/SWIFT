@@ -48,9 +48,9 @@ static double projected_kernel_integrand(double qz, void *param) {
 
   const double qxy = *((double *) param);
   const double q = sqrt(pow(qxy, 2.0) + pow(qz, 2.0));
-  float W;
-  kernel_eval(q, &W);
-  return (double) W;
+  double W;
+  kernel_eval_double(q, &W);
+  return W;
 }
 
 
@@ -85,11 +85,7 @@ double projected_kernel_integrate(double u) {
   const double qz_max = sqrt(pow(kernel_gamma, 2.0)-pow(qxy, 2.0));
   const double qz_min = -qz_max;
   gsl_function F = {&projected_kernel_integrand, &qxy};
-
-  /* Need to specify an absolute tolerance here because the
-     kernel is evaluated using floats, which causes problems with
-     the gsl integration routine if the tolerance is zero. */
-  gsl_integration_qag(&F, qz_min, qz_max, 1.0e-6, 1.0e-5, workspace_size,
+  gsl_integration_qag(&F, qz_min, qz_max, 1.0e-10, 1.0e-10, workspace_size,
                       GSL_INTEG_GAUSS61, space, &result, &abserr);
 
   /* Free the workspace */
@@ -121,8 +117,9 @@ void projected_kernel_init(struct projected_kernel_table *tab) {
   tab->inv_du = 1.0/tab->du;
 
   /* Evaluate the kernel at points in the table */
-  for(int i=0; i<tab->n; i+=1)
+  for(int i=0; i<tab->n-1; i+=1)
     tab->value[i] = projected_kernel_integrate(i*tab->du);
+  tab->value[tab->n-1] = 0.0;
 }
 
 
