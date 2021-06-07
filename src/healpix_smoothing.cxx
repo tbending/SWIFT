@@ -26,6 +26,7 @@ static double projected_kernel(double r, double h) {
 struct healpix_smoothing_info {
   int nside;
   double max_pixrad;
+  double kernel_gamma;
   Healpix_Base2 healpix_base;
   struct projected_kernel_table kernel;
 };
@@ -33,13 +34,14 @@ struct healpix_smoothing_info {
 
 extern "C" {
 
-  struct healpix_smoothing_info *healpix_smoothing_init(int nside) {
+  struct healpix_smoothing_info *healpix_smoothing_init(int nside, double gamma) {
     
     const Healpix_Ordering_Scheme scheme = RING;
     healpix_smoothing_info *smooth_info = new struct healpix_smoothing_info;
     smooth_info->nside = nside;
     smooth_info->healpix_base = Healpix_Base2(nside, scheme, SET_NSIDE);
     smooth_info->max_pixrad = smooth_info->healpix_base.max_pixrad();
+    smooth_info->kernel_gamma = gamma;
     projected_kernel_init(&smooth_info->kernel);
     return smooth_info;
   }
@@ -84,8 +86,12 @@ extern "C" {
                                          size_t *last_pixel) {
     pointing p = pointing(theta, phi);
 
+    // Input radius is the angle corresponding to the smoothing length,
+    // so we need to find all pixels within kernel_gamma*radius
+    const double search_radius = radius*smooth_info->kernel_gamma;
+
     // Small particles get added to a single pixel
-    if(radius < smooth_info->max_pixrad) {
+    if(search_radius < smooth_info->max_pixrad) {
       int64 pixel = smooth_info->healpix_base.ang2pix(p);
       *first_pixel = pixel;
       *last_pixel = pixel;
@@ -93,9 +99,8 @@ extern "C" {
     }
 
     // Find all pixels with centres within the angular radius
-    // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
     std::vector<int64> pixels;
-    smooth_info->healpix_base.query_disc(p, radius, pixels);
+    smooth_info->healpix_base.query_disc(p, search_radius, pixels);
     *first_pixel = pixels[0];
     *last_pixel = pixels[0];
     for(size_t i=0; i < pixels.size(); i++) {
@@ -112,9 +117,13 @@ extern "C" {
                                     const size_t local_nr_pix, double *map_data) {
 
     pointing p = pointing(theta, phi);
+
+    // Input radius is the angle corresponding to the smoothing length,
+    // so we need to find all pixels within kernel_gamma*radius
+    const double search_radius = radius*smooth_info->kernel_gamma;
   
     // Small particles get added to a single pixel
-    if(radius < smooth_info->max_pixrad) {
+    if(search_radius < smooth_info->max_pixrad) {
       int64 pixel = smooth_info->healpix_base.ang2pix(p);
       if((pixel >= local_pix_offset) && (pixel < local_pix_offset+local_nr_pix))
         atomic_add_d(&map_data[pixel-local_pix_offset], value);
@@ -122,9 +131,8 @@ extern "C" {
     }
 
     // Find all pixels with centres within the angular radius
-    // IMPORTANT: need to search a larger radius if kernel cutoff is > 1h
     std::vector<int64> pixels;
-    smooth_info->healpix_base.query_disc(p, radius, pixels);
+    smooth_info->healpix_base.query_disc(p, search_radius, pixels);
   
     // Check for the case where a particle was sent to an MPI rank it doesn't contribute to
     const size_t npix = pixels.size();
@@ -147,7 +155,7 @@ extern "C" {
       const double angle = acos(dotprod(pixel_vec, part_vec));
 
       // Evaluate the kernel at this radius
-      weight[i] += projected_kernel(angle, radius);
+      weight[i] = projected_kernel_eval(&smooth_info->kernel, angle/radius);
       tot += weight[i];
 
     }

@@ -3,7 +3,7 @@
 
 struct healpix_smoothing_info;
 
-struct healpix_smoothing_info *healpix_smoothing_init(int nside);
+struct healpix_smoothing_info *healpix_smoothing_init(int nside, double gamma);
 
 void healpix_smoothing_clean(struct healpix_smoothing_info *smooth_info);
 

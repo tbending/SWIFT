@@ -33,6 +33,7 @@
 #include "common_io.h"
 #include "error.h"
 #include "exchange_structs.h"
+#include "hydro.h"
 #include "memuse.h"
 #include "particle_buffer.h"
 #include "restart.h"
@@ -67,7 +68,7 @@ void lightcone_map_init(struct lightcone_map *map, const int nside,
   map->comm_rank = comm_rank;
 
   /* Initialise C++ code for smoothing on the sphere */
-  map->smoothing_info = healpix_smoothing_init(nside);
+  map->smoothing_info = healpix_smoothing_init(nside, kernel_gamma);
 
   /* Initialise the data buffer for this map */
   particle_buffer_init(&map->buffer, sizeof(struct lightcone_map_contribution),
@@ -201,7 +202,7 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
   }
 
   /* Re-initialise C++ smoothing info */
-  map->smoothing_info = healpix_smoothing_init(map->nside);
+  map->smoothing_info = healpix_smoothing_init(map->nside, kernel_gamma);
 
 }
 
