@@ -766,23 +766,29 @@ if test "x$with_healpix_cxx" != "xno"; then
       AC_LANG_PUSH(C++)
       tmp_ldflags=${LDFLAGS}
       LDFLAGS="${LDFLAGS} ${HEALPIX_CXX_LIBS}"
+      tmp_cppflags=${CPPFLAGS}
+      CPPFLAGS="${CPPFLAGS} ${HEALPIX_CXX_INCS}"
       have_healpix_cxx="yes"
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
          [[#include "healpix_cxx/healpix_base.h"]],
          [Healpix_Base2 hb = Healpix_Base2(8, RING);])],
          [AC_DEFINE(HAVE_HEALPIX_CXX,1,[Define if you have the Healpix C++ API])],[have_healpix_cxx="no"])
       LDFLAGS=${tmp_ldflags}
+      CPPFLAGS=${tmp_cppflags}
       AC_LANG_POP()
    else
       AC_LANG_PUSH(C++)
       tmp_ldflags=${LDFLAGS}
       LDFLAGS="${LDFLAGS} ${HEALPIX_CXX_LIBS}"
+      tmp_cppflags=${CPPFLAGS}
+      CPPFLAGS="${CPPFLAGS} ${HEALPIX_CXX_INCS}"
       AC_LINK_IFELSE([AC_LANG_PROGRAM(
          [[#include "healpix_cxx/healpix_base.h"]],
          [Healpix_Base2 hb = Healpix_Base2(8, RING);])],
          [AC_DEFINE(HAVE_HEALPIX_CXX,1,[Define if you have the Healpix C++ API])],
          [AC_MSG_ERROR(something is wrong with the HEALPIX_CXX library!)])
       LDFLAGS=${tmp_ldflags}
+      CPPFLAGS=${tmp_cppflags}
       AC_LANG_POP()
       have_healpix_cxx="yes"
    fi
