@@ -17,6 +17,9 @@
  *
  ******************************************************************************/
 
+#ifndef SWIFT_PROJECTED_KERNEL_H
+#define SWIFT_PROJECTED_KERNEL_H
+
 /* Config parameters. */
 #include "../config.h"
 
@@ -64,3 +67,5 @@ __attribute__((always_inline)) INLINE static double projected_kernel_eval(
 void projected_kernel_init(struct projected_kernel_table *tab);
 void projected_kernel_clean(struct projected_kernel_table *tab);
 void projected_kernel_dump(void);
+
+#endif

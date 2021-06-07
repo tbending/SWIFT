@@ -1,3 +1,5 @@
+#ifndef SWIFT_HEALPIX_SMOOTHING_H
+#define SWIFT_HEALPIX_SMOOTHING_H
 
 struct healpix_smoothing_info;
 
@@ -27,3 +29,4 @@ void healpix_smoothing_add_to_map(struct healpix_smoothing_info *smooth_info,
                                   const double value, const size_t local_pix_offset,
                                   const size_t local_nr_pix, double *map_data);
 
+#endif /* SWIFT_HEALPIX_SMOOTHING_H */
