@@ -6,7 +6,10 @@
 #include "healpix_cxx/healpix_base.h"
 #include "healpix_cxx/datatypes.h"
 
+extern "C" {
 #include "atomic.h"
+#include "projected_kernel.h"
+}
 
 // 2D Wendland C2 kernel (omitting normalisation)
 // TODO: use same kernel as Swift?
@@ -24,6 +27,7 @@ struct healpix_smoothing_info {
   int nside;
   double max_pixrad;
   Healpix_Base2 healpix_base;
+  struct projected_kernel_table kernel;
 };
 
 
@@ -36,10 +40,12 @@ extern "C" {
     smooth_info->nside = nside;
     smooth_info->healpix_base = Healpix_Base2(nside, scheme, SET_NSIDE);
     smooth_info->max_pixrad = smooth_info->healpix_base.max_pixrad();
+    projected_kernel_init(&smooth_info->kernel);
     return smooth_info;
   }
 
   void healpix_smoothing_clean(struct healpix_smoothing_info *smooth_info) {
+    projected_kernel_clean(&smooth_info->kernel);
     delete smooth_info;
   }
 
