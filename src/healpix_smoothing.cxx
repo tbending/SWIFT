@@ -92,10 +92,11 @@ extern "C" {
     smooth_info->healpix_base.query_disc(p, radius, pixels);
     *first_pixel = pixels[0];
     *last_pixel = pixels[0];
-    for(int64 pixel : pixels) {
-      if(pixel < *first_pixel)*first_pixel = pixel;
-      if(pixel > *last_pixel)*last_pixel = pixel;
+    for(size_t i=0; i < pixels.size(); i++) {
+      if(pixels[i] < *first_pixel)*first_pixel = pixels[i];
+      if(pixels[i] > *last_pixel)*last_pixel = pixels[i];
     }
+
     return;
   }
 
