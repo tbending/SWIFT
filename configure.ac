@@ -69,9 +69,15 @@ AC_DEFINE([_GLIBCXX_INCLUDE_NEXT_C_HEADERS],1,[Hack for min() and max() using g+
 # Enable POSIX and platform extension preprocessor macros.
 AC_USE_SYSTEM_EXTENSIONS
 
-# Check for compiler version and vendor.
+# Check for C compiler version and vendor.
 AX_COMPILER_VENDOR
 AX_COMPILER_VERSION
+
+# Repeat for C++ compiler
+AC_LANG_PUSH([C++])
+AX_COMPILER_VENDOR
+AX_COMPILER_VERSION
+AC_LANG_POP([C++])
 
 # Check whether we have a recent enough GCC
 if test "$ax_cv_c_compiler_vendor" = "gnu"; then
@@ -148,6 +154,15 @@ if test "$enable_ipo" = "yes"; then
       AC_MSG_RESULT([added LLVM interprocedural optimization support])
    else
       AC_MSG_WARN([Compiler does not support interprocedural optimization])
+   fi
+
+   # Interprocedural optimization support for C++.
+   if test "$ax_cv_cxx_compiler_vendor" = "intel"; then
+      CXXFLAGS="$CXXFLAGS -ip -ipo"
+   elif test "$ax_cv_cxx_compiler_vendor" = "gnu"; then
+      CXXFLAGS="$CXXFLAGS -flto"
+   elif test "$ax_cv_cxx_compiler_vendor" = "clang"; then
+      CXXFLAGS="$CXXFLAGS -flto=thin"
    fi
 fi
 
@@ -577,6 +592,11 @@ if test "$enable_opt" = "yes" ; then
    ac_test_CFLAGS="no"
    AX_CC_MAXOPT
    ac_test_CFLAGS="yes"
+
+   # Also for the C++ compiler
+   ac_test_CXXFLAGS="no"
+   AX_CXX_MAXOPT
+   ac_test_CXXFLAGS="yes"
 
    # Choose the best flags for the gravity sub-library on this compiler and architecture
    if test "$ax_cv_c_compiler_vendor" = "intel"; then
