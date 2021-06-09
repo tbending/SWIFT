@@ -76,11 +76,11 @@ void lightcone_read_shell_radii(const struct cosmology *cosmo, char *radius_file
   FILE *fd = fopen(radius_file, "r");
   if(!fd)error("Failed to open lightcone radius file %s", radius_file);
 
-  /* Count number of lines */
+  /* Count number of non-zero length lines */
   size_t len = 0;
   char *line = NULL;
   int nr_lines = 0;
-  while (getline(&line, &len, fd) != -1) nr_lines+=1;
+  while (getline(&line, &len, fd) != -1 && strlen(line) > 0) nr_lines+=1;
   rewind(fd);
 
   /* Allocate output array */
