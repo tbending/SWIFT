@@ -702,7 +702,7 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
   ticks tic = getticks();
 
   /* Report how much memory we're using before flushing buffers */
-  lightcone_report_memory_use(props);
+  if(props->verbose)lightcone_report_memory_use(props);
 
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
