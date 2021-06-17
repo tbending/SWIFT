@@ -31,6 +31,7 @@
 #include "parser.h"
 #include "part_type.h"
 #include "particle_buffer.h"
+#include "threadpool.h"
 #include "timeline.h"
 #include "units.h"
 
@@ -206,9 +207,10 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
                                  const struct engine *e, const struct gpart *gp,
                                  const double a_cross, const double x_cross[3]);
 
-void lightcone_flush_map_updates(struct lightcone_props *props);
+void lightcone_flush_map_updates(struct lightcone_props *props, struct threadpool *tp);
 
 void lightcone_dump_completed_shells(struct lightcone_props *props,
+                                     struct threadpool *tp,
                                      const struct cosmology *c, 
                                      const struct unit_system *internal_units,
                                      const struct unit_system *snapshot_units,

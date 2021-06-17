@@ -165,6 +165,7 @@ int lightcone_array_trigger_map_update(struct lightcone_array_props *props) {
  *
  */
 void lightcone_array_flush(struct lightcone_array_props *props,
+                           struct threadpool *tp,
                            const struct cosmology *cosmo,
                            const struct unit_system *internal_units,
                            const struct unit_system *snapshot_units,
@@ -179,7 +180,7 @@ void lightcone_array_flush(struct lightcone_array_props *props,
     struct lightcone_props *lc_props = props->lightcone+lightcone_nr;
 
     /* Apply lightcone map updates if requested */
-    if(flush_map_updates) lightcone_flush_map_updates(lc_props);
+    if(flush_map_updates) lightcone_flush_map_updates(lc_props, tp);
 
     /* Flush particle buffers if they're large or flag is set */
     lightcone_flush_particle_buffers(lc_props,
@@ -187,7 +188,7 @@ void lightcone_array_flush(struct lightcone_array_props *props,
                                      flush_particles, end_file);
     
     /* Write out any completed healpix maps */
-    lightcone_dump_completed_shells(lc_props, cosmo, internal_units,
+    lightcone_dump_completed_shells(lc_props, tp, cosmo, internal_units,
                                     snapshot_units, dump_all_shells,
                                     /*need_flush=*/!flush_map_updates);
   }

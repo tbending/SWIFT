@@ -1,4 +1,5 @@
 #include "lock.h"
+#include "threadpool.h"
 
 #ifndef SWIFT_PARTICLE_BUFFER_H
 #define SWIFT_PARTICLE_BUFFER_H

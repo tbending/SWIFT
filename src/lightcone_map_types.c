@@ -32,10 +32,21 @@
 /* This object's header */
 #include "lightcone_map_types.h"
 
-/* Healpix C API */
-#ifdef HAVE_CHEALPIX
-#include <chealpix.h>
-#endif
+
+static double angular_smoothing_scale(const double *pos, const double hsml) {
+  
+  /* Compute distance to particle */
+  double dist = 0;
+  for(int i=0; i<3; i+=1)
+    dist += pos[i]*pos[i];
+  dist = sqrt(dist);
+  
+  /* Avoid trig call for small angles (accurate to about 0.3%) */
+  if(dist > 10.0*hsml)
+    return hsml/dist;
+  else
+    return atan(hsml/dist);
+}
 
 /**
  * @brief Make a healpix map of projected mass in each pixel
@@ -50,16 +61,6 @@ void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
                               const struct gpart *gp, const double a_cross,
                               const double x_cross[3]) {
 
-  /* Find healpix pixel index */
-#ifdef HAVE_CHEALPIX
-  long ipring;
-  vec2pix_ring(map->nside, x_cross, &ipring);
-  size_t pixel = (size_t) ipring;
-#else
-  error("Need Healpix C API to make lightcone maps");
-  size_t pixel = 0;
-#endif  
-
   /* Handle on the other particle types */
   const struct space *s = e->s;
   const struct part *parts = s->parts;
@@ -70,20 +71,24 @@ void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
-    lightcone_map_buffer_update(map, pixel, p->mass);
+    const double radius = angular_smoothing_scale(x_cross, p->h);
+    lightcone_map_buffer_update(map, x_cross, radius, p->mass);
   } break;
   case swift_type_stars: {
     const struct spart *sp = &sparts[-gp->id_or_neg_offset];
-    lightcone_map_buffer_update(map, pixel, sp->mass);
+    const double radius = 0.0;
+    lightcone_map_buffer_update(map, x_cross, radius, sp->mass);
   } break;
   case swift_type_black_hole: {      
     const struct bpart *bp = &bparts[-gp->id_or_neg_offset];
-    lightcone_map_buffer_update(map, pixel, bp->mass);
+    const double radius = 0.0;
+    lightcone_map_buffer_update(map, x_cross, radius, bp->mass);
   } break;
   case swift_type_dark_matter:
   case swift_type_dark_matter_background:
   case swift_type_neutrino: {
-    lightcone_map_buffer_update(map, pixel, gp->mass);
+    const double radius = 0.0;
+    lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
   } break;
   default:
     /* Unknown type, nothing to do */
@@ -105,16 +110,6 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
                             const struct gpart *gp, const double a_cross,
                             const double x_cross[3]) {
 
-  /* Find healpix pixel index */
-#ifdef HAVE_CHEALPIX
-  long ipring;
-  vec2pix_ring(map->nside, x_cross, &ipring);
-  size_t pixel = (size_t) ipring;
-#else
-  error("Need Healpix C API to make lightcone maps");
-  size_t pixel = 0;
-#endif  
-
   /* Handle on the other particle types */
   const struct space *s = e->s;
   const struct part *parts = s->parts;
@@ -122,7 +117,8 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
-    lightcone_map_buffer_update(map, pixel, p->mass);
+    const double radius = angular_smoothing_scale(x_cross, p->h);
+    lightcone_map_buffer_update(map, x_cross, radius, p->mass);
   } break;
   default:
     /* Not gas, nothing to do */
@@ -143,20 +139,11 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
 void lightcone_map_neutrino_mass(struct lightcone_map *map, const struct engine *e,
                                  const struct gpart *gp, const double a_cross,
                                  const double x_cross[3]) {
-
-  /* Find healpix pixel index */
-#ifdef HAVE_CHEALPIX
-  long ipring;
-  vec2pix_ring(map->nside, x_cross, &ipring);
-  size_t pixel = (size_t) ipring;
-#else
-  error("Need Healpix C API to make lightcone maps");
-  size_t pixel = 0;
-#endif  
   
   switch (gp->type) {
   case swift_type_neutrino: {
-    lightcone_map_buffer_update(map, pixel, gp->mass);
+    const double radius = 0.0;
+    lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
   } break;
   default:
     /* Not a neutrino, nothing to do */

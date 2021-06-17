@@ -1793,8 +1793,8 @@ int main(int argc, char *argv[]) {
 
     /* Write out any remaining lightcone data at the end of the run */
 #ifdef WITH_LIGHTCONE
-    lightcone_array_flush(e.lightcone_array_properties, e.cosmology,
-                          e.internal_units, e.snapshot_units,
+    lightcone_array_flush(e.lightcone_array_properties, &(e.threadpool),
+                          e.cosmology, e.internal_units, e.snapshot_units,
                           /*flush_map_updates=*/1, /*flush_particles=*/1,
                           /*end_file=*/1, /*dump_all_shells=*/1);
     lightcone_array_write_index(e.lightcone_array_properties);
