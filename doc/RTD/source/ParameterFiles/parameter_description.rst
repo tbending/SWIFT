@@ -926,8 +926,12 @@ be processed by the ``SpecWizard`` tool
 Light Cone Outputs
 ---------------------
 
-The ``Lightcone`` section of the parameter file contains all the options related to
-light cone outputs. The parameters are:
+One or more light cone outputs can be configured by including ``LightconeX`` sections
+in the parameter file, where X is in the range 0-7. The parameters for each light cone are:
+
+* Switch to enable or disable a lightcone: ``enabled``
+
+This should be set to 1 to enable the corresponding lightcone or 0 to disable it.
 
 * Base name for particle and HEALPix map outputs: ``basename``.
 
@@ -989,6 +993,10 @@ This is a list of strings which specifies what quantities should be accumulated 
 The possible values are defined in the lightcone_map_types array in ``lightcone_map_types.h``.
 See :ref:`lightcone_adding_outputs_label` if you'd like to add a new map type.
 
+* Whether to smooth gas particles in the maps: ``smooth``
+
+This should be 1 to enable smoothing, or 0 otherwise.
+
 The following shows a full set of light cone parameters:
 
 .. code:: YAML
@@ -996,6 +1004,7 @@ The following shows a full set of light cone parameters:
   Lightcone:
 
     # Common parameters
+    enabled: 1
     basename: lightcone
     observer_position: [35.5, 78.12, 12.45]
     buffer_chunk_size: 100000
@@ -1017,6 +1026,7 @@ The following shows a full set of light cone parameters:
     radius_file:          ./shell_radii.txt
     max_updates_buffered: 100000
     map_names:            [TotalMass]
+    smooth:               1
 
 An example of the radius file::
 

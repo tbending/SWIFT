@@ -26,6 +26,10 @@ communication during the time step. At the end of the step if any
 MPI rank has a large amount of updates buffered then all pending
 updates will be applied to the pixel data.
 
+For gas particles, the HEALPix maps are smoothed using a projected
+version of the same kernel used for the hydro calculations. Other
+particle types are not smoothed.
+
 The code writes one output file for each spherical shell. In MPI mode
 all ranks write to the same file using parallel HDF5. If maps of
 multiple quantities are being made they will be written to a single
