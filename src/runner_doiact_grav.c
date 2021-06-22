@@ -310,7 +310,7 @@ static INLINE void runner_dopair_grav_pp_full_no_cache(
           const float h_inv_3 = h_inv * h_inv * h_inv;
 
 #ifdef SWIFT_DEBUG_CHECKS
-	  if (gpj->time_bin == time_bin_not_created)
+          if (gpj->time_bin == time_bin_not_created)
             error("Found an extra gpart in the gravity interaction");
 
           if (r2 == 0.f && h2 == 0.)
