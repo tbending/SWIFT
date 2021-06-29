@@ -89,7 +89,7 @@ struct lightcone_map {
   /*! Number of pixels stored on this node */
   size_t local_nr_pix;
   
-  /*! Offset of the firts pixel stored on this rank */
+  /*! Offset of the first pixel stored on this rank */
   size_t local_pix_offset;
 
   /*! Number of pixels per rank (last node has any extra) */
