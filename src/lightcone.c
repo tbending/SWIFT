@@ -203,7 +203,7 @@ static void lightcone_allocate_buffers(struct lightcone_props *props) {
                          elements_per_block, "lightcone_neutrino");
   }  
 
-  /* For each particle type, determine which maps will be updated */
+  /* For each particle type, determine which healpix maps will be updated */
   const int nr_maps = props->nr_maps;
   for(int ptype=0; ptype<swift_type_count; ptype+=1) {
     
@@ -231,10 +231,17 @@ static void lightcone_allocate_buffers(struct lightcone_props *props) {
        and the values to be added to the healpix maps */
     this_type->buffer_element_size = (3+this_type->nr_maps) * sizeof(double);
 
-    /* Initialize the map update buffer for this particle type */
-    particle_buffer_init(&this_type->buffer, this_type->buffer_element_size,
-                         elements_per_block, "lightcone_map_buffer");
+  }
 
+  /* For each shell, allocate one buffer per particle type to store the map updates */
+  const int nr_shells = props->nr_shells;
+  for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
+    for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+      struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+      particle_buffer_init(&(props->shell[shell_nr].buffer[ptype]),
+                           this_type->buffer_element_size,
+                           elements_per_block, "lightcone_map_buffer");
+    }
   }
 }
 
@@ -886,6 +893,13 @@ void lightcone_clean(struct lightcone_props *props) {
     }
     free(props->shell[shell_nr].map);
   }
+
+  /* Free buffers associated with each shell */
+  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
+    for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+      particle_buffer_free(&(props->shell[shell_nr].buffer[ptype]));
+    }
+  }
   
   /* Free array of shells */
   free(props->shell);
@@ -897,7 +911,6 @@ void lightcone_clean(struct lightcone_props *props) {
   for(int ptype=0; ptype<swift_type_count; ptype+=1) {
     struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
     free(this_type->map_index);
-    particle_buffer_free(&(this_type->buffer));
   }
 
 }

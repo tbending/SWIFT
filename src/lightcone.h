@@ -71,6 +71,9 @@ struct lightcone_shell {
   /*! Array of lightcone maps for this shell */
   struct lightcone_map *map;
 
+  /*! Buffers to store the map updates for each particle type */
+  struct particle_buffer buffer[swift_type_count];
+
 };
 
 
@@ -87,9 +90,6 @@ struct lightcone_particle_type {
 
   /*! Amount of data to store per particle */
   size_t buffer_element_size;
-
-  /*! Buffer to store lightcone map contributions for this particle type */
-  struct particle_buffer buffer;
 
 };
 
