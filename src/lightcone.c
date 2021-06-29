@@ -202,6 +202,40 @@ static void lightcone_allocate_buffers(struct lightcone_props *props) {
                          sizeof(struct lightcone_neutrino_data),
                          elements_per_block, "lightcone_neutrino");
   }  
+
+  /* For each particle type, determine which maps will be updated */
+  const int nr_maps = props->nr_maps;
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    
+    struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+
+    /* Count maps to update */
+    this_type->nr_maps = 0;
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      if(props->map_type[map_nr].ptype_contributes(ptype))
+        this_type->nr_maps += 1;
+    }
+    
+    /* Store indexes of maps to update */
+    this_type->map_index = malloc(sizeof(int)*this_type->nr_maps);
+    this_type->nr_maps = 0;
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      if(props->map_type[map_nr].ptype_contributes(ptype)) {
+        this_type->map_index[this_type->nr_maps] = map_nr;
+        this_type->nr_maps += 1;
+      }
+    }
+
+    /* Determine how much data we need to store per particle. We need
+       theta and phi angular coordinates, angular size of the particle,
+       and the values to be added to the healpix maps */
+    this_type->buffer_element_size = (3+this_type->nr_maps) * sizeof(double);
+
+    /* Initialize the map update buffer for this particle type */
+    particle_buffer_init(&this_type->buffer, this_type->buffer_element_size,
+                         elements_per_block, "lightcone_map_buffer");
+
+  }
 }
 
 
@@ -401,9 +435,6 @@ void lightcone_init(struct lightcone_props *props,
   /* Always start a new file initially */
   props->start_new_file = 1;
 
-  /* Allocate lightcone output buffers */
-  lightcone_allocate_buffers(props);
-
   /* 
      Healpix map parameters for this lightcone
   */
@@ -519,6 +550,9 @@ void lightcone_init(struct lightcone_props *props,
   /* Store initial state of lightcone shells */
   for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1)
     props->shell[shell_nr].state = shell_uninitialized;
+
+  /* Allocate lightcone output buffers */
+  lightcone_allocate_buffers(props);
 
   /* Estimate number of particles which will be output.
      
@@ -858,6 +892,14 @@ void lightcone_clean(struct lightcone_props *props) {
 
   /* Free array of lightcone map types */
   free(props->map_type);
+
+  /* Free data associated with particle types */
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+    free(this_type->map_index);
+    particle_buffer_free(&(this_type->buffer));
+  }
+
 }
 
 

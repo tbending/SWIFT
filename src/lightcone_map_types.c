@@ -54,7 +54,7 @@ static double angular_smoothing_scale(const double *pos, const double hsml) {
  * @param map the #lightcone_map structure
  * @param part_type the particle type
  */
-int lightcone_map_total_mass_type_contributes(struct lightcone_map *map, enum part_type ptype) {
+int lightcone_map_total_mass_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_gas:
@@ -123,7 +123,7 @@ void lightcone_map_total_mass_get_value(struct lightcone_map *map, const struct 
  * @param map the #lightcone_map structure
  * @param part_type the particle type
  */
-int lightcone_map_gas_mass_type_contributes(struct lightcone_map *map, enum part_type ptype) {
+int lightcone_map_gas_mass_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_gas:
@@ -168,7 +168,7 @@ void lightcone_map_gas_mass_get_value(struct lightcone_map *map, const struct en
  * @param map the #lightcone_map structure
  * @param part_type the particle type
  */
-int lightcone_map_neutrino_mass_type_contributes(struct lightcone_map *map, enum part_type ptype) {
+int lightcone_map_neutrino_mass_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_neutrino:

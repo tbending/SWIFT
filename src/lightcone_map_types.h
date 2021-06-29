@@ -39,7 +39,7 @@ typedef void (*map_update_function_t)(struct lightcone_map *map, const struct en
                                       const double x_cross[3]);
 
 /* Type to store pointer to function to check which types contribute to a map */
-typedef int (*map_contrib_function_t)(struct lightcone_map *map, enum part_type ptype);
+typedef int (*map_contrib_function_t)(int ptype);
 
 /**
  * @brief Struct to store information on one type of lightcone map
@@ -55,7 +55,7 @@ struct lightcone_map_type {
 /* 
    Healpix map of total mass
 */
-int lightcone_map_total_mass_type_contributes(struct lightcone_map *map, enum part_type ptype);
+int lightcone_map_total_mass_type_contributes(int ptype);
 
 void lightcone_map_total_mass_get_value(struct lightcone_map *map, const struct engine *e,
                                         const struct gpart *gp, const double a_cross,
@@ -63,7 +63,7 @@ void lightcone_map_total_mass_get_value(struct lightcone_map *map, const struct 
 /* 
    Healpix map of gas mass
 */
-int lightcone_map_gas_mass_type_contributes(struct lightcone_map *map, enum part_type ptype);
+int lightcone_map_gas_mass_type_contributes(int ptype);
 
 void lightcone_map_gas_mass_get_value(struct lightcone_map *map, const struct engine *e,
                                       const struct gpart *gp, const double a_cross,
@@ -72,7 +72,7 @@ void lightcone_map_gas_mass_get_value(struct lightcone_map *map, const struct en
 /* 
    Healpix map of neutrino mass
 */
-int lightcone_map_neutrino_mass_type_contributes(struct lightcone_map *map, enum part_type ptype);
+int lightcone_map_neutrino_mass_type_contributes(int ptype);
 
 void lightcone_map_neutrino_mass_get_value(struct lightcone_map *map, const struct engine *e,
                                            const struct gpart *gp, const double a_cross,

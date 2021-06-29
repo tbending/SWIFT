@@ -75,6 +75,26 @@ struct lightcone_shell {
 
 
 /**
+ * @brief Information about a particle type contributing to the lightcone
+ */
+struct lightcone_particle_type {
+  
+  /*! Number of lightcone maps this particle type contributes to */
+  int nr_maps;
+  
+  /*! Indices of the lightcone maps this particle type contributes to */
+  int *map_index;
+
+  /*! Amount of data to store per particle */
+  size_t buffer_element_size;
+
+  /*! Buffer to store lightcone map contributions for this particle type */
+  struct particle_buffer buffer;
+
+};
+
+
+/**
  * @brief Lightcone data
  */
 struct lightcone_props {
@@ -171,6 +191,9 @@ struct lightcone_props {
 
   /*! Range of shells that might be updated this step */
   int shell_nr_min, shell_nr_max;
+
+  /*! Information about each particle type contributing to the maps */
+  struct lightcone_particle_type part_type[swift_type_count];
 
 };
 
