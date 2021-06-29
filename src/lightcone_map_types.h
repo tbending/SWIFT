@@ -34,9 +34,9 @@ struct lightcone_map;
 struct gpart;
 
 /* Type to store pointer to function for updating a healpix map */
-typedef void (*map_update_function_t)(struct lightcone_map *map, const struct engine *e,
-                                      const struct gpart *gp, const double a_cross,
-                                      const double x_cross[3]);
+typedef double (*map_update_function_t)(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]);
 
 /* Type to store pointer to function to check which types contribute to a map */
 typedef int (*map_contrib_function_t)(int ptype);
@@ -57,26 +57,26 @@ struct lightcone_map_type {
 */
 int lightcone_map_total_mass_type_contributes(int ptype);
 
-void lightcone_map_total_mass_get_value(struct lightcone_map *map, const struct engine *e,
-                                        const struct gpart *gp, const double a_cross,
-                                        const double x_cross[3]);
+double lightcone_map_total_mass_get_value(const struct engine *e,
+                                          const struct gpart *gp, const double a_cross,
+                                          const double x_cross[3]);
 /* 
    Healpix map of gas mass
 */
 int lightcone_map_gas_mass_type_contributes(int ptype);
 
-void lightcone_map_gas_mass_get_value(struct lightcone_map *map, const struct engine *e,
-                                      const struct gpart *gp, const double a_cross,
-                                      const double x_cross[3]);
+double lightcone_map_gas_mass_get_value(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]);
 
 /* 
    Healpix map of neutrino mass
 */
 int lightcone_map_neutrino_mass_type_contributes(int ptype);
 
-void lightcone_map_neutrino_mass_get_value(struct lightcone_map *map, const struct engine *e,
-                                           const struct gpart *gp, const double a_cross,
-                                           const double x_cross[3]);
+double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {

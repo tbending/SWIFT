@@ -25,6 +25,7 @@
 #include "../config.h"
 
 /* Local headers */
+#include "healpix_smoothing.h"
 #include "lightcone_map.h"
 #include "lightcone_map_types.h"
 #include "lightcone_replications.h"
@@ -194,6 +195,12 @@ struct lightcone_props {
 
   /*! Information about each particle type contributing to the maps */
   struct lightcone_particle_type part_type[swift_type_count];
+
+  /*! Whether we're smoothing the healpix maps */
+  int smooth;
+
+  /*! Healpix smoothing information */
+  struct healpix_smoothing_info *smoothing_info;
 
 };
 

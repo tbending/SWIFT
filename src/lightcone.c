@@ -35,6 +35,7 @@
 #include "cosmology.h"
 #include "engine.h"
 #include "error.h"
+#include "hydro.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
 #include "lock.h"
@@ -446,6 +447,9 @@ void lightcone_init(struct lightcone_props *props,
      Healpix map parameters for this lightcone
   */
 
+  /* Initialise C++ smoothing code */
+  props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
+
   /* Update lightcone pixel data if more than this number of updates are buffered */
   props->max_updates_buffered = parser_get_opt_param_int(params, YML_NAME("max_updates_buffered"), 1000000);
   
@@ -456,7 +460,7 @@ void lightcone_init(struct lightcone_props *props,
   props->nside = parser_get_param_double(params, YML_NAME("nside"));
 
   /* Whether we smooth the maps */
-  int smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
+  props->smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
 
   /* Names of the healpix maps to make for this lightcone */
   char **map_names;
@@ -525,10 +529,10 @@ void lightcone_init(struct lightcone_props *props,
   const int nr_maps = props->nr_maps;
   for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
     for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
-      lightcone_map_init(&(props->shell[shell_nr].map[map_nr]), props->nside,
-                         props->shell[shell_nr].rmin, props->shell[shell_nr].rmax,
-                         props->buffer_chunk_size, props->map_type[map_nr].units,
-                         smooth);
+      size_t total_nr_pix = healpix_smoothing_get_npix(props->smoothing_info);
+      lightcone_map_init(&(props->shell[shell_nr].map[map_nr]), total_nr_pix,
+                         props->nside, props->shell[shell_nr].rmin,
+                         props->shell[shell_nr].rmax, props->map_type[map_nr].units);
     }
   }
   if(engine_rank==0)message("lightcone %d: there are %d lightcone shells and %d maps per shell",
@@ -725,8 +729,10 @@ void lightcone_flush_map_updates_for_shell(struct lightcone_props *props,
   if(props->shell[shell_nr].state == shell_current) {
     if(props->verbose && engine_rank==0)
       message("lightcone %d: applying lightcone map updates for shell %d", props->index, shell_nr);
-    for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
-      lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), tp, props->verbose);
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      // NOT IMPLEMENTED YET
+      /* lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), tp, props->verbose); */
+    }
   }
 }
 
@@ -912,7 +918,9 @@ void lightcone_clean(struct lightcone_props *props) {
     struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
     free(this_type->map_index);
   }
-
+  
+  /* Tidy up C++ healpix smoothing code */
+  healpix_smoothing_clean(props->smoothing_info);
 }
 
 
@@ -1103,12 +1111,11 @@ void lightcone_prepare_for_step(struct lightcone_props *props,
 int lightcone_trigger_map_update(struct lightcone_props *props) {
   
   size_t total_updates = 0;
-  const int nr_maps = props->nr_maps;
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
     if(props->shell[shell_nr].state == shell_current) {
-      for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-        total_updates += particle_buffer_num_elements(&props->shell[shell_nr].map[map_nr].buffer);
+      for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+        total_updates += particle_buffer_num_elements(&(props->shell[shell_nr].buffer[ptype]));
       }
     }
   }
@@ -1197,6 +1204,22 @@ void lightcone_buffer_particle(struct lightcone_props *props,
 }
 
 
+static double angular_smoothing_scale(const double *pos, const double hsml) {
+  
+  /* Compute distance to particle */
+  double dist = 0;
+  for(int i=0; i<3; i+=1)
+    dist += pos[i]*pos[i];
+  dist = sqrt(dist);
+  
+  /* Avoid trig call for small angles (accurate to about 0.3%) */
+  if(dist > 10.0*hsml)
+    return hsml/dist;
+  else
+    return atan(hsml/dist);
+}
+
+
 /**
  * @brief Buffer a particle's contribution to the healpix map(s)
  *
@@ -1211,26 +1234,54 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
                                  const struct engine *e, const struct gpart *gp,
                                  const double a_cross, const double x_cross[3]) {
 
-  /* Number of lightcone maps per shell */
-  const int nr_maps = props->nr_maps;
+  /* Find information on healpix maps this particle type contributes to */
+  const struct lightcone_particle_type *part_type_info = &(props->part_type[gp->type]);
+
+  /* If this particle type contributes to no healpix maps, do nothing */
+  if(part_type_info->nr_maps==0)return;
+
+  /* Get angular coordinates of the particle */
+  double theta, phi;
+  healpix_smoothing_vec2ang(props->smoothing_info, x_cross, &theta, &phi);
+
+  /* Get angular size of the particle */
+  double radius;
+  if((gp->type == swift_type_gas) && props->smooth) {
+    const struct part *parts = e->s->parts;
+    const struct part *p = &parts[-gp->id_or_neg_offset];
+    radius = angular_smoothing_scale(x_cross, p->h);
+  } else {
+    radius = 0.0;
+  }
 
   /* Loop over shells to update */
   for(int shell_nr=props->shell_nr_min; shell_nr<=props->shell_nr_max; shell_nr+=1) {
     if(a_cross > props->shell[shell_nr].amin && a_cross <= props->shell[shell_nr].amax) {
   
+      /* Make sure this shell is available for updating */
       if(props->shell[shell_nr].state == shell_uninitialized)
         error("Attempt to update shell which has not been allocated");
       if(props->shell[shell_nr].state == shell_complete)
         error("Attempt to update shell which has been written out");
 
-      /* Loop over healpix maps to update within this shell */
-      for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-        
-        /* Call the update function associated with this type of map */
-        struct lightcone_map *map = &(props->shell[shell_nr].map[map_nr]);
-        props->map_type[map_nr].update_map(map, e, gp, a_cross, x_cross);
-        
-      } /* Next map type */
+      /* Allocate storage for updates and set particle coordinates and radius */
+      double *data = malloc(part_type_info->buffer_element_size);
+      data[0] = theta;
+      data[1] = phi;
+      data[2] = radius;
+
+      /* Loop over healpix maps which this particle type contributes to and find values to add */
+      for(int i=0; i<part_type_info->nr_maps; i+=1) {
+        int map_nr = part_type_info->map_index[i];
+        data[2+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
+      }
+
+      /* Buffer the updates */
+      particle_buffer_append(&(props->shell[shell_nr].buffer[gp->type]), data);
+
+      /* Free update info */
+      free(data);
+
     }
   } /* Next shell */
 }
@@ -1248,7 +1299,7 @@ void lightcone_report_memory_use(struct lightcone_props *props) {
   for(int i=0; i<3; i+=1)
     memuse_local[i] = 0;
 
-  /* Accumulate memory used by particle buffers */
+  /* Accumulate memory used by particle buffers - one buffer per particle type */
   for(int i=0; i<swift_type_count; i+=1) {
     if(props->use_type[i])
       memuse_local[0] += particle_buffer_memory_use(props->buffer+i);
@@ -1258,9 +1309,15 @@ void lightcone_report_memory_use(struct lightcone_props *props) {
   const int nr_maps = props->nr_maps;
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
+
+    /* Healpix map updates - one buffer per particle type per shell */
+    for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+      memuse_local[1] += particle_buffer_memory_use(&(props->shell[shell_nr].buffer[ptype]));
+    }
+
+    /* Pixel data - one buffer per map per shell */
     for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
       struct lightcone_map *map = &(props->shell[shell_nr].map[map_nr]);
-      memuse_local[1] += particle_buffer_memory_use(&map->buffer);
       if(map->data)memuse_local[2] += map->local_nr_pix*sizeof(double);
     }
   }
