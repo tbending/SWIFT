@@ -329,6 +329,7 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
     while(lightcone_map_types[type_nr].update_map) {
       if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
         props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
       }
       type_nr += 1;
     }
@@ -510,6 +511,7 @@ void lightcone_init(struct lightcone_props *props,
     while(lightcone_map_types[type_nr].update_map) {
       if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
         props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
         props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
         if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                   index, map_nr, lightcone_map_types[type_nr].name);

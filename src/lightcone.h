@@ -89,7 +89,7 @@ struct lightcone_particle_type {
   /*! Indices of the lightcone maps this particle type contributes to */
   int *map_index;
 
-  /*! Amount of data to store per particle */
+  /*! Amount of data to store per particle: theta, phi, radius and the value to add to each healpix map */
   size_t buffer_element_size;
 
 };
