@@ -68,7 +68,7 @@ include_HEADERS += particle_splitting.h particle_splitting_struct.h
 include_HEADERS += chemistry_csds.h star_formation_csds.h
 include_HEADERS += lightcone.h lightcone_particle_io.h lightcone_replications.h lightcone_crossing.h
 include_HEADERS += lightcone_array.h lightcone_map.h lightcone_map_types.h particle_buffer.h exchange_structs.h
-include_HEADERS += healpix_smoothing.h projected_kernel.h
+include_HEADERS += healpix_smoothing.h projected_kernel.h lightcone_shell.h
 
 # source files for EAGLE cooling
 QLA_COOLING_SOURCES =
@@ -185,7 +185,7 @@ AM_SOURCES += runner_neutrino.c
 AM_SOURCES += neutrino/Default/fermi_dirac.c
 AM_SOURCES += lightcone.c lightcone_particle_io.c lightcone_replications.c particle_buffer.c
 AM_SOURCES += lightcone_array.c lightcone_map.c lightcone_map_types.c exchange_structs.c
-AM_SOURCES += healpix_smoothing.cxx projected_kernel.c
+AM_SOURCES += healpix_smoothing.cxx projected_kernel.c lightcone_shell.c
 AM_SOURCES += $(QLA_COOLING_SOURCES) 
 AM_SOURCES += $(EAGLE_COOLING_SOURCES) $(EAGLE_FEEDBACK_SOURCES) 
 AM_SOURCES += $(GRACKLE_COOLING_SOURCES) $(GEAR_FEEDBACK_SOURCES) 
