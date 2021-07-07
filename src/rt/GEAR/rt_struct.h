@@ -33,6 +33,31 @@ struct rt_part_data {
     float flux[3];
   } conserved[RT_NGROUPS];
 
+  /* density state vector */
+  struct {
+    float energy;
+    float flux[3];
+  } density[RT_NGROUPS];
+
+  /* gradients of densities */
+  /* for the flux[3][3] quantity:
+   *    first index: x, y, z coordinate of the flux.
+   *    Second index: gradient along x, y, z direction. */
+  struct {
+    float energy[3];
+    float flux[3][3];
+  } gradient[RT_NGROUPS];
+
+  /* cell slope limiter quantities */
+  /* array of length two: store min among all neighbours
+   * at first index, store max among all neighbours at
+   * second index */
+  struct {
+    float energy[2];
+    float flux[3][2];
+    /* float maxr; [> just use the hydro one <] */
+  } limiter[RT_NGROUPS];
+
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* debugging data to store during entire run */
   unsigned long long
@@ -43,7 +68,8 @@ struct rt_part_data {
   int debug_iact_stars_inject;    /* how many stars this part interacted with */
   int debug_calls_iact_gradient;  /* calls from gradient interaction loop */
   int debug_calls_iact_transport; /* calls from transport interaction loop */
-  int debug_injection_check;      /* called in a self/rt_injection task? */
+  /* skip this for GEAR */
+  /* int debug_injection_check;   [> called in a self/rt_injection task? <] */
   /* calls from gradient interaction loop in actual function */
   int debug_calls_iact_gradient_interaction;
   /* calls from transport interaction loop in actual function */
@@ -59,6 +85,12 @@ struct rt_part_data {
 /* Additional RT data in star particle struct */
 struct rt_spart_data {
 
+  /* Stellar energy emission that will be injected in to gas.
+   * Total energy, not density, not rate! */
+  /* TODO: keep this also for RT_HYDRO_CONTROLLED_INJECTION and
+   * store results with each hydro-star interaction in here */
+  float emission_this_step[RT_NGROUPS];
+
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* data to store during entire run */
   unsigned long long
@@ -69,7 +101,16 @@ struct rt_spart_data {
   int debug_iact_hydro_inject; /* how many hydro particles this particle
                                   interacted with */
   int debug_emission_rate_set; /* stellar photon emisison rate computed? */
-  int debug_injection_check;   /* called in a self/rt_injection task? */
+  /* skip this for GEAR */
+  /* int debug_injection_check; [> called in a self/rt_injection task? <] */
+
+  float debug_injected_energy[RT_NGROUPS];     /* how much energy this star
+                                                  particle actually has injected
+                                                  into the gas */
+  float debug_injected_energy_tot[RT_NGROUPS]; /* how much energy this star
+                                              particle actually has injected
+                                              into the gas over the entire
+                                              run*/
 #endif
 };
 

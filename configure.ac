@@ -1683,7 +1683,7 @@ case "$with_subgrid" in
 	with_subgrid_chemistry=QLA
 	with_subgrid_tracers=none
 	with_subgrid_entropy_floor=QLA
-	with_subgrid_stars=none
+	with_subgrid_stars=basic
 	with_subgrid_star_formation=QLA
 	with_subgrid_feedback=none
 	with_subgrid_black_holes=none
@@ -2540,6 +2540,10 @@ case "$with_rt" in
 
       if test "$enable_debugging_checks" = "yes"; then
           AC_DEFINE([SWIFT_RT_DEBUG_CHECKS], [1], [additional debugging checks for RT])
+      fi
+
+      if test "$with_hydro" != "gizmo-mfv"; then
+          AC_MSG_ERROR([GEAR-RT: Cannot work without gizmo-mfv hydro])
       fi
 
    ;;
