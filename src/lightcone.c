@@ -304,6 +304,9 @@ void lightcone_init(struct lightcone_props *props,
      Healpix map parameters for this lightcone
   */
 
+  /* Healpix nside parameter */
+  props->nside = parser_get_param_double(params, YML_NAME("nside"));
+
   /* Initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
 
@@ -313,9 +316,6 @@ void lightcone_init(struct lightcone_props *props,
   /* Name of the file with radii of spherical shells */
   parser_get_param_string(params, YML_NAME("radius_file"), props->radius_file);
   
-  /* Healpix nside parameter */
-  props->nside = parser_get_param_double(params, YML_NAME("nside"));
-
   /* Whether we smooth the maps */
   props->smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
 
