@@ -42,33 +42,17 @@
 #endif
 
 
-void lightcone_map_init(struct lightcone_map *map, const size_t total_nr_pix,
-                        const int nside, const double r_min, const double r_max,
+void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t total_nr_pix,
+                        const size_t pix_per_rank, const size_t local_nr_pix,
+                        const size_t local_pix_offset, const double r_min, const double r_max,
                         enum unit_conversion_factor units) {
-  
-  int comm_rank = 0, comm_size = 1;
-#ifdef WITH_MPI
-  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &comm_rank);
-#endif
 
-  /*Store number of pixels in the map */  
-  map->total_nr_pix = total_nr_pix;
+  /*Store number of pixels in the map etc */
   map->nside = nside;
-
-  /* Determine which pixels are stored on which rank:
-     put pix_per_rank on each node with any extra assigned to
-     the last node. This makes it easy to convert a pixel index
-     to a node index. */
-  map->pix_per_rank = map->total_nr_pix / comm_size;
-  if(map->pix_per_rank==0)error("Must have healpix npix > number of MPI ranks!");
-  if(comm_rank < comm_size-1)
-    map->local_nr_pix = map->pix_per_rank;
-  else
-    map->local_nr_pix = map->total_nr_pix - (comm_size-1)*map->pix_per_rank;
-
-  /* Store offset from local array index to global healpix pixel index  */
-  map->local_pix_offset = map->pix_per_rank * comm_rank;
+  map->total_nr_pix = total_nr_pix;
+  map->pix_per_rank = pix_per_rank;
+  map->local_nr_pix = local_nr_pix;
+  map->local_pix_offset = local_pix_offset;
   
   /* Pixel data is initially not allocated */
   map->data = NULL;
@@ -202,7 +186,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   /* Select the part of the dataset in the file to write to */
 #ifdef WITH_MPI
 #ifdef HAVE_PARALLEL_HDF5
-  const size_t pixel_offset = map->pix_per_rank * comm_rank;
+  const size_t pixel_offset = map->local_pix_offset;
   const hsize_t start[1] = {(hsize_t) pixel_offset};
   const hsize_t count[1] = {(hsize_t) map->local_nr_pix};
   if(H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, start, NULL, count, NULL) < 0)

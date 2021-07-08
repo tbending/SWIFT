@@ -70,8 +70,9 @@ struct lightcone_map {
 };
 
 
-void lightcone_map_init(struct lightcone_map *map, const size_t total_nr_pix,
-                        const int nside, const double r_min, const double r_max,
+void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t total_nr_pix,
+                        const size_t pix_per_rank, const size_t local_nr_pix,
+                        const size_t local_pix_offset, const double r_min, const double r_max,
                         enum unit_conversion_factor units);
 
 void lightcone_map_clean(struct lightcone_map *map);

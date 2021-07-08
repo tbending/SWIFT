@@ -125,6 +125,8 @@ void lightcone_struct_dump(const struct lightcone_props *props, FILE *stream) {
   /* Don't write array pointers */
   tmp.shell = NULL;
   tmp.map_type = NULL;
+  for(int ptype=0; ptype<swift_type_count; ptype+=1)
+    tmp.part_type[ptype].map_index = NULL;
 
   /* Dump the lightcone struct */
   restart_write_blocks((void *) &tmp, sizeof(struct lightcone_props), 1, stream,
@@ -569,28 +571,6 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
 
 
 /**
- * @brief Flush lightcone map update buffers for one shell
- *
- * @param props the #lightcone_props structure.
- * @param shell_nr index of the shell to update
- *
- */
-void lightcone_flush_map_updates_for_shell(struct lightcone_props *props,
-                                           struct threadpool *tp, int shell_nr) {
-
-  const int nr_maps   = props->nr_maps;
-  if(props->shell[shell_nr].state == shell_current) {
-    if(props->verbose && engine_rank==0)
-      message("lightcone %d: applying lightcone map updates for shell %d", props->index, shell_nr);
-    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-      // NOT IMPLEMENTED YET
-      /* lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), tp, props->verbose); */
-    }
-  }
-}
-
-
-/**
  * @brief Flush lightcone map update buffers for all shells
  *
  * @param props the #lightcone_props structure.
@@ -604,15 +584,17 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
   /* Report how much memory we're using before flushing buffers */
   if(props->verbose)lightcone_report_memory_use(props);
 
-  const int nr_shells = props->nr_shells;
-  for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-    lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
+  /* Apply updates to all current shells */
+  for(int shell_nr=0; shell_nr<props->nr_shells; shell_nr+=1) {
+    if(props->shell[shell_nr].state == shell_current)
+      lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
+                                        props->part_type, props->smoothing_info);
   }
 
+  /* Report runtime */
   if (props->verbose && engine_rank==0)
     message("lightcone %d: Applying lightcone map updates took %.3f %s.",
             props->index, clocks_from_ticks(getticks() - tic), clocks_getunit());
-  
 }
 
 
@@ -669,7 +651,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         num_shells_written += 1;
 
         /* Apply any buffered updates for this shell, if we didn't already */
-        if(need_flush)lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
+        if(need_flush) lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
+                                                         props->part_type, props->smoothing_info);
 
         /* Get the name of the file to write */
         char fname[FILENAME_BUFFER_SIZE];

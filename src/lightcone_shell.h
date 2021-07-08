@@ -28,6 +28,7 @@
 
 /* Local headers */
 #include "cosmology.h"
+#include "healpix_smoothing.h"
 #include "lightcone_map.h"
 #include "lightcone_map_types.h"
 #include "particle_buffer.h"
@@ -42,6 +43,15 @@ enum lightcone_shell_state {
 
 /**
  * @brief Information about a particle type contributing to the lightcone
+ *
+ * For each Swift particle type we store how many lightcone maps that type
+ * contributes to and their indexes in the array of lightcone_maps structs
+ * associated with each lightcone_shell.
+ * 
+ * We also record the number of bytes needed to store one update: updates
+ * consist of the angular coordinates of the particle, its angular smoothing
+ * radius, and the quantities contributed to the lightcone maps.
+ *
  */
 struct lightcone_particle_type {
   
@@ -59,6 +69,17 @@ struct lightcone_particle_type {
 
 /**
  * @brief Information about each lightcone shell
+ *
+ * Each shell contains one lightcone_map for each healpix map
+ * we're making. This is where the pixel data is stored while
+ * the current simulation timestep overlaps the shell's redshift
+ * range.
+ *
+ * Each shell also contains one particle_buffer per particle type,
+ * which stores the updates to be applied to the pixel data.
+ * Updates are accumulated in the buffers during each time step 
+ * and applied at the end of the step.
+ *
  */
 struct lightcone_shell {
 
@@ -86,6 +107,21 @@ struct lightcone_shell {
   /*! Buffers to store the map updates for each particle type */
   struct particle_buffer buffer[swift_type_count];
 
+  /*! Healpix nside parameter */
+  int nside;
+
+  /*! Total pixels in the maps */
+  size_t total_nr_pix;
+
+  /*! Number of pixels per map stored on this node */
+  size_t local_nr_pix;
+  
+  /*! Offset of the first pixel stored on this rank */
+  size_t local_pix_offset;
+
+  /*! Number of pixels per rank (last node has any extra) */
+  size_t pix_per_rank;
+
 };
 
 
@@ -104,5 +140,9 @@ void lightcone_shell_array_dump(const struct lightcone_shell *shell, int nr_shel
 struct lightcone_shell *lightcone_shell_array_restore(FILE *stream, int nr_shells,
                                                       struct lightcone_particle_type *part_type,
                                                       size_t elements_per_block);
+
+void lightcone_shell_flush_map_updates(struct lightcone_shell *shell, struct threadpool *tp,
+                                       struct lightcone_particle_type *part_type,
+                                       struct healpix_smoothing_info *smoothing_info);
 
 #endif /* SWIFT_LIGHTCONE_SHELL_H */
