@@ -678,6 +678,7 @@ if test "$enable_san" = "yes"; then
    fi
    if test "$enable_san" = "yes"; then
       CFLAGS="$CFLAGS -fsanitize=address -fno-omit-frame-pointer"
+      CXXFLAGS="$CXXFLAGS -fsanitize=address -fno-omit-frame-pointer"
       AC_MSG_RESULT([added address sanitizer support])
    else
       AC_MSG_WARN([Compiler does not support address sanitizer option])
@@ -705,6 +706,7 @@ if test "$enable_ubsan" = "yes"; then
    fi
    if test "$enable_ubsan" = "yes"; then
       CFLAGS="$CFLAGS -fsanitize=undefined"
+      CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
       AC_MSG_RESULT([added undefined sanitizer support])
    else
       AC_MSG_WARN([Compiler does not support undefined sanitizer option])
@@ -824,7 +826,7 @@ AM_CONDITIONAL([HAVEHEALPIX_CXX],[test -n "$HEALPIX_CXX_LIBS"])
 
 # Check for pthreads.
 AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-    CC="$PTHREAD_CC" LDFLAGS="$LDFLAGS $PTHREAD_LIBS $LIBS"],
+    CC="$PTHREAD_CC" CXX="$PTHREAD_CXX" LDFLAGS="$LDFLAGS $PTHREAD_LIBS $LIBS"],
     AC_MSG_ERROR([Could not find a working version of
     the pthread library. Make sure you have the library and header files installed
     or use CPPFLAGS and LDFLAGS if the library is installed in a
