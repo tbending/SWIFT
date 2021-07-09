@@ -160,8 +160,8 @@ struct lightcone_shell *lightcone_shell_array_init(const struct cosmology *cosmo
                                                    size_t elements_per_block,
                                                    int *nr_shells_out) {
   /* Read in the shell radii */
-  int nr_shells;
-  struct lightcone_shell *shell;
+  int nr_shells = 0;
+  struct lightcone_shell *shell = NULL;
   if(engine_rank==0)
     read_shell_radii(cosmo, radius_file, &nr_shells, &shell);
 #ifdef WITH_MPI
