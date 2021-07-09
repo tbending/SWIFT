@@ -1109,7 +1109,7 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
       /* Loop over healpix maps which this particle type contributes to and find values to add */
       for(int i=0; i<part_type_info->nr_maps; i+=1) {
         int map_nr = part_type_info->map_index[i];
-        data[2+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
+        data[3+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
       }
 
       /* Buffer the updates */
