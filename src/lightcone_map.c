@@ -61,6 +61,9 @@ void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t
   map->r_min = r_min;
   map->r_max = r_max;
   map->units = units;
+
+  /* Initialize total for consistency check */
+  map->total = 0.0;
 }
 
 
@@ -227,6 +230,16 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   io_write_attribute_d(dset_id,
                        "Conversion factor to CGS (not including cosmological corrections)",
                        cgs_factor);
+
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+  /* Consistency check: will write out expected sum over pixels */
+  double total = map->total;
+#ifdef WITH_MPI
+  MPI_Allreduce(&map->total, &total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+#endif
+  total *= conversion_factor;
+  io_write_attribute_f(dset_id, "expected_sum", total);
+#endif
 
   /* Set up property list for the write */
   hid_t h_plist_id = H5Pcreate(H5P_DATASET_XFER);

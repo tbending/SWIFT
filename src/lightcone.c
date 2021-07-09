@@ -1110,6 +1110,12 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
       for(int i=0; i<part_type_info->nr_maps; i+=1) {
         int map_nr = part_type_info->map_index[i];
         data[3+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
+
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+        /* Accumulate total quantity added to each map for consistency check */
+        atomic_add_d(&props->shell[shell_nr].map[map_nr].total, data[3+i]);
+#endif
+
       }
 
       /* Buffer the updates */

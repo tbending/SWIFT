@@ -20,6 +20,12 @@
 #ifndef SWIFT_LIGHTCONE_MAP_H
 #define SWIFT_LIGHTCONE_MAP_H
 
+/* Define this to write the expected sum of the map to the
+   output file. This is to check that the SPH smoothing and
+   communication code is conserving the quantity added to
+   the map. */
+#define LIGHTCONE_MAP_CHECK_TOTAL
+
 /* Standard headers */
 #include <math.h>
 #include <limits.h>
@@ -66,6 +72,11 @@ struct lightcone_map {
 
   /*! Units of this map */
   enum unit_conversion_factor units;
+
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+  /*! Total quantity accumulated to this map, for consistency check */
+  double total;
+#endif
 
 };
 
