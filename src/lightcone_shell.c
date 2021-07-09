@@ -548,7 +548,7 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
   size_t local_nr_pix     = shell->map[0].local_nr_pix;
 
   /* Loop over updates to apply */
-  for(size_t i=0; i<num_elements; i+=1) {
+  for(int i=0; i<num_elements; i+=1) {
 
     /* Find the data for this update */
     size_t index = i*(3+part_type->nr_maps);
@@ -583,7 +583,7 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
       healpix_smoothing_find_neighbours(smoothing_info, theta, phi, radius, &nr_ngb, &ngb);
       
       /* Loop over neighbour pixels */
-      for(int ngb_nr=0; ngb_nr<nr_ngb; ngb_nr+=1) {
+      for(size_t ngb_nr=0; ngb_nr<nr_ngb; ngb_nr+=1) {
 
         const size_t global_pix = ngb[ngb_nr].global_pix;
 
