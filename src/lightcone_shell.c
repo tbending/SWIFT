@@ -390,6 +390,21 @@ static int pixel_to_rank(int comm_size, size_t pix_per_rank, size_t pixel) {
 }
 
 
+/**
+ * @brief Count elements to send to each rank from each buffer block
+ *
+ * For each buffer_block_info in the input array, this counts how
+ * many lightcone map updates are to be sent to each MPI rank.
+ * It also determines the range of MPI ranks which each update
+ * needs to be sent to. Updates must be copied to several ranks
+ * if we're smoothing the maps and the smoothing kernel overlaps parts
+ * of the healpix map which are stored on different ranks.
+ *
+ * @param map_data Pointer to an array of buffer_block_info
+ * @param num_elements Number of elements buffer_block_info array
+ * @param extra_data Pointer to healpix_smoothing_mapper_data struct
+ *
+ */
 static void count_elements_to_send_mapper(void *map_data, int num_elements,
                                           void *extra_data) {
   
@@ -453,6 +468,18 @@ static void count_elements_to_send_mapper(void *map_data, int num_elements,
 }
 
 
+/**
+ * @brief Store elements to send to each MPI rank from each buffer block
+ *
+ * This stores the updates to be sent to MPI ranks in order of which
+ * rank they need to be sent to. It also duplicates updates which need
+ * to go to multiple ranks.
+ *
+ * @param map_data Pointer to an array of buffer_block_info
+ * @param num_elements Number of elements buffer_block_info array
+ * @param extra_data Pointer to healpix_smoothing_mapper_data struct
+ *
+ */
 static void store_elements_to_send_mapper(void *map_data, int num_elements,
                                           void *extra_data) {
   
