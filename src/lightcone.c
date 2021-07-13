@@ -1223,6 +1223,28 @@ void lightcone_write_index(struct lightcone_props *props) {
     io_write_attribute(group_id, "final_file_on_rank", INT,
                        current_file_on_rank, comm_size);
 
+    /* Write observer position and redshift limits */
+    io_write_attribute(group_id, "observer_position", DOUBLE,
+                       props->observer_position, 3);
+    io_write_attribute_d(group_id, "minimum_redshift", props->z_min_for_particles);
+    io_write_attribute_d(group_id, "maximum_redshift", props->z_max_for_particles);
+
+    /* Write the number of shells and their radii */
+    const int nr_shells = props->nr_shells;
+    io_write_attribute_i(group_id, "nr_shells", nr_shells);
+    double *shell_inner_radii = malloc(sizeof(double)*nr_shells);
+    double *shell_outer_radii = malloc(sizeof(double)*nr_shells);
+    for(int i=0; i<nr_shells; i+=1) {
+      shell_inner_radii[i] = props->shell[i].rmin;
+      shell_outer_radii[i] = props->shell[i].rmax;
+    }
+    io_write_attribute(group_id, "shell_inner_radii", DOUBLE,
+                       shell_inner_radii, nr_shells);
+    io_write_attribute(group_id, "shell_outer_radii", DOUBLE,
+                       shell_outer_radii, nr_shells);
+    free(shell_outer_radii);
+    free(shell_inner_radii);
+
     H5Gclose(group_id);
     H5Fclose(file_id);
   }
