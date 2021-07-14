@@ -94,6 +94,7 @@ struct lightcone_gas_data {
   long long id;
   double x[3];
   double mass;
+  double h;
   double a;
 };
 
