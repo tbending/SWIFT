@@ -25,9 +25,10 @@
 #include "../config.h"
 
 /* Local headers */
-#include "lightcone_map.h"
+#include "healpix_smoothing.h"
 #include "lightcone_map_types.h"
 #include "lightcone_replications.h"
+#include "lightcone_shell.h"
 #include "parser.h"
 #include "part_type.h"
 #include "particle_buffer.h"
@@ -39,40 +40,6 @@
 struct cosmology;
 struct engine;
 struct space;
-
-
-enum lightcone_shell_state {
-  shell_uninitialized,
-  shell_current,
-  shell_complete,
-};
-
-
-/**
- * @brief Information about each lightcone shell
- */
-struct lightcone_shell {
-
-  /*! State of this shell */
-  enum lightcone_shell_state state;
-
-  /*! Inner radius of shell */
-  double rmin;
-
-  /*! Outer radius of shell */
-  double rmax;
-
-  /*! Minimum expansion factor for this shell */
-  double amin;
-
-  /*! Maximum expansion factor for this shell */
-  double amax;
-
-  /*! Array of lightcone maps for this shell */
-  struct lightcone_map *map;
-
-};
-
 
 /**
  * @brief Lightcone data
@@ -171,6 +138,15 @@ struct lightcone_props {
 
   /*! Range of shells that might be updated this step */
   int shell_nr_min, shell_nr_max;
+
+  /*! Information about each particle type contributing to the maps */
+  struct lightcone_particle_type part_type[swift_type_count];
+
+  /*! Whether we're smoothing the healpix maps */
+  int smooth;
+
+  /*! Healpix smoothing information */
+  struct healpix_smoothing_info *smoothing_info;
 
 };
 

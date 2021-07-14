@@ -35,6 +35,7 @@
 #include "cosmology.h"
 #include "engine.h"
 #include "error.h"
+#include "hydro.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
 #include "lock.h"
@@ -57,108 +58,7 @@ extern int engine_rank;
 
 
 /**
- * @brief Read in shell radii for lightcone healpix maps
- *
- * Allocates the output array, shell_out.
- *
- * @param radius_file Name of the file to read
- * @param nr_shells Returns number of shells in the file
- * @param shell_rmin_out Returns shell inner raddi
- * @param shell_rmax_out Returns shell outer raddi
- */
-void lightcone_read_shell_radii(const struct cosmology *cosmo, char *radius_file,
-                                int *nr_shells, struct lightcone_shell **shell_out) {
-  
-
-  /* Allow shell radii to be specified in several different units */
-  enum shell_units {not_known=0, comoving_distance=1, redshift=2, expansion_factor=3};
-
-  FILE *fd = fopen(radius_file, "r");
-  if(!fd)error("Failed to open lightcone radius file %s", radius_file);
-
-  /* Count number of non-zero length lines */
-  size_t len = 0;
-  char *line = NULL;
-  int nr_lines = 0;
-  while (getline(&line, &len, fd) != -1 && strlen(line) > 0) nr_lines+=1;
-  rewind(fd);
-
-  /* Allocate output array */
-  struct lightcone_shell *shell = malloc(sizeof(struct lightcone_shell)*(nr_lines-1));
-
-  /* Check header */
-  enum shell_units units = not_known;
-  if(getline(&line, &len, fd) != -1) {
-    if (strcmp(line, "# Minimum comoving distance, Maximum comoving distance\n") == 0) {
-      units = comoving_distance;
-    } else if (strcmp(line, "# Minimum redshift, Maximum redshift\n") == 0) {
-      units = redshift;
-    } else if (strcmp(line, "# Maximum expansion factor, Minimum expansion factor\n") == 0) {
-      units = expansion_factor;
-    } else {
-      error("Unrecognized header in radius file");
-    }
-  } else {
-    error("Unable to read header in radius file");
-  }
-
-  /* Read lines */
-  for(int i=0; i<nr_lines-1; i+=1) {
-    if(fscanf(fd, "%le, %le\n", &shell[i].rmin, &shell[i].rmax) != 2)
-      error("Failed to read line from radius file");
-  }
-  fclose(fd);
-  *nr_shells = nr_lines-1;
-  const int nr = *nr_shells;
-  free(line);
-
-  /* Convert units */
-  switch(units) {
-  case comoving_distance:
-    /* Input is already comoving distance */
-    break;
-  case redshift:
-    /* Convert redshift to comoving distance */
-    for(int i=0; i<nr; i+=1) {
-      const double a_at_rmin = 1.0/(1.0+shell[i].rmin);
-      shell[i].rmin = cosmology_get_comoving_distance(cosmo, a_at_rmin);
-      const double a_at_rmax = 1.0/(1.0+shell[i].rmax);
-      shell[i].rmax = cosmology_get_comoving_distance(cosmo, a_at_rmax);
-    }
-    break;
-  case expansion_factor:
-    /* Convert expansion factor to comoving distance */
-    for(int i=0; i<nr; i+=1) {
-      shell[i].rmin = cosmology_get_comoving_distance(cosmo, shell[i].rmin);
-      shell[i].rmax = cosmology_get_comoving_distance(cosmo, shell[i].rmax);
-    }
-    break;
-  default:
-    error("unknown unit type");
-  }
-
-  /* Do some sanity checks on the radii */
-  /* All values should be monotonically increasing */
-  for(int i=1; i<nr; i+=1) {
-    if(shell[i].rmin <= shell[i-1].rmin)error("Minimum radii should be monotonically increasing");
-    if(shell[i].rmax <= shell[i-1].rmax)error("Maximum radii should be monotonically increasing");
-  }
-
-  /* Maximum radius should be greater than minimum */
-  for(int i=0; i<nr; i+=1)
-    if(shell[i].rmin >= shell[i].rmax)error("Maximum radius should be greater than minimum");
-
-  /* Shells should not overlap */
-  for(int i=1; i<nr; i+=1)
-    if(shell[i].rmin < shell[i-1].rmax)error("Shells should not overlap");
-
-  /* Return pointer to array */
-  *shell_out = shell;
-}
-
-
-/**
- * @brief Allocate I/O buffers for a lightcone
+ * @brief Allocate particle I/O buffers for a lightcone
  *
  * @param props the #lightcone_props structure
  */
@@ -225,6 +125,8 @@ void lightcone_struct_dump(const struct lightcone_props *props, FILE *stream) {
   /* Don't write array pointers */
   tmp.shell = NULL;
   tmp.map_type = NULL;
+  for(int ptype=0; ptype<swift_type_count; ptype+=1)
+    tmp.part_type[ptype].map_index = NULL;
 
   /* Dump the lightcone struct */
   restart_write_blocks((void *) &tmp, sizeof(struct lightcone_props), 1, stream,
@@ -235,16 +137,13 @@ void lightcone_struct_dump(const struct lightcone_props *props, FILE *stream) {
                        props->nr_maps, stream, "lightcone_props", "lightcone_props");
 
   /* Dump the array of shells */
-  restart_write_blocks((void *) props->shell, sizeof(struct lightcone_shell),
-                       props->nr_shells, stream, "lightcone_props", "lightcone_props");
+  lightcone_shell_array_dump(props->shell, props->nr_shells, stream);
 
-  /* Dump the lightcone maps */
-  const int nr_shells = props->nr_shells;
-  const int nr_maps = props->nr_maps;
-  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
-    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-      lightcone_map_struct_dump(&(props->shell[shell_nr].map[map_nr]), stream);
-    }
+  /* For each particle type we have an array of lightcone map indexes to update. Dump these. */
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    const struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+    restart_write_blocks((void *) this_type->map_index, sizeof(int),
+                         this_type->nr_maps, stream, "lightcone_props", "lightcone_props");
   }
 }
 
@@ -267,18 +166,15 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
                       props->nr_maps, stream, NULL, "lightcone_props");
 
   /* Read in the shells */
-  props->shell = malloc(sizeof(struct lightcone_shell)*props->nr_shells);
-  restart_read_blocks((void *)props->shell, sizeof(struct lightcone_shell),
-                      props->nr_shells, stream, NULL, "lightcone_props");
+  props->shell = lightcone_shell_array_restore(stream, props->nr_shells, props->part_type,
+                                               props->buffer_chunk_size);
 
-  /* Read in the lightcone maps */
-  const int nr_shells = props->nr_shells;
-  const int nr_maps = props->nr_maps;
-  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
-    props->shell[shell_nr].map = malloc(sizeof(struct lightcone_map)*props->nr_maps);
-    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-      lightcone_map_struct_restore(&(props->shell[shell_nr].map[map_nr]), stream);
-    }
+  /* For each particle type we have an array of lightcone map indexes to update. Restore these. */
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+    this_type->map_index = malloc(sizeof(int)*this_type->nr_maps);
+    restart_read_blocks((void *)this_type->map_index, sizeof(int),
+                        this_type->nr_maps, stream, NULL, "lightcone_props");
   }
 
   /* Restore pointers to functions for updating healpix maps */
@@ -287,6 +183,7 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
     while(lightcone_map_types[type_nr].update_map) {
       if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
         props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
       }
       type_nr += 1;
     }
@@ -294,12 +191,14 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
                                                  props->map_type[map_nr].name);
   }
 
+  /* Re-initialise C++ smoothing code */
+  props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
+
   /* Re-allocate particle data buffers */
   lightcone_allocate_buffers(props);
 
   /* Define output quantities */
   lightcone_io_make_output_fields();
-
 }
 
 
@@ -401,12 +300,15 @@ void lightcone_init(struct lightcone_props *props,
   /* Always start a new file initially */
   props->start_new_file = 1;
 
-  /* Allocate lightcone output buffers */
-  lightcone_allocate_buffers(props);
-
   /* 
      Healpix map parameters for this lightcone
   */
+
+  /* Healpix nside parameter */
+  props->nside = parser_get_param_double(params, YML_NAME("nside"));
+
+  /* Initialise C++ smoothing code */
+  props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
 
   /* Update lightcone pixel data if more than this number of updates are buffered */
   props->max_updates_buffered = parser_get_opt_param_int(params, YML_NAME("max_updates_buffered"), 1000000);
@@ -414,11 +316,8 @@ void lightcone_init(struct lightcone_props *props,
   /* Name of the file with radii of spherical shells */
   parser_get_param_string(params, YML_NAME("radius_file"), props->radius_file);
   
-  /* Healpix nside parameter */
-  props->nside = parser_get_param_double(params, YML_NAME("nside"));
-
   /* Whether we smooth the maps */
-  int smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
+  props->smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
 
   /* Names of the healpix maps to make for this lightcone */
   char **map_names;
@@ -430,34 +329,6 @@ void lightcone_init(struct lightcone_props *props,
   }
   parser_free_param_string_array(props->nr_maps, map_names);
 
-  /* Read in the shell radii for this lightcone */
-  if(engine_rank == 0)
-    lightcone_read_shell_radii(cosmo, props->radius_file, &props->nr_shells, &props->shell);
-#ifdef WITH_MPI
-  MPI_Bcast(&props->nr_shells, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if(engine_rank!=0)props->shell = malloc(sizeof(struct lightcone_shell)*props->nr_shells);
-  MPI_Bcast(props->shell, sizeof(struct lightcone_shell)*props->nr_shells, MPI_BYTE, 0, MPI_COMM_WORLD);
-#endif
-
-  /* Report shell radii */
-  const int nr_shells = props->nr_shells;
-  if(engine_rank==0) {
-    for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-      message("lightcone %d: shell %d has inner radius %e and outer radius %e", 
-              index, shell_nr, props->shell[shell_nr].rmin, props->shell[shell_nr].rmax);
-    }
-  }
-
-  /* Compute expansion factor at shell edges */
-  for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-    /* Inner edge of the shell */
-    props->shell[shell_nr].amax =
-      cosmology_scale_factor_at_comoving_distance(cosmo, props->shell[shell_nr].rmin);
-    /* Outer edge of the shell */
-    props->shell[shell_nr].amin =
-      cosmology_scale_factor_at_comoving_distance(cosmo, props->shell[shell_nr].rmax);
-  }
-
   /* Each type of map has a pointer to an update function. First, null them all. */
   for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1)
     props->map_type[map_nr].update_map = NULL;
@@ -468,6 +339,7 @@ void lightcone_init(struct lightcone_props *props,
     while(lightcone_map_types[type_nr].update_map) {
       if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
         props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
         props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
         if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                   index, map_nr, lightcone_map_types[type_nr].name);
@@ -478,19 +350,48 @@ void lightcone_init(struct lightcone_props *props,
                                                  props->map_type[map_nr].name);
   }
 
-  /* Allocate lightcone_map structs for each shell */
-  for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-    props->shell[shell_nr].map = malloc(props->nr_maps*sizeof(struct lightcone_map));
+  /* For each particle type, determine which healpix maps will be updated */
+  const int nr_maps = props->nr_maps;
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    
+    struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+
+    /* Count maps updated by this particle type */
+    this_type->nr_maps = 0;
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      if(props->map_type[map_nr].ptype_contributes(ptype))
+        this_type->nr_maps += 1;
+    }
+    
+    /* Store indexes of maps to update for this particle type */
+    this_type->map_index = malloc(sizeof(int)*this_type->nr_maps);
+    this_type->nr_maps = 0;
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      if(props->map_type[map_nr].ptype_contributes(ptype)) {
+        this_type->map_index[this_type->nr_maps] = map_nr;
+        this_type->nr_maps += 1;
+      }
+    }
+
+    /* Determine how much data we need to store per particle of this type.
+       We need theta and phi angular coordinates, angular size of the particle,
+       and the values to be added to the healpix maps */
+    this_type->buffer_element_size = (3+this_type->nr_maps) * sizeof(double);
   }
 
-  /* Initialize lightcone healpix maps */
-  const int nr_maps = props->nr_maps;
-  for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-    for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
-      lightcone_map_init(&(props->shell[shell_nr].map[map_nr]), props->nside,
-                         props->shell[shell_nr].rmin, props->shell[shell_nr].rmax,
-                         props->buffer_chunk_size, props->map_type[map_nr].units,
-                         smooth);
+  /* Set up the array of lightcone shells for this lightcone */
+  size_t total_nr_pix = healpix_smoothing_get_npix(props->smoothing_info);
+  props->shell = lightcone_shell_array_init(cosmo, props->radius_file, props->nr_maps,
+                                            props->map_type, props->nside, total_nr_pix,
+                                            props->part_type, props->buffer_chunk_size,
+                                            &props->nr_shells);
+  
+  /* Report shell radii */
+  const int nr_shells = props->nr_shells;
+  if(engine_rank==0) {
+    for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
+      message("lightcone %d: shell %d has inner radius %e and outer radius %e", 
+              index, shell_nr, props->shell[shell_nr].rmin, props->shell[shell_nr].rmax);
     }
   }
   if(engine_rank==0)message("lightcone %d: there are %d lightcone shells and %d maps per shell",
@@ -516,9 +417,8 @@ void lightcone_init(struct lightcone_props *props,
   props->r2_max = pow(cosmology_get_comoving_distance(cosmo, a_min), 2.0);
   props->r2_min = pow(cosmology_get_comoving_distance(cosmo, a_max), 2.0);
 
-  /* Store initial state of lightcone shells */
-  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1)
-    props->shell[shell_nr].state = shell_uninitialized;
+  /* Allocate lightcone output buffers */
+  lightcone_allocate_buffers(props);
 
   /* Estimate number of particles which will be output.
      
@@ -671,26 +571,6 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
 
 
 /**
- * @brief Flush lightcone map update buffers for one shell
- *
- * @param props the #lightcone_props structure.
- * @param shell_nr index of the shell to update
- *
- */
-void lightcone_flush_map_updates_for_shell(struct lightcone_props *props,
-                                           struct threadpool *tp, int shell_nr) {
-
-  const int nr_maps   = props->nr_maps;
-  if(props->shell[shell_nr].state == shell_current) {
-    if(props->verbose && engine_rank==0)
-      message("lightcone %d: applying lightcone map updates for shell %d", props->index, shell_nr);
-    for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
-      lightcone_map_update_from_buffer(&(props->shell[shell_nr].map[map_nr]), tp, props->verbose);
-  }
-}
-
-
-/**
  * @brief Flush lightcone map update buffers for all shells
  *
  * @param props the #lightcone_props structure.
@@ -704,15 +584,17 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
   /* Report how much memory we're using before flushing buffers */
   if(props->verbose)lightcone_report_memory_use(props);
 
-  const int nr_shells = props->nr_shells;
-  for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
-    lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
+  /* Apply updates to all current shells */
+  for(int shell_nr=0; shell_nr<props->nr_shells; shell_nr+=1) {
+    if(props->shell[shell_nr].state == shell_current)
+      lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
+                                        props->part_type, props->smoothing_info);
   }
 
+  /* Report runtime */
   if (props->verbose && engine_rank==0)
     message("lightcone %d: Applying lightcone map updates took %.3f %s.",
             props->index, clocks_from_ticks(getticks() - tic), clocks_getunit());
-  
 }
 
 
@@ -769,7 +651,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         num_shells_written += 1;
 
         /* Apply any buffered updates for this shell, if we didn't already */
-        if(need_flush)lightcone_flush_map_updates_for_shell(props, tp, shell_nr);
+        if(need_flush) lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
+                                                         props->part_type, props->smoothing_info);
 
         /* Get the name of the file to write */
         char fname[FILENAME_BUFFER_SIZE];
@@ -852,12 +735,28 @@ void lightcone_clean(struct lightcone_props *props) {
     }
     free(props->shell[shell_nr].map);
   }
+
+  /* Free buffers associated with each shell */
+  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
+    for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+      particle_buffer_free(&(props->shell[shell_nr].buffer[ptype]));
+    }
+  }
   
   /* Free array of shells */
   free(props->shell);
 
   /* Free array of lightcone map types */
   free(props->map_type);
+
+  /* Free data associated with particle types */
+  for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+    struct lightcone_particle_type *this_type = &(props->part_type[ptype]);
+    free(this_type->map_index);
+  }
+  
+  /* Tidy up C++ healpix smoothing code */
+  healpix_smoothing_clean(props->smoothing_info);
 }
 
 
@@ -1048,12 +947,11 @@ void lightcone_prepare_for_step(struct lightcone_props *props,
 int lightcone_trigger_map_update(struct lightcone_props *props) {
   
   size_t total_updates = 0;
-  const int nr_maps = props->nr_maps;
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
     if(props->shell[shell_nr].state == shell_current) {
-      for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-        total_updates += particle_buffer_num_elements(&props->shell[shell_nr].map[map_nr].buffer);
+      for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+        total_updates += particle_buffer_num_elements(&(props->shell[shell_nr].buffer[ptype]));
       }
     }
   }
@@ -1142,6 +1040,22 @@ void lightcone_buffer_particle(struct lightcone_props *props,
 }
 
 
+static double angular_smoothing_scale(const double *pos, const double hsml) {
+  
+  /* Compute distance to particle */
+  double dist = 0;
+  for(int i=0; i<3; i+=1)
+    dist += pos[i]*pos[i];
+  dist = sqrt(dist);
+  
+  /* Avoid trig call for small angles (accurate to about 0.3%) */
+  if(dist > 10.0*hsml)
+    return hsml/dist;
+  else
+    return atan(hsml/dist);
+}
+
+
 /**
  * @brief Buffer a particle's contribution to the healpix map(s)
  *
@@ -1156,26 +1070,60 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
                                  const struct engine *e, const struct gpart *gp,
                                  const double a_cross, const double x_cross[3]) {
 
-  /* Number of lightcone maps per shell */
-  const int nr_maps = props->nr_maps;
+  /* Find information on healpix maps this particle type contributes to */
+  const struct lightcone_particle_type *part_type_info = &(props->part_type[gp->type]);
+
+  /* If this particle type contributes to no healpix maps, do nothing */
+  if(part_type_info->nr_maps==0)return;
+
+  /* Get angular coordinates of the particle */
+  double theta, phi;
+  healpix_smoothing_vec2ang(props->smoothing_info, x_cross, &theta, &phi);
+
+  /* Get angular size of the particle */
+  double radius;
+  if((gp->type == swift_type_gas) && props->smooth) {
+    const struct part *parts = e->s->parts;
+    const struct part *p = &parts[-gp->id_or_neg_offset];
+    radius = angular_smoothing_scale(x_cross, p->h);
+  } else {
+    radius = 0.0;
+  }
 
   /* Loop over shells to update */
   for(int shell_nr=props->shell_nr_min; shell_nr<=props->shell_nr_max; shell_nr+=1) {
     if(a_cross > props->shell[shell_nr].amin && a_cross <= props->shell[shell_nr].amax) {
   
+      /* Make sure this shell is available for updating */
       if(props->shell[shell_nr].state == shell_uninitialized)
         error("Attempt to update shell which has not been allocated");
       if(props->shell[shell_nr].state == shell_complete)
         error("Attempt to update shell which has been written out");
 
-      /* Loop over healpix maps to update within this shell */
-      for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-        
-        /* Call the update function associated with this type of map */
-        struct lightcone_map *map = &(props->shell[shell_nr].map[map_nr]);
-        props->map_type[map_nr].update_map(map, e, gp, a_cross, x_cross);
-        
-      } /* Next map type */
+      /* Allocate storage for updates and set particle coordinates and radius */
+      double *data = malloc(part_type_info->buffer_element_size);
+      data[0] = theta;
+      data[1] = phi;
+      data[2] = radius;
+
+      /* Loop over healpix maps which this particle type contributes to and find values to add */
+      for(int i=0; i<part_type_info->nr_maps; i+=1) {
+        int map_nr = part_type_info->map_index[i];
+        data[3+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
+
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+        /* Accumulate total quantity added to each map for consistency check */
+        atomic_add_d(&props->shell[shell_nr].map[map_nr].total, data[3+i]);
+#endif
+
+      }
+
+      /* Buffer the updates */
+      particle_buffer_append(&(props->shell[shell_nr].buffer[gp->type]), data);
+
+      /* Free update info */
+      free(data);
+
     }
   } /* Next shell */
 }
@@ -1193,7 +1141,7 @@ void lightcone_report_memory_use(struct lightcone_props *props) {
   for(int i=0; i<3; i+=1)
     memuse_local[i] = 0;
 
-  /* Accumulate memory used by particle buffers */
+  /* Accumulate memory used by particle buffers - one buffer per particle type */
   for(int i=0; i<swift_type_count; i+=1) {
     if(props->use_type[i])
       memuse_local[0] += particle_buffer_memory_use(props->buffer+i);
@@ -1203,9 +1151,15 @@ void lightcone_report_memory_use(struct lightcone_props *props) {
   const int nr_maps = props->nr_maps;
   const int nr_shells = props->nr_shells;
   for(int shell_nr=0; shell_nr<nr_shells; shell_nr+=1) {
+
+    /* Healpix map updates - one buffer per particle type per shell */
+    for(int ptype=0; ptype<swift_type_count; ptype+=1) {
+      memuse_local[1] += particle_buffer_memory_use(&(props->shell[shell_nr].buffer[ptype]));
+    }
+
+    /* Pixel data - one buffer per map per shell */
     for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
       struct lightcone_map *map = &(props->shell[shell_nr].map[map_nr]);
-      memuse_local[1] += particle_buffer_memory_use(&map->buffer);
       if(map->data)memuse_local[2] += map->local_nr_pix*sizeof(double);
     }
   }
@@ -1268,6 +1222,28 @@ void lightcone_write_index(struct lightcone_props *props) {
     io_write_attribute_i(group_id, "nr_mpi_ranks", comm_size);
     io_write_attribute(group_id, "final_file_on_rank", INT,
                        current_file_on_rank, comm_size);
+
+    /* Write observer position and redshift limits */
+    io_write_attribute(group_id, "observer_position", DOUBLE,
+                       props->observer_position, 3);
+    io_write_attribute_d(group_id, "minimum_redshift", props->z_min_for_particles);
+    io_write_attribute_d(group_id, "maximum_redshift", props->z_max_for_particles);
+
+    /* Write the number of shells and their radii */
+    const int nr_shells = props->nr_shells;
+    io_write_attribute_i(group_id, "nr_shells", nr_shells);
+    double *shell_inner_radii = malloc(sizeof(double)*nr_shells);
+    double *shell_outer_radii = malloc(sizeof(double)*nr_shells);
+    for(int i=0; i<nr_shells; i+=1) {
+      shell_inner_radii[i] = props->shell[i].rmin;
+      shell_outer_radii[i] = props->shell[i].rmax;
+    }
+    io_write_attribute(group_id, "shell_inner_radii", DOUBLE,
+                       shell_inner_radii, nr_shells);
+    io_write_attribute(group_id, "shell_outer_radii", DOUBLE,
+                       shell_outer_radii, nr_shells);
+    free(shell_outer_radii);
+    free(shell_inner_radii);
 
     H5Gclose(group_id);
     H5Fclose(file_id);
