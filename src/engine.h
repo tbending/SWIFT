@@ -49,6 +49,7 @@
 #include "velociraptor_interface.h"
 
 struct black_holes_properties;
+struct extra_io_properties;
 
 /**
  * @brief The different policies the #engine can follow.
@@ -485,6 +486,9 @@ struct engine {
   /* Properties of the chemistry model */
   const struct chemistry_global_data *chemistry;
 
+  /* Properties used to compute the extra i/o fields */
+  struct extra_io_properties *io_extra_props;
+
   /*! The FOF properties data. */
   struct fof_props *fof_properties;
 
@@ -597,6 +601,7 @@ void engine_init(
     struct cooling_function_data *cooling_func,
     const struct star_formation *starform,
     const struct chemistry_global_data *chemistry,
+    struct extra_io_properties *io_extra_props,
     struct fof_props *fof_properties, struct los_props *los_properties);
 void engine_config(int restart, int fof, struct engine *e,
                    struct swift_params *params, int nr_nodes, int nodeID,

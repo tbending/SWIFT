@@ -1544,6 +1544,7 @@ with_subgrid_stars=none
 with_subgrid_star_formation=none
 with_subgrid_feedback=none
 with_subgrid_sink=none
+with_subgrid_extra_io=none
 
 case "$with_subgrid" in
    yes)
@@ -1560,6 +1561,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=GEAR
 	with_subgrid_black_holes=none
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=no
    ;;
    QLA)
@@ -1572,6 +1574,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=none
 	with_subgrid_black_holes=none
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=no
    ;;
    EAGLE)
@@ -1584,6 +1587,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=EAGLE
 	with_subgrid_black_holes=EAGLE
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=yes
    ;;
    EAGLE-XL)
@@ -1596,6 +1600,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=EAGLE
 	with_subgrid_black_holes=EAGLE
 	with_subgrid_sink=none
+	with_subgrid_extra_io=EAGLE
 	enable_fof=yes
    ;;
    *)
@@ -2061,6 +2066,35 @@ case "$with_tracers" in
    ;;
    *)
       AC_MSG_ERROR([Unknown tracers choice: $with_tracers])
+   ;;
+esac
+
+#  Extra fields added to snapshots at i/o time
+AC_ARG_WITH([extra_io],
+   [AS_HELP_STRING([--with-extra-io=<function>],
+      [chemistry function @<:@none, EAGLE default: none@:>@]
+   )],
+   [with_extra_io="$withval"],
+   [with_extra_io="none"]
+)
+
+if test "$with_subgrid" != "none"; then
+   if test "$with_extra_io" != "none"; then
+      AC_MSG_ERROR([Cannot provide with-subgrid and with-extra_io together])
+   else
+      with_extra_io="$with_subgrid_extra_io"
+   fi
+fi
+
+case "$with_extra_io" in
+   none)
+      AC_DEFINE([EXTRA_IO_NONE], [1], [No extra_io function])
+   ;;
+   EAGLE)
+      AC_DEFINE([EXTRA_IO_EAGLE], [1], [Extra i/o fields taken from the EAGLE model])
+   ;;
+   *)
+      AC_MSG_ERROR([Unknown extra-io choice: $with_extra_io])
    ;;
 esac
 
@@ -2586,7 +2620,8 @@ AC_MSG_RESULT([
    Sink particle model  : $with_sink
    Black holes model    : $with_black_holes
    Radiative transfer   : $with_rt$rt_extra_msg
-
+   Extra i/o            : $with_extra_io
+   
    Atomic operations in tasks  : $enable_atomics_within_tasks
    Individual timers           : $enable_timers
    Task debugging              : $enable_task_debugging

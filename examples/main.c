@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
   struct cooling_function_data cooling_func;
   struct cosmology cosmo;
   struct external_potential potential;
+  struct extra_io_properties extra_io_props;
   struct star_formation starform;
   struct pm_mesh mesh;
   struct gpart *gparts = NULL;
@@ -1108,6 +1109,10 @@ int main(int argc, char *argv[]) {
     chemistry_init(params, &us, &prog_const, &chemistry);
     if (myrank == 0) chemistry_print(&chemistry);
 
+    /* Initialise the extra i/o */
+    bzero(&extra_io_props, sizeof(struct extra_io_properties));
+    extra_io_init(params, &us, &prog_const, &cosmo, &extra_io_props);     
+    
     /* Initialise the FOF properties */
     bzero(&fof_properties, sizeof(struct fof_props));
 #ifdef WITH_FOF
@@ -1419,8 +1424,8 @@ int main(int argc, char *argv[]) {
                 &entropy_floor, &gravity_properties, &stars_properties,
                 &black_holes_properties, &sink_properties, &neutrino_properties,
                 &feedback_properties, &rt_properties, &mesh, &potential,
-                &cooling_func, &starform, &chemistry, &fof_properties,
-                &los_properties);
+                &cooling_func, &starform, &chemistry, &extra_io_props,
+		&fof_properties, &los_properties);
     engine_config(/*restart=*/0, /*fof=*/0, &e, params, nr_nodes, myrank,
                   nr_threads, nr_pool_threads, with_aff, talking, restart_file);
 
@@ -1778,6 +1783,7 @@ int main(int argc, char *argv[]) {
   if (with_cooling || with_temperature) cooling_clean(e.cooling_func);
   if (with_feedback) feedback_clean(e.feedback_props);
   if (with_rt) rt_clean(e.rt_props);
+  extra_io_clean(e.io_extra_props);
   engine_clean(&e, /*fof=*/0, restart);
   free(params);
   free(output_options);

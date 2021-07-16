@@ -42,6 +42,7 @@
 #include "engine.h"
 #include "entropy_floor.h"
 #include "error.h"
+#include "extra_io.h"
 #include "feedback.h"
 #include "feedback_properties.h"
 #include "fof.h"
