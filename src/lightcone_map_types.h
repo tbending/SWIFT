@@ -93,6 +93,15 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
+/* 
+   Healpix map of intrinsic erosita-low band
+*/
+int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype);
+
+double lightcone_map_xray_erosita_low_intrinsic_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
