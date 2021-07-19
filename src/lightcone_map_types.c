@@ -297,10 +297,12 @@ double lightcone_map_xray_erosita_low_intrinsicl_get_value(const struct engine *
   /* Handle on the other particle types */
   const struct space *s = e->s;
   const struct part *parts = s->parts;
+  const struct xpart *xparts = s->xparts;
 
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
+    const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
 
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
@@ -308,7 +310,7 @@ double lightcone_map_xray_erosita_low_intrinsicl_get_value(const struct engine *
     const double luminosity = extra_io_get_xray_fluxes(
     p, xp, e, xray_band_types_erosita_low_intrinsic_photons);
 
-    const double flux = luminsoity / (4 * M_PI * pow(cdist_cross, 2) * (1 + z_cross)); // photon luminosity distance
+    const double flux = luminosity / (4 * M_PI * pow(cdist_cross, 2) * (1 + z_cross)); // photon luminosity distance
 
     return flux;
   } break;
