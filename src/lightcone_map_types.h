@@ -94,14 +94,58 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const double x_cross[3]);
 
 /* 
-   Healpix map of intrinsic erosita-low band
+   Healpix map of intrinsic erosita-low photons band
 */
-int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype);
+int lightcone_map_xray_erosita_low_intrinsic_photons_type_contributes(int ptype);
 
-double lightcone_map_xray_erosita_low_intrinsic_get_value(const struct engine *e,
+double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct engine *e,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
+/* 
+   Healpix map of intrinsic erosita-low energy band
+*/
+int lightcone_map_xray_erosita_low_intrinsic_energy_type_contributes(int ptype);
+
+double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic erosita-high photons band
+*/
+int lightcone_map_xray_erosita_high_intrinsic_photons_type_contributes(int ptype);
+
+double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic erosita-high energy band
+*/
+int lightcone_map_xray_erosita_high_intrinsic_energy_type_contributes(int ptype);
+
+double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic ROSAT photons band
+*/
+int lightcone_map_xray_rosat_intrinsic_photons_type_contributes(int ptype);
+
+double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic ROSAT energy band
+*/
+int lightcone_map_xray_rosat_intrinsic_energy_type_contributes(int ptype);
+
+double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);    
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
@@ -110,7 +154,12 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"DarkMatterMass", lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS},
   {"StellarMass",    lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS},
   {"NeutrinoMass",   lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS},
-  {"XrayErositaLowIntrinsic",   lightcone_map_xray_erosita_low_intrinsic_get_value,    lightcone_map_xray_erosita_low_intrinsic_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayErositaLowIntrinsicPhotons",   lightcone_map_xray_erosita_low_intrinsic_photons_get_value,    lightcone_map_xray_erosita_low_intrinsic_photons_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayErositaLowIntrinsicEnergies",   lightcone_map_xray_erosita_low_intrinsic_energy_get_value,    lightcone_map_xray_erosita_low_intrinsic_energy_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayErositaHighIntrinsicPhotons",   lightcone_map_xray_erosita_high_intrinsic_photons_get_value,    lightcone_map_xray_erosita_high_intrinsic_photons_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayErositaHighIntrinsicEnergies",   lightcone_map_xray_erosita_high_intrinsic_energy_get_value,    lightcone_map_xray_erosita_high_intrinsic_energy_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayROSATIntrinsicPhotons",   lightcone_map_xray_rosat_intrinsic_photons_get_value,    lightcone_map_xray_rosat_intrinsic_photons_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"XrayROSATIntrinsicEnergies",   lightcone_map_xray_rosat_intrinsic_energy_get_value,    lightcone_map_xray_rosat_intrinsic_energy_type_contributes,    UNIT_CONV_NO_UNITS},
   {"",               NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS},
   /* NULL functions indicate end of array */
 };
