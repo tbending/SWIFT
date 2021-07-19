@@ -329,7 +329,7 @@ double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct e
  *
  * @param part_type the particle type
  */
-int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype) {
+int lightcone_map_xray_erosita_low_intrinsic_energy_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_gas:
@@ -442,7 +442,7 @@ double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct 
  *
  * @param part_type the particle type
  */
-int lightcone_map_xray_erosita_high_intrinsic_type_contributes(int ptype) {
+int lightcone_map_xray_erosita_high_intrinsic_energy_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_gas:
@@ -555,7 +555,7 @@ double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine 
  *
  * @param part_type the particle type
  */
-int lightcone_map_xray_rosat_intrinsic_type_contributes(int ptype) {
+int lightcone_map_xray_rosat_intrinsic_energy_type_contributes(int ptype) {
 
   switch(ptype) {
   case swift_type_gas:
