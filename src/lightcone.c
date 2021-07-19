@@ -385,6 +385,9 @@ void lightcone_init(struct lightcone_props *props,
                                             props->map_type, props->nside, total_nr_pix,
                                             props->part_type, props->buffer_chunk_size,
                                             &props->nr_shells);
+
+  /* Compute area of a healpix pixel */
+  props->pixel_area_steradians = 4*M_PI/total_nr_pix;
   
   /* Report shell radii */
   const int nr_shells = props->nr_shells;

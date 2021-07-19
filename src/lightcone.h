@@ -124,6 +124,9 @@ struct lightcone_props {
   /*! Healpix nside parameter */
   int nside;
 
+  /*! Healpix pixel area */
+  double pixel_area_steradians;
+
   /*! Number of shells */
   int nr_shells;
 
