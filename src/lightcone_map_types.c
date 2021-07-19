@@ -290,7 +290,7 @@ int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype) {
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
-double lightcone_map_xray_erosita_low_intrinsicl_get_value(const struct engine *e,
+double lightcone_map_xray_erosita_low_intrinsic_get_value(const struct engine *e,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
