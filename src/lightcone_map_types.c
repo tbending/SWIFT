@@ -33,33 +33,37 @@
 #include "lightcone_map_types.h"
 
 
-static double angular_smoothing_scale(const double *pos, const double hsml) {
-  
-  /* Compute distance to particle */
-  double dist = 0;
-  for(int i=0; i<3; i+=1)
-    dist += pos[i]*pos[i];
-  dist = sqrt(dist);
-  
-  /* Avoid trig call for small angles (accurate to about 0.3%) */
-  if(dist > 10.0*hsml)
-    return hsml/dist;
-  else
-    return atan(hsml/dist);
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_total_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+  case swift_type_stars:
+  case swift_type_black_hole:
+  case swift_type_dark_matter:
+  case swift_type_dark_matter_background:
+  case swift_type_neutrino:
+    return 1;
+  default:
+    return 0;
+  }
 }
 
 /**
  * @brief Make a healpix map of projected mass in each pixel
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
-void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
-                              const struct gpart *gp, const double a_cross,
-                              const double x_cross[3]) {
+double lightcone_map_total_mass_get_value(const struct engine *e,
+                                          const struct gpart *gp, const double a_cross,
+                                          const double x_cross[3]) {
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
@@ -71,44 +75,53 @@ void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
-    const double radius = angular_smoothing_scale(x_cross, p->h);
-    lightcone_map_buffer_update(map, x_cross, radius, p->mass);
+    return p->mass;
   } break;
   case swift_type_stars: {
     const struct spart *sp = &sparts[-gp->id_or_neg_offset];
-    const double radius = 0.0;
-    lightcone_map_buffer_update(map, x_cross, radius, sp->mass);
+    return sp->mass;
   } break;
   case swift_type_black_hole: {      
     const struct bpart *bp = &bparts[-gp->id_or_neg_offset];
-    const double radius = 0.0;
-    lightcone_map_buffer_update(map, x_cross, radius, bp->mass);
+    return bp->mass;
   } break;
   case swift_type_dark_matter:
   case swift_type_dark_matter_background:
   case swift_type_neutrino: {
-    const double radius = 0.0;
-    lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
+    return gp->mass;
   } break;
   default:
-    /* Unknown type, nothing to do */
-    break;
+    error("lightcone map function called on wrong particle type");
+    return -1.0; /* Prevent 'missing return' error */
   }
 }
 
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_gas_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
+  }
+}
 
 /**
  * @brief Make a healpix map of projected gas mass in each pixel
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
-void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
-                            const struct gpart *gp, const double a_cross,
-                            const double x_cross[3]) {
+double lightcone_map_gas_mass_get_value(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]) {
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
@@ -117,36 +130,127 @@ void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
   switch (gp->type) {
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
-    const double radius = angular_smoothing_scale(x_cross, p->h);
-    lightcone_map_buffer_update(map, x_cross, radius, p->mass);
+    return p->mass;
   } break;
   default:
-    /* Not gas, nothing to do */
-    break;
+    error("lightcone map function called on wrong particle type");
+    return -1.0;  /* Prevent 'missing return' error */
+  }
+}
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_dark_matter_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_dark_matter:
+  case swift_type_dark_matter_background:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+/**
+ * @brief Make a healpix map of projected dark matter mass in each pixel
+ *
+ * @param e the #engine structure
+ * @param gp the #gpart to add to the map
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the lightcone
+ */
+double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
+                                                const struct gpart *gp, const double a_cross,
+                                                const double x_cross[3]) {
+  switch (gp->type) {
+  case swift_type_dark_matter:
+  case swift_type_dark_matter_background: {
+    return gp->mass;
+  } break;
+  default:
+    error("lightcone map function called on wrong particle type");
+    return -1.0;  /* Prevent 'missing return' error */
+  }
+}
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_stellar_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_stars:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+/**
+ * @brief Make a healpix map of stellar mass in each pixel
+ *
+ * @param e the #engine structure
+ * @param gp the #gpart to add to the map
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the lightcone
+ */
+double lightcone_map_stellar_mass_get_value(const struct engine *e,
+                                            const struct gpart *gp, const double a_cross,
+                                            const double x_cross[3]) {
+
+  /* Handle on the other particle types */
+  const struct space *s = e->s;
+  const struct spart *sparts = s->sparts;
+
+  switch (gp->type) {
+  case swift_type_stars: {
+    const struct spart *sp = &sparts[-gp->id_or_neg_offset];
+    return sp->mass;
+  } break;
+  default:
+    error("lightcone map function called on wrong particle type");
+    return -1.0; /* Prevent 'missing return' error */
+  }
+}
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_neutrino_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_neutrino:
+    return 1;
+  default:
+    return 0;
   }
 }
 
 /**
  * @brief Make a healpix map of projected neutrino mass in each pixel
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
-void lightcone_map_neutrino_mass(struct lightcone_map *map, const struct engine *e,
-                                 const struct gpart *gp, const double a_cross,
-                                 const double x_cross[3]) {
-  
+double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]) {
   switch (gp->type) {
   case swift_type_neutrino: {
-    const double radius = 0.0;
-    lightcone_map_buffer_update(map, x_cross, radius, gp->mass);
+    return gp->mass;
   } break;
   default:
-    /* Not a neutrino, nothing to do */
-    break;
+    error("lightcone map function called on wrong particle type");
+    return -1.0;  /* Prevent 'missing return' error */
   }
 }
 
@@ -160,7 +264,7 @@ void lightcone_map_neutrino_mass(struct lightcone_map *map, const struct engine 
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_compton_y(struct lightcone_map *map, const struct engine *e,
+void lightcone_map_compton_y_get_value(struct lightcone_map *map, const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 
@@ -210,7 +314,7 @@ void lightcone_map_compton_y(struct lightcone_map *map, const struct engine *e,
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
+void lightcone_map_doppler_b_get_value(struct lightcone_map *map, const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 
@@ -279,7 +383,7 @@ void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct engine *e,
+void lightcone_map_dispersion_meassure_get_value(struct lightcone_map *map, const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 

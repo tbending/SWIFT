@@ -34,9 +34,12 @@ struct lightcone_map;
 struct gpart;
 
 /* Type to store pointer to function for updating a healpix map */
-typedef void (*map_update_function_t)(struct lightcone_map *map, const struct engine *e,
-                                      const struct gpart *gp, const double a_cross,
-                                      const double x_cross[3]);
+typedef double (*map_update_function_t)(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]);
+
+/* Type to store pointer to function to check which types contribute to a map */
+typedef int (*map_contrib_function_t)(int ptype);
 
 /**
  * @brief Struct to store information on one type of lightcone map
@@ -44,37 +47,80 @@ typedef void (*map_update_function_t)(struct lightcone_map *map, const struct en
 struct lightcone_map_type {
   char name[PARSER_MAX_LINE_SIZE];
   map_update_function_t update_map;
+  map_contrib_function_t ptype_contributes;
   enum unit_conversion_factor units;
 };
 
 
-void lightcone_map_total_mass(struct lightcone_map *map, const struct engine *e,
-                              const struct gpart *gp, const double a_cross,
-                              const double x_cross[3]);
+/* 
+   Healpix map of total mass
+*/
+int lightcone_map_total_mass_type_contributes(int ptype);
 
-void lightcone_map_gas_mass(struct lightcone_map *map, const struct engine *e,
-                            const struct gpart *gp, const double a_cross,
-                            const double x_cross[3]);
+double lightcone_map_total_mass_get_value(const struct engine *e,
+                                          const struct gpart *gp, const double a_cross,
+                                          const double x_cross[3]);
+/* 
+   Healpix map of gas mass
+*/
+int lightcone_map_gas_mass_type_contributes(int ptype);
 
-void lightcone_map_neutrino_mass(struct lightcone_map *map, const struct engine *e,
-                                 const struct gpart *gp, const double a_cross,
-                                 const double x_cross[3]);
+double lightcone_map_gas_mass_get_value(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]);
+/* 
+   Healpix map of dark matter mass
+*/
+int lightcone_map_dark_matter_mass_type_contributes(int ptype);
 
-void lightcone_map_compton_y(struct lightcone_map *map, const struct engine *e,
-                             const struct gpart *gp, const double a_cross,
-                             const double x_cross[3]);
+double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
+                                                const struct gpart *gp, const double a_cross,
+                                                const double x_cross[3]);
+/* 
+   Healpix map of stellar mass
+*/
+int lightcone_map_stellar_mass_type_contributes(int ptype);
 
-void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
-                             const struct gpart *gp, const double a_cross,
-                             const double x_cross[3]);
+double lightcone_map_stellar_mass_get_value(const struct engine *e,
+                                                const struct gpart *gp, const double a_cross,
+                                                const double x_cross[3]);
+/* 
+   Healpix map of neutrino mass
+*/
+int lightcone_map_neutrino_mass_type_contributes(int ptype);
 
-void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct engine *e,
+double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+/* 
+   Healpix map of compton y
+*/
+int lightcone_map_compton_y_type_contributes(int ptype);
+
+void lightcone_map_compton_y_get_value(struct lightcone_map *map, const struct engine *e,
                                        const struct gpart *gp, const double a_cross,
                                        const double x_cross[3]);
+/* 
+   Healpix map of doppler b
+*/
+int lightcone_map_doppler_b_type_contributes(int ptype);
+
+void lightcone_map_doppler_b_get_value(struct lightcone_map *map, const struct engine *e,
+                                       const struct gpart *gp, const double a_cross,
+                                       const double x_cross[3]);
+/* 
+   Healpix map of dispersion meassure
+*/
+int lightcone_map_dispersion_meassure_type_contributes(int ptype);
+
+void lightcone_map_dispersion_meassure_get_value(struct lightcone_map *map, const struct engine *e,
+                                                 const struct gpart *gp, const double a_cross,
+                                                 const double x_cross[3]);
 
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
+<<<<<<< src/lightcone_map_types.h
   {"TotalMass",    lightcone_map_total_mass,    UNIT_CONV_MASS},
   {"GasMass",      lightcone_map_gas_mass,      UNIT_CONV_MASS},
   {"NeutrinoMass", lightcone_map_neutrino_mass, UNIT_CONV_MASS},
@@ -83,6 +129,18 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"DM",           lightcone_map_dispersion_meassure, UNIT_CONV_INV_AREA},
   {"",             NULL,                        UNIT_CONV_NO_UNITS},
   /* NULL function indicates end of array */
+=======
+  {"TotalMass",      lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       UNIT_CONV_MASS},
+  {"GasMass",        lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS},
+  {"DarkMatterMass", lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS},
+  {"StellarMass",    lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS},
+  {"NeutrinoMass",   lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS},
+  {"ComptonY",       lightcone_map_compton_y_get_value,        lightcone_map_compton_y_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"DopplerB",       lightcone_map_doppler_b_get_value,        lightcone_map_doppler_b_type_contributes,    UNIT_CONV_NO_UNITS},
+  {"DM",             lightcone_map_dispersion_meassure_get_value, lightcone_map_dispersion_meassure_type_contributes, UNIT_CONV_INV_AREA},
+  {"",               NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS},
+  /* NULL functions indicate end of array */
+>>>>>>> src/lightcone_map_types.h
 };
 
 #endif

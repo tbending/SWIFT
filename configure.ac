@@ -678,6 +678,7 @@ if test "$enable_san" = "yes"; then
    fi
    if test "$enable_san" = "yes"; then
       CFLAGS="$CFLAGS -fsanitize=address -fno-omit-frame-pointer"
+      CXXFLAGS="$CXXFLAGS -fsanitize=address -fno-omit-frame-pointer"
       AC_MSG_RESULT([added address sanitizer support])
    else
       AC_MSG_WARN([Compiler does not support address sanitizer option])
@@ -705,6 +706,7 @@ if test "$enable_ubsan" = "yes"; then
    fi
    if test "$enable_ubsan" = "yes"; then
       CFLAGS="$CFLAGS -fsanitize=undefined"
+      CXXFLAGS="$CXXFLAGS -fsanitize=undefined"
       AC_MSG_RESULT([added undefined sanitizer support])
    else
       AC_MSG_WARN([Compiler does not support undefined sanitizer option])
@@ -824,7 +826,7 @@ AM_CONDITIONAL([HAVEHEALPIX_CXX],[test -n "$HEALPIX_CXX_LIBS"])
 
 # Check for pthreads.
 AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-    CC="$PTHREAD_CC" LDFLAGS="$LDFLAGS $PTHREAD_LIBS $LIBS"],
+    CC="$PTHREAD_CC" CXX="$PTHREAD_CXX" LDFLAGS="$LDFLAGS $PTHREAD_LIBS $LIBS"],
     AC_MSG_ERROR([Could not find a working version of
     the pthread library. Make sure you have the library and header files installed
     or use CPPFLAGS and LDFLAGS if the library is installed in a
@@ -1683,7 +1685,7 @@ case "$with_subgrid" in
 	with_subgrid_chemistry=QLA
 	with_subgrid_tracers=none
 	with_subgrid_entropy_floor=QLA
-	with_subgrid_stars=none
+	with_subgrid_stars=basic
 	with_subgrid_star_formation=QLA
 	with_subgrid_feedback=none
 	with_subgrid_black_holes=none
@@ -2540,6 +2542,10 @@ case "$with_rt" in
 
       if test "$enable_debugging_checks" = "yes"; then
           AC_DEFINE([SWIFT_RT_DEBUG_CHECKS], [1], [additional debugging checks for RT])
+      fi
+
+      if test "$with_hydro" != "gizmo-mfv"; then
+          AC_MSG_ERROR([GEAR-RT: Cannot work without gizmo-mfv hydro])
       fi
 
    ;;

@@ -92,17 +92,9 @@ __attribute__((always_inline)) INLINE static void drift_gpart(
 #endif
 
 #ifdef WITH_LIGHTCONE
-  switch (gp->type) {
-  case swift_type_dark_matter:
-  case swift_type_dark_matter_background:
-  case swift_type_neutrino:
-    /* This particle has no *part counterpart, so check for lightcone crossing here */
-    lightcone_check_particle_crosses(e, replication_list, gp, dt_drift, ti_old, ti_current, cell_loc);
-    break;
-  default:
-    /* Particle has a counterpart or is of a type not supported in lightcones */
-    break;
-    }
+  /* Store initial position and velocity for lightcone check after the drift */
+  const double x[3] = {gp->x[0], gp->x[1], gp->x[2]};
+  const float v_full[3] = {gp->v_full[0], gp->v_full[1], gp->v_full[2]};
 #endif
 
   /* Drift... */
@@ -111,6 +103,22 @@ __attribute__((always_inline)) INLINE static void drift_gpart(
   gp->x[2] += gp->v_full[2] * dt_drift;
 
   gravity_predict_extra(gp, grav_props);
+
+#ifdef WITH_LIGHTCONE
+  /* Check for lightcone crossing */
+  switch (gp->type) {
+  case swift_type_dark_matter:
+  case swift_type_dark_matter_background:
+  case swift_type_neutrino:
+    /* This particle has no *part counterpart, so check for lightcone crossing here */
+    lightcone_check_particle_crosses(e, replication_list, x, v_full, gp, dt_drift, ti_old, ti_current, cell_loc);
+    break;
+  default:
+    /* Particle has a counterpart or is of a type not supported in lightcones */
+    break;
+    }
+#endif
+
 }
 
 /**
@@ -165,9 +173,9 @@ __attribute__((always_inline)) INLINE static void drift_part(
 #endif
 
 #ifdef WITH_LIGHTCONE
-  if(p->gpart)
-    lightcone_check_particle_crosses(e, replication_list, p->gpart, dt_drift,
-                                     ti_old, ti_current, cell_loc);
+  /* Store initial position and velocity for lightcone check after the drift */
+  const double x[3] = {p->x[0], p->x[1], p->x[2]};
+  const float v_full[3] = {xp->v_full[0], xp->v_full[1], xp->v_full[2]};
 #endif
 
   /* Drift... */
@@ -205,6 +213,13 @@ __attribute__((always_inline)) INLINE static void drift_part(
     p->v[1] = 0.f;
     p->v[2] = 0.f;
   }
+#endif
+
+#ifdef WITH_LIGHTCONE
+  /* Check if the particle crossed the lightcone */
+  if(p->gpart)
+    lightcone_check_particle_crosses(e, replication_list, x, v_full, p->gpart, dt_drift,
+                                     ti_old, ti_current, cell_loc);
 #endif
 }
 
@@ -248,9 +263,9 @@ __attribute__((always_inline)) INLINE static void drift_spart(
 #endif
 
 #ifdef WITH_LIGHTCONE
-  if(sp->gpart)
-    lightcone_check_particle_crosses(e, replication_list, sp->gpart, dt_drift,
-                                     ti_old, ti_current, cell_loc);
+  /* Store initial position and velocity for lightcone check after the drift */
+  const double x[3] = {sp->x[0], sp->x[1], sp->x[2]};
+  const float v_full[3] = {sp->v[0], sp->v[1], sp->v[2]};
 #endif
 
   /* Drift... */
@@ -267,6 +282,13 @@ __attribute__((always_inline)) INLINE static void drift_spart(
     sp->x_diff[k] -= dx;
     sp->x_diff_sort[k] -= dx;
   }
+
+#ifdef WITH_LIGHTCONE
+  /* Check for lightcone crossing */
+  if(sp->gpart)
+    lightcone_check_particle_crosses(e, replication_list, x, v_full, sp->gpart,
+                                     dt_drift, ti_old, ti_current, cell_loc);
+#endif
 }
 
 /**
@@ -309,9 +331,9 @@ __attribute__((always_inline)) INLINE static void drift_bpart(
 #endif
 
 #ifdef WITH_LIGHTCONE
-  if(bp->gpart)
-    lightcone_check_particle_crosses(e, replication_list, bp->gpart, dt_drift,
-                                     ti_old, ti_current, cell_loc);
+  /* Store initial position and velocity for lightcone check after the drift */
+  const double x[3] = {bp->x[0], bp->x[1], bp->x[2]};
+  const float v_full[3] = {bp->v[0], bp->v[1], bp->v[2]};
 #endif
 
   /* Drift... */
@@ -327,6 +349,13 @@ __attribute__((always_inline)) INLINE static void drift_bpart(
     const float dx = bp->v[k] * dt_drift;
     bp->x_diff[k] -= dx;
   }
+
+#ifdef WITH_LIGHTCONE
+  /* Check for lightcone crossing */
+  if(bp->gpart)
+    lightcone_check_particle_crosses(e, replication_list, x, v_full, bp->gpart,
+                                     dt_drift, ti_old, ti_current, cell_loc);
+#endif
 }
 
 /**

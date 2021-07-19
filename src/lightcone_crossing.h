@@ -37,18 +37,28 @@
  * @brief Check if a particle crosses the lightcone during a drift.
  *
  * Here we don't assume anything about the particle type except
- * that it has a corresponding #gpart. x and v_full must be set
- * by the calling function because gp->x and gp->v_full may not
- * be the right values to use for some particle types.
+ * that it has a corresponding #gpart. The particle type is checked
+ * if we decide to output the particle.
  *
- * The particle type is checked if we decide to output the
- * particle, at which point we call a type specific function.
+ * Note that x and v_full are values at the start of the time step but
+ * the particle has been drifted to the end of the time step when this
+ * function is called.
+ *
+ * @param e the #engine struct
+ * @param replication_list_array one replication list for each lightcone
+ * @param x the position of the particle BEFORE it is drifted
+ * @param v_full the velocity of the particle
+ * @param gp pointer to the #gpart to check
+ * @param dt_drift the time step size used to update the position
+ * @param ti_old begining of the time step on the integer time line
+ * @param ti_current end of the time step on the integer time line
+ * @param cell_loc coordinates of the #cell containing the #gpart
  *
  */
 __attribute__((always_inline)) INLINE static void lightcone_check_particle_crosses(
      const struct engine *e, struct replication_list *replication_list_array,
-     const struct gpart *gp, const double dt_drift, const integertime_t ti_old,
-     const integertime_t ti_current, const double cell_loc[3]) {
+     const double *x, const float *v_full, const struct gpart *gp, const double dt_drift,
+     const integertime_t ti_old, const integertime_t ti_current, const double cell_loc[3]) {
 
   /* First, check if we have any replications to search */
   /* TODO: pre-calculate this for each cell to save time */
@@ -61,8 +71,6 @@ __attribute__((always_inline)) INLINE static void lightcone_check_particle_cross
 
   /* Unpack some variables we need */
   const struct cosmology *c = e->cosmology;
-  const double *x = gp->x;
-  const float *v_full = gp->v_full;
 
   /* Determine expansion factor at start and end of the drift */
   const double a_start = c->a_begin * exp(ti_old     * c->time_base);

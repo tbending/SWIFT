@@ -49,6 +49,7 @@
 #include "kernel_hydro.h"
 #include "lock.h"
 #include "minmax.h"
+#include "neutrino/Default/fermi_dirac.h"
 #include "proxy.h"
 #include "restart.h"
 #include "rt.h"
@@ -782,8 +783,9 @@ void space_convert_rt_star_quantities_mapper(void *restrict map_data,
     const double star_age_end_of_step =
         stars_compute_age(sp, e->cosmology, e->time, with_cosmology);
 
-    rt_compute_stellar_emission_rate(sp, e->time, star_age_end_of_step,
-                                     dt_star);
+    rt_compute_stellar_emission_rate(sp, e->time, star_age_end_of_step, dt_star,
+                                     e->rt_props, e->physical_constants,
+                                     e->internal_units);
   }
 }
 
@@ -1937,15 +1939,15 @@ void space_check_cosmology(struct space *s, const struct cosmology *cosmo,
   const size_t nr_gparts = s->nr_gparts;
 
   /* Sum up the mass in this space */
+  int has_background_particles = 0;
   double mass_cdm = 0.;
   double mass_b = 0.;
   double mass_nu = 0.;
   for (size_t i = 0; i < nr_gparts; ++i) {
 
-#ifdef SWIFT_DEBUG_CHECKS
-    if (gparts[i].time_bin == time_bin_not_created)
-      error("Found an extra particle when checking cosmology");
-#endif
+    /* Skip extra particles */
+    if (gparts[i].time_bin == time_bin_not_created) continue;
+
     switch (gparts[i].type) {
       case swift_type_dark_matter:
       case swift_type_dark_matter_background:
@@ -1963,6 +1965,9 @@ void space_check_cosmology(struct space *s, const struct cosmology *cosmo,
       default:
         error("Invalid particle type");
     }
+
+    if (gparts[i].type == swift_type_dark_matter_background)
+      has_background_particles = 1;
   }
 
 /* Reduce the total mass */
@@ -2004,14 +2009,16 @@ void space_check_cosmology(struct space *s, const struct cosmology *cosmo,
     /* Expected matter density */
     const double Omega_m = cosmo->Omega_cdm + cosmo->Omega_b;
 
-    if (with_hydro && fabs(Omega_particles_cdm - cosmo->Omega_cdm) > 1e-3)
+    if (with_hydro && !has_background_particles &&
+        fabs(Omega_particles_cdm - cosmo->Omega_cdm) > 1e-3)
       error(
           "The cold dark matter content of the simulation does not match the "
           "cosmology in the parameter file: cosmo.Omega_cdm = %e particles "
           "Omega_cdm = %e",
           cosmo->Omega_cdm, Omega_particles_cdm);
 
-    if (with_hydro && fabs(Omega_particles_b - cosmo->Omega_b) > 1e-3)
+    if (with_hydro && !has_background_particles &&
+        fabs(Omega_particles_b - cosmo->Omega_b) > 1e-3)
       error(
           "The baryon content of the simulation does not match the cosmology "
           "in the parameter file: cosmo.Omega_b = %e particles Omega_b = %e",

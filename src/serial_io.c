@@ -782,6 +782,7 @@ void read_ic_serial(char* fileName, const struct unit_system* internal_units,
 
         int num_fields = 0;
         struct io_props list[100];
+        bzero(list, 100 * sizeof(struct io_props));
         size_t Nparticles = 0;
 
         /* Read particle fields into the particle structure */
@@ -1076,7 +1077,7 @@ void write_output_serial(struct engine* e,
       subsample_fraction[swift_type_dark_matter], e->snapshot_output_count);
 
   if (with_DM_background) {
-    Ndm_background = io_count_dark_matter_to_write(
+    Ndm_background = io_count_background_dark_matter_to_write(
         e->s, subsample[swift_type_dark_matter_background],
         subsample_fraction[swift_type_dark_matter_background],
         e->snapshot_output_count);
@@ -1321,6 +1322,7 @@ void write_output_serial(struct engine* e,
 
         int num_fields = 0;
         struct io_props list[100];
+        bzero(list, 100 * sizeof(struct io_props));
         size_t Nparticles = 0;
 
         struct part* parts_written = NULL;
