@@ -248,7 +248,7 @@ void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
-      double angular_diameter_distance = pow(angular_diameter_distance_2, 0.5);
+      double angular_diameter_distance = sqrt(angular_diameter_distance_2);
 
       double radial_velocity =
           (p->v[0] * x_cross[0] * a_cross + p->v[1] * x_cross[1] * a_cross +
