@@ -268,3 +268,61 @@ void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
       break;
   }
 }
+
+/**
+ * @brief Make a healpix map of the dispersion meassure
+ *
+ * @param map the #lightcone_map structure
+ * @param e the #engine structure
+ * @param gp the #gpart to add to the map
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the
+ * lightcone
+ */
+void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct engine *e,
+                             const struct gpart *gp, const double a_cross,
+                             const double x_cross[3]) {
+
+  /* Handle on the other particle types */
+  const struct space *s = e->s;
+  const struct part *parts = s->parts;
+  const struct xpart* xparts = e->s->xparts;
+
+  /* Handle on the physics modules */
+  const struct cosmology* cosmo = e->cosmology;
+  const struct hydro_props* hydro_props = e->hydro_properties;
+  const struct unit_system* us = e->internal_units;
+  const struct phys_const* phys_const = e->physical_constants;
+  const struct cooling_function_data* cool_func = e->cooling_func;
+
+  switch (gp->type) {
+    case swift_type_gas: {
+      const struct part *p = &parts[-gp->id_or_neg_offset];
+      const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
+      double n_e = cooling_get_electron_pressure(phys_const, hydro_props, us, cosmo,
+                                          cool_func, p, xp);
+
+      double rho = hydro_get_physical_density(p, cosmo);
+
+      double m = hydro_get_mass(p);
+
+      double doppler_b_factor = n_e * m / (rho);
+
+      double x_squared = x_cross[0] * x_cross[0] * a_cross * a_cross;
+      double y_squared = x_cross[1] * x_cross[1] * a_cross * a_cross;
+      double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
+      double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
+
+      double pixel_size_2 = map->pixel_area_steradians;
+
+      double b_for_map = doppler_b_factor /
+                  (pixel_size_2 * angular_diameter_distance_2);
+
+      const double radius = angular_smoothing_scale(x_cross, p->h);
+      lightcone_map_buffer_update(map, x_cross, radius, b_for_map);
+    } break;
+    default:
+      /* Not gas, nothing to do */
+      break;
+  }
+}

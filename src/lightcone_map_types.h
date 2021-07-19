@@ -68,6 +68,11 @@ void lightcone_map_doppler_b(struct lightcone_map *map, const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]);
 
+void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct engine *e,
+                                       const struct gpart *gp, const double a_cross,
+                                       const double x_cross[3]);
+
+
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
   {"TotalMass",    lightcone_map_total_mass,    UNIT_CONV_MASS},
@@ -75,6 +80,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"NeutrinoMass", lightcone_map_neutrino_mass, UNIT_CONV_MASS},
   {"ComptonY",     lightcone_map_compton_y,     UNIT_CONV_NO_UNITS},
   {"DopplerB",     lightcone_map_doppler_b,     UNIT_CONV_NO_UNITS},
+  {"DM",           lightcone_map_dispersion_meassure, UNIT_CONV_AREA},
   {"",             NULL,                        UNIT_CONV_NO_UNITS},
   /* NULL function indicates end of array */
 };
