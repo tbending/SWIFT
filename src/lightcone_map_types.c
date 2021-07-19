@@ -37,7 +37,7 @@
 #ifndef SWIFT_EXTRA_IO_EAGLE_H
 #define SWIFT_EXTRA_IO_EAGLE_H
 
-#include "extra.h"
+#include "extra_io/EAGLE/extra.h"
 #include "io_properties.h"
 
 
