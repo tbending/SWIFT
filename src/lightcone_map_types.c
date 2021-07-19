@@ -34,9 +34,6 @@
 
 
 /* Required for the xrays */
-#ifndef SWIFT_EXTRA_IO_EAGLE_H
-#define SWIFT_EXTRA_IO_EAGLE_H
-
 #include "extra_io/EAGLE/extra.h"
 #include "io_properties.h"
 
@@ -282,6 +279,9 @@ int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype) {
   }
 }
 
+#ifndef SWIFT_EXTRA_IO_EAGLE_H
+#define SWIFT_EXTRA_IO_EAGLE_H
+
 /**
  * @brief Make a healpix map of projected erosita-low intrinsic flux in each pixel
  *
@@ -319,4 +319,5 @@ double lightcone_map_xray_erosita_low_intrinsicl_get_value(const struct engine *
     return -1.0;  /* Prevent 'missing return' error */
   }
 }
+#endif /* SWIFT_EXTRA_IO_EAGLE_H */
 
