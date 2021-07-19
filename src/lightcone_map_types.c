@@ -57,11 +57,13 @@ int lightcone_map_total_mass_type_contributes(int ptype) {
  * @brief Make a healpix map of projected mass in each pixel
  *
  * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_total_mass_get_value(const struct engine *e,
+                                          const struct lightcone_props *lightcone_props,
                                           const struct gpart *gp, const double a_cross,
                                           const double x_cross[3]) {
 
@@ -115,11 +117,13 @@ int lightcone_map_gas_mass_type_contributes(int ptype) {
  * @brief Make a healpix map of projected gas mass in each pixel
  *
  * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_gas_mass_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -160,11 +164,13 @@ int lightcone_map_dark_matter_mass_type_contributes(int ptype) {
  * @brief Make a healpix map of projected dark matter mass in each pixel
  *
  * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
+                                                const struct lightcone_props *lightcone_props,
                                                 const struct gpart *gp, const double a_cross,
                                                 const double x_cross[3]) {
   switch (gp->type) {
@@ -198,11 +204,13 @@ int lightcone_map_stellar_mass_type_contributes(int ptype) {
  * @brief Make a healpix map of stellar mass in each pixel
  *
  * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_stellar_mass_get_value(const struct engine *e,
+                                            const struct lightcone_props *lightcone_props,
                                             const struct gpart *gp, const double a_cross,
                                             const double x_cross[3]) {
 
@@ -241,11 +249,13 @@ int lightcone_map_neutrino_mass_type_contributes(int ptype) {
  * @brief Make a healpix map of projected neutrino mass in each pixel
  *
  * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]) {
   switch (gp->type) {
