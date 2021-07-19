@@ -161,6 +161,11 @@ struct part {
   /* Temperature */
   float T;
 
+  // gasoline
+  float weighted_wcount;
+  float weighted_neighbour_wcount;
+  float f_gasoline;
+
   /* Store density/force specific stuff. */
   union {
 
@@ -200,6 +205,9 @@ struct part {
 
       /*! "Grad h" term */
       float f;
+
+      // gasoline
+      float f_gasoline;
 
       /*! Particle pressure. */
       float pressure;

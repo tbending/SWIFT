@@ -118,6 +118,12 @@ __attribute__((always_inline)) INLINE static void runner_iact_density(
   pj->density.rot_v[0] += facj * curlvr[0];
   pj->density.rot_v[1] += facj * curlvr[1];
   pj->density.rot_v[2] += facj * curlvr[2];
+
+  /* Correction factors for kernel gradients, and norm for the velocity
+   * gradient. */ //gasoline
+
+  pi->weighted_wcount += mj * r2 * wi_dx * r_inv;
+  pj->weighted_wcount += mi * r2 * wj_dx * r_inv;
   
   /* Compute imbalance statistic */
   wi = sqrtf(wi);
@@ -215,6 +221,10 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_density(
   pi->density.rot_v[1] += faci * curlvr[1];
   pi->density.rot_v[2] += faci * curlvr[2];
 
+  /* Correction factors for kernel gradients, and norm for the velocity
+   * gradient. */ // gasoline
+  pi->weighted_wcount += mj * r2 * wi_dx * r_inv;
+
   /* Compute imbalance statistic */
   wi = sqrtf(wi);
   
@@ -272,18 +282,26 @@ __attribute__((always_inline)) INLINE static void runner_iact_gradient(
   const float uj = r * hj_inv;
   kernel_deval(uj, &wj, &wj_dx);
 
+  /* Correction factors for kernel gradients */ // gasoline
+  const float rho_inv_i = 1.f / pi->rho;
+  const float rho_inv_j = 1.f / pj->rho;
+
+  pi->weighted_neighbour_wcount += pj->mass * r2 * wi_dx * rho_inv_j * r_inv;
+  pj->weighted_neighbour_wcount += pi->mass * r2 * wj_dx * rho_inv_i * r_inv;
+
   /* Compute kernel averages */
-  
-  if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+  //if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+  if (pi->I > 0.f){
     pi->sum_wij_exp += wi * expf(-pj->I*pj->I);
-    pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
+    //pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
     pi->sum_wij_exp_P += pj->P * wi * expf(-pj->I*pj->I);
     pi->sum_wij_exp_T += pj->T * wi * expf(-pj->I*pj->I);
   }
   
-  if (pj->mat_id == pi->mat_id && pj->I > 0.f){
+  //if (pj->mat_id == pi->mat_id && pj->I > 0.f){
+  if (pi->I > 0.f){
     pj->sum_wij_exp += wj * expf(-pi->I*pi->I);
-    pj->sum_wij_exp_rho += pi->rho * wj * expf(-pi->I*pi->I);
+    //pj->sum_wij_exp_rho += pi->rho * wj * expf(-pi->I*pi->I);
     pj->sum_wij_exp_P += pi->P * wj * expf(-pi->I*pi->I);
     pj->sum_wij_exp_T += pi->T * wj * expf(-pi->I*pi->I);
   }
@@ -319,10 +337,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_gradient(
   const float ui = r * h_inv;
   kernel_deval(ui, &wi, &wi_dx);
 
+  /* Correction factors for kernel gradients */ // gasoline
+
+  const float rho_inv_j = 1.f / pj->rho;
+
+  pi->weighted_neighbour_wcount += pj->mass * r2 * wi_dx * rho_inv_j * r_inv;
+
   // Compute kernel averages
-  if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+  //if (pi->mat_id == pj->mat_id && pi->I > 0.f){
+  if (pi->I > 0.f){
     pi->sum_wij_exp += wi * expf(-pj->I*pj->I);
-    pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
+    //pi->sum_wij_exp_rho += pj->rho * wi * expf(-pj->I*pj->I);
     pi->sum_wij_exp_P += pj->P * wi * expf(-pj->I*pj->I);
     pi->sum_wij_exp_T += pj->T * wi * expf(-pj->I*pj->I);
   }
@@ -384,12 +409,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_force(
   const float wj_dr = hjd_inv * wj_dx;
 
   /* Variable smoothing length term */
-  const float f_ij = 1.f - pi->force.f / mj;
-  const float f_ji = 1.f - pj->force.f / mi;
+  //const float f_ij = 1.f - pi->force.f / pj->mass;
+  //const float f_ji = 1.f - pj->force.f / pi->mass;
 
   /* Compute gradient terms */
-  const float P_over_rho2_i = pressurei / (rhoi * rhoi) * f_ij;
-  const float P_over_rho2_j = pressurej / (rhoj * rhoj) * f_ji;
+  //const float P_over_rho2_i = pressurei / (rhoi * rhoi) * f_ij;
+  //const float P_over_rho2_j = pressurej / (rhoj * rhoj) * f_ji;
+
+  /* Variable smoothing length term */ // gasoline
+  float kernel_gradient = 0.5f * (wi_dr * pi->f_gasoline + wj_dr * pj->f_gasoline);
 
   /* Compute dv dot r. */
   const float dvdr = (pi->v[0] - pj->v[0]) * dx[0] +
@@ -414,12 +442,19 @@ __attribute__((always_inline)) INLINE static void runner_iact_force(
   const float visc = -0.25f * v_sig * mu_ij * (balsara_i + balsara_j) / rho_ij;
 
   /* Convolve with the kernel */
-  const float visc_acc_term =
-      0.5f * visc * (wi_dr * f_ij + wj_dr * f_ji) * r_inv;
+  //const float visc_acc_term =
+  //    0.5f * visc * (wi_dr * f_ij + wj_dr * f_ji) * r_inv;
 
   /* SPH acceleration term */
+  //const float sph_acc_term =
+  //    (P_over_rho2_i * wi_dr + P_over_rho2_j * wj_dr) * r_inv;
+
+  /* Convolve with the kernel */ // gasoline
+  const float visc_acc_term = visc * kernel_gradient * r_inv;
+
+  /* SPH acceleration term */ // gasoline
   const float sph_acc_term =
-      (P_over_rho2_i * wi_dr + P_over_rho2_j * wj_dr) * r_inv;
+      (pressurei + pressurej) * r_inv * kernel_gradient / (rhoi * rhoj);
 
   /* Assemble the acceleration */
   const float acc = sph_acc_term + visc_acc_term;
@@ -434,8 +469,14 @@ __attribute__((always_inline)) INLINE static void runner_iact_force(
   pj->a_hydro[2] += mi * acc * dx[2];
 
   /* Get the time derivative for u. */
-  const float sph_du_term_i = P_over_rho2_i * dvdr * r_inv * wi_dr;
-  const float sph_du_term_j = P_over_rho2_j * dvdr * r_inv * wj_dr;
+  //const float sph_du_term_i = P_over_rho2_i * dvdr * r_inv * wi_dr;
+  //const float sph_du_term_j = P_over_rho2_j * dvdr * r_inv * wj_dr;
+
+  /* Get the time derivative for u. */ // gasoline
+  const float sph_du_term_i =
+      pressurei * dvdr * r_inv * kernel_gradient / (pi->rho * pj->rho);
+  const float sph_du_term_j =
+      pressurej * dvdr * r_inv * kernel_gradient / (pi->rho * pj->rho);
 
   /* Viscosity term */
   const float visc_du_term = 0.5f * visc_acc_term * dvdr;
@@ -489,7 +530,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_force(
   const float r = r2 * r_inv;
 
   /* Recover some data */
-  const float mi = pi->mass;
+  //const float mi = pi->mass;
   const float mj = pj->mass;
   const float rhoi = pi->rho;
   const float rhoj = pj->rho;
@@ -513,12 +554,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_force(
   const float wj_dr = hjd_inv * wj_dx;
 
   /* Variable smoothing length term */
-  const float f_ij = 1.f - pi->force.f / mj;
-  const float f_ji = 1.f - pj->force.f / mi;
+  //const float f_ij = 1.f - pi->force.f / pj->mass;
+  //const float f_ji = 1.f - pj->force.f / pi->mass;
 
   /* Compute gradient terms */
-  const float P_over_rho2_i = pressurei / (rhoi * rhoi) * f_ij;
-  const float P_over_rho2_j = pressurej / (rhoj * rhoj) * f_ji;
+  //const float P_over_rho2_i = pressurei / (rhoi * rhoi) * f_ij;
+  //const float P_over_rho2_j = pressurej / (rhoj * rhoj) * f_ji;
+
+  /* Variable smoothing length term */ // gasoline
+  const float kernel_gradient = 0.5f * (wi_dr * pi->f_gasoline + wj_dr * pj->f_gasoline);
 
   /* Compute dv dot r. */
   const float dvdr = (pi->v[0] - pj->v[0]) * dx[0] +
@@ -545,12 +589,19 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_force(
   const float visc = -0.25f * v_sig * mu_ij * (balsara_i + balsara_j) / rho_ij;
 
   /* Convolve with the kernel */
-  const float visc_acc_term =
-      0.5f * visc * (wi_dr * f_ij + wj_dr * f_ji) * r_inv;
+  //const float visc_acc_term =
+  //    0.5f * visc * (wi_dr * f_ij + wj_dr * f_ji) * r_inv;
 
   /* SPH acceleration term */
+  //const float sph_acc_term =
+  //    (P_over_rho2_i * wi_dr + P_over_rho2_j * wj_dr) * r_inv;
+
+  /* Convolve with the kernel */ // gasoline
+  const float visc_acc_term = visc * kernel_gradient * r_inv;
+
+  /* SPH acceleration term */ // gasoline
   const float sph_acc_term =
-      (P_over_rho2_i * wi_dr + P_over_rho2_j * wj_dr) * r_inv;
+      (pressurei + pressurej) * r_inv * kernel_gradient / (rhoi * rhoj);
 
   /* Assemble the acceleration */
   const float acc = sph_acc_term + visc_acc_term;
@@ -561,7 +612,11 @@ __attribute__((always_inline)) INLINE static void runner_iact_nonsym_force(
   pi->a_hydro[2] -= mj * acc * dx[2];
 
   /* Get the time derivative for u. */
-  const float sph_du_term_i = P_over_rho2_i * dvdr * r_inv * wi_dr;
+  //const float sph_du_term_i = P_over_rho2_i * dvdr * r_inv * wi_dr;
+
+  /* Get the time derivative for u. */ // gasoline
+  const float sph_du_term_i =
+      pressurei * dvdr * r_inv * kernel_gradient / (pi->rho * pj->rho);
 
   /* Viscosity term */
   const float visc_du_term = 0.5f * visc_acc_term * dvdr;

@@ -491,6 +491,10 @@ __attribute__((always_inline)) INLINE static void hydro_init_part(
   p->sum_rij[2] = 0.f;
   p->I = 0.f;
   p->sum_wij = 0.f;
+ 
+  p->weighted_wcount = 0.f;
+  p->weighted_neighbour_wcount = 0.f;
+  p->f_gasoline = 0.f;
   
 }
 
@@ -591,6 +595,11 @@ __attribute__((always_inline)) INLINE static void hydro_part_has_no_neighbours(
   p->density.rot_v[0] = 0.f;
   p->density.rot_v[1] = 0.f;
   p->density.rot_v[2] = 0.f;
+
+  /* Set to 1 as these are only used by taking the ratio */
+  p->weighted_wcount = p->mass * kernel_root * h_inv_dim;
+  p->weighted_neighbour_wcount = 1.f;
+
 }
 
 /**
@@ -657,8 +666,35 @@ __attribute__((always_inline)) INLINE static void hydro_reset_gradient(
 __attribute__((always_inline)) INLINE static void hydro_end_gradient(
     struct part *p) {
 
+  /*if (p->N_ngb < 3 || p->weighted_wcount == 0.f || p->weighted_neighbour_wcount == 0.f){
+    printf(
+      "## I particle: "
+      "id, x, y, z, "
+      "m, u, P, rho, h, "
+      "mat_id, N_ngb, I, "
+      "ww, wnw\n"
+      "%lld, %.7g, %.7g, %.7g, "
+      "%.7g, %.7g, %.7g, %.7g, %.7g, "
+      "%d, %.7g, %.7g, "
+      "%.7g, %.7g \n",
+      p->id, p->x[0], p->x[1], p->x[2], p->mass,
+      p->u, p->force.pressure, p->rho, p->h,
+      p->mat_id, p->N_ngb, p->I,
+      p->weighted_wcount, p->weighted_neighbour_wcount);
+  }*/
+  
+
+  /* The f_i is calculated explicitly in Gasoline. */
+  if (p->weighted_wcount == 0.f || p->weighted_neighbour_wcount == 0.f){
+    p->f_gasoline = 1.f;
+  } else {
+    p->f_gasoline = p->weighted_wcount / (p->weighted_neighbour_wcount * p->rho);
+    //p->f_gasoline = 1.f;
+  }
+  
+
   if (p->I > 0.f){
-  /* Add self contribution to rho_new */
+  /* Add self contribution to kernel averages*/
   p->sum_wij_exp += kernel_root * expf(-p->I*p->I);
   p->sum_wij_exp_rho += p->rho * kernel_root * expf(-p->I*p->I);
   p->sum_wij_exp_P += p->P * kernel_root * expf(-p->I*p->I);
@@ -671,10 +707,21 @@ __attribute__((always_inline)) INLINE static void hydro_end_gradient(
   /* Compute weighted sum */
   float new_density =
       gas_density_from_pressure_and_temperature(p->sum_wij_exp_P, p->sum_wij_exp_T, p->mat_id);
-
+  
   float rho_combined = 0.f;
   rho_combined = expf(-p->I*p->I)*p->rho + (1.f - expf(-p->I*p->I))*new_density;
-  p->rho = rho_combined;
+  
+  /* Ensure new density is not lower than minimum SPH density */
+  const float h = p->h;
+  const float h_inv = 1.0f / h;                 /* 1/h */
+  const float h_inv_dim = pow_dimension(h_inv); /* 1/h^d */
+  const float rho_min = p->mass * kernel_root * h_inv_dim;
+  if (rho_combined < rho_min){
+    p->rho = rho_min;
+  } else {
+    p->rho = rho_combined;
+  }
+  //p->rho = rho_combined;
   }
 }
 
@@ -758,6 +805,19 @@ __attribute__((always_inline)) INLINE static void hydro_prepare_force(
   p->force.pressure = pressure;
   p->force.soundspeed = soundspeed;
   p->force.balsara = balsara;
+
+  /*if (p->rho < 0.006f){
+  printf(
+      "## I particle: "
+      "id, x, y, z, m, u, P, rho, h, mat_id, N_ngb, I, acc_x, acc_y, acc_z, f_gas\n"
+      "%lld, %.7g, %.7g, %.7g, "
+      "%.7g, %.7g, %.7g, %.7g, %.7g, %d, "
+      "%.7g, %.7g, %.7g, %.7g, %.7g, %.7g \n",
+      p->id, p->x[0], p->x[1], p->x[2], p->mass,
+      p->u, p->force.pressure, p->rho, p->h, p->mat_id,
+      p->N_ngb, p->I, p->a_hydro[0], p->a_hydro[1], p->a_hydro[2], p->f_gasoline);
+  }*/
+
 }
 
 /**
@@ -894,6 +954,19 @@ __attribute__((always_inline)) INLINE static void hydro_end_force(
     struct part *restrict p, const struct cosmology *cosmo) {
 
   p->force.h_dt *= p->h * hydro_dimension_inv;
+
+  //if (p->rho < 0.006f){
+  if (sqrtf(p->a_hydro[0]*p->a_hydro[0] + p->a_hydro[1]*p->a_hydro[1] + p->a_hydro[2]*p->a_hydro[2]) > 0.0001){
+  printf(
+      "## I particle: "
+      "id, x, y, z, m, u, P, rho, h, mat_id, N_ngb, I, acc_x, acc_y, acc_z\n"
+      "%lld, %.7g, %.7g, %.7g, "
+      "%.7g, %.7g, %.7g, %.7g, %.7g, %d, "
+      "%.7g, %.7g, %.7g, %.7g, %.7g \n",
+      p->id, p->x[0], p->x[1], p->x[2], p->mass,
+      p->u, p->force.pressure, p->rho, p->h, p->mat_id,
+      p->N_ngb, p->I, p->a_hydro[0], p->a_hydro[1], p->a_hydro[2]);
+  }
 }
 
 /**

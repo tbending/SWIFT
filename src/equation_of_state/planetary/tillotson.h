@@ -502,7 +502,7 @@ INLINE static float Til_density_from_pressure_and_temperature(
     P_mid = Til_pressure_from_temperature(rho_mid, T, mat);
     P_max = Til_pressure_from_temperature(rho_max, T, mat);
     
-    if (P_des > P_min && P_des < P_max){
+    if (P_des >= P_min && P_des <= P_max){
         while ((rho_max - rho_min) > tolerance && counter < max_counter){
         
             P_min = Til_pressure_from_temperature(rho_min, T, mat);
