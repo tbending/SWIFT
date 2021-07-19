@@ -610,13 +610,9 @@ void engine_init(
     struct cooling_function_data *cooling_func,
     const struct star_formation *starform,
     const struct chemistry_global_data *chemistry,
-<<<<<<< HEAD
+    struct extra_io_properties *io_extra_props,
     struct fof_props *fof_properties, struct los_props *los_properties,
     struct lightcone_array_props *lightcone_array_properties);
-=======
-    struct extra_io_properties *io_extra_props,
-    struct fof_props *fof_properties, struct los_props *los_properties);
->>>>>>> joey_xray
 void engine_config(int restart, int fof, struct engine *e,
                    struct swift_params *params, int nr_nodes, int nodeID,
                    int nr_task_threads, int nr_pool_threads, int with_aff,
