@@ -306,7 +306,7 @@ void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct e
 
       double m = hydro_get_mass(p);
 
-      double doppler_b_factor = n_e * m / (rho);
+      double number_of_electrons = n_e * m / (rho);
 
       double x_squared = x_cross[0] * x_cross[0] * a_cross * a_cross;
       double y_squared = x_cross[1] * x_cross[1] * a_cross * a_cross;
@@ -315,7 +315,7 @@ void lightcone_map_dispersion_meassure(struct lightcone_map *map, const struct e
 
       double pixel_size_2 = map->pixel_area_steradians;
 
-      double b_for_map = doppler_b_factor /
+      double b_for_map = number_of_electrons /
                   (pixel_size_2 * angular_diameter_distance_2);
 
       const double radius = angular_smoothing_scale(x_cross, p->h);

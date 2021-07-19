@@ -80,7 +80,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"NeutrinoMass", lightcone_map_neutrino_mass, UNIT_CONV_MASS},
   {"ComptonY",     lightcone_map_compton_y,     UNIT_CONV_NO_UNITS},
   {"DopplerB",     lightcone_map_doppler_b,     UNIT_CONV_NO_UNITS},
-  {"DM",           lightcone_map_dispersion_meassure, UNIT_CONV_AREA},
+  {"DM",           lightcone_map_dispersion_meassure, UNIT_CONV_INV_AREA},
   {"",             NULL,                        UNIT_CONV_NO_UNITS},
   /* NULL function indicates end of array */
 };
