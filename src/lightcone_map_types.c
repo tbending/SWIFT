@@ -257,14 +257,13 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
 /**
  * @brief Make a healpix map of the compton y parameter
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_compton_y_get_value(struct lightcone_map *map, const struct engine *e,
+double lightcone_map_compton_y_get_value(const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 
@@ -295,11 +294,11 @@ void lightcone_map_compton_y_get_value(struct lightcone_map *map, const struct e
 
       double y_for_map = y_compton / (pixel_size_2 * angular_diameter_distance_2);
 
-      const double radius = angular_smoothing_scale(x_cross, p->h);
-      lightcone_map_buffer_update(map, x_cross, radius, y_for_map);
+      return y_for_map;
     } break;
     default:
-      /* Not gas, nothing to do */
+      error("lightcone map function called on wrong particle type");
+      return -1.0;  /* Prevent 'missing return' error */
       break;
   }
 }
@@ -307,14 +306,13 @@ void lightcone_map_compton_y_get_value(struct lightcone_map *map, const struct e
 /**
  * @brief Make a healpix map of the doppler b parameter
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_doppler_b_get_value(struct lightcone_map *map, const struct engine *e,
+double lightcone_map_doppler_b_get_value(const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 
@@ -364,11 +362,11 @@ void lightcone_map_doppler_b_get_value(struct lightcone_map *map, const struct e
       double b_for_map = doppler_b_factor * radial_velocity /
                   (pixel_size_2 * angular_diameter_distance_2);
 
-      const double radius = angular_smoothing_scale(x_cross, p->h);
-      lightcone_map_buffer_update(map, x_cross, radius, b_for_map);
+      return b_for_map;
     } break;
     default:
-      /* Not gas, nothing to do */
+      error("lightcone map function called on wrong particle type");
+      return -1.0;  /* Prevent 'missing return' error */
       break;
   }
 }
@@ -376,14 +374,13 @@ void lightcone_map_doppler_b_get_value(struct lightcone_map *map, const struct e
 /**
  * @brief Make a healpix map of the dispersion meassure
  *
- * @param map the #lightcone_map structure
  * @param e the #engine structure
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the
  * lightcone
  */
-void lightcone_map_dispersion_meassure_get_value(struct lightcone_map *map, const struct engine *e,
+double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3]) {
 
@@ -419,14 +416,15 @@ void lightcone_map_dispersion_meassure_get_value(struct lightcone_map *map, cons
 
       double pixel_size_2 = map->pixel_area_steradians;
 
-      double b_for_map = number_of_electrons /
+      double dm_for_map = number_of_electrons /
                   (pixel_size_2 * angular_diameter_distance_2);
 
-      const double radius = angular_smoothing_scale(x_cross, p->h);
-      lightcone_map_buffer_update(map, x_cross, radius, b_for_map);
+      return dm_for_map;
     } break;
     default:
       /* Not gas, nothing to do */
+      error("lightcone map function called on wrong particle type");
+      return -1.0;  /* Prevent 'missing return' error */
       break;
   }
 }
