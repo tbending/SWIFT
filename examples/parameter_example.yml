@@ -645,6 +645,11 @@ Neutrino:
   generate_ics:                       0          # Automatically generate neutrino velocities at the start of the run
   neutrino_seed:                      1234       # Seed used in the delta-f weighting step for Fermi-Dirac momentum generation
 
+# Parameters related to extra i/o (X-ray emmisivity)  ----------------------------
+
+XrayEmissivity:
+  xray_table_path:         ./X_Ray_tables.hdf5   # Path to the X-ray emissivity tables
+  
 # Parameters related to the sink particles ---------------------------------------
 
 # Default sink particles

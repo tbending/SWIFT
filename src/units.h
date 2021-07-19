@@ -113,6 +113,8 @@ enum unit_conversion_factor {
   UNIT_CONV_ENERGY_FLUX_DENSITY,
   UNIT_CONV_POWER_DENSITY,
   UNIT_CONV_THERMAL_DIFFUSIVITY,
+  UNIT_CONV_NUMBER_DENSITY_PER_TIME,
+  UNIT_CONV_PHOTONS_PER_TIME,
 };
 
 void units_init_cgs(struct unit_system*);

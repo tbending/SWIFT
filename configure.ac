@@ -112,11 +112,12 @@ if test "$with_csds" = "yes"; then
    # Ensure that everything is alright for the CSDS
    if test ! -f csds/Makefile.in; then
       AC_MSG_ERROR([It seems that the submodule "CSDS" was not initialized, please rerun autogen.sh and reconfigure.])
-   fi
+
+   AC_CONFIG_SUBDIRS([csds])
+fi
 
 fi
 AM_CONDITIONAL([HAVECSDS],[test $with_csds = "yes"])
-AM_COND_IF([HAVECSDS], [AC_CONFIG_FILES([csds/Makefile csds/src/Makefile csds/tests/Makefile])])
 
 
 
@@ -1256,45 +1257,6 @@ AC_ARG_WITH([random-seed],
 )
 AC_DEFINE_UNQUOTED([SWIFT_RANDOM_SEED_XOR], [$with_random_seed],[Value of the random seed.])
 
-# Check for python.
-have_python="no"
-AC_ARG_WITH([python],
-    [AS_HELP_STRING([--with-python=PATH],
-       [root directory where python is installed @<:@yes/no@:>@]
-    )],
-    [with_python="$withval"],
-    [with_python="no"]
-)
-if test "x$with_python" != "xno"; then
-   if test "$with_python" == ""; then
-      # use linux default python
-      with_python="/usr/"
-   fi
-   AM_PATH_PYTHON([3], [], [AC_MSG_ERROR(python not found)])   
-   AC_ARG_VAR([PYTHON_LIBS], [Linking flags for python, bypassing python-config])
-   AC_ARG_VAR([PYTHON_INCS], [Include flags for python, bypassing python-config])
-   AC_ARG_VAR([PYTHON_CONFIG], [Path to python-config])
-   AS_IF([test -z "$PYTHON_INCS"], [
-      AS_IF([test -z "$PYTHON_CONFIG"], [
-      	AC_PATH_PROGS([PYTHON_CONFIG],
-	          [python$PYTHON_VERSION-config python-config],
-                  [no],
-                  [`dirname $PYTHON`])
-    	AS_IF([test "$PYTHON_CONFIG" = no], [AC_MSG_ERROR([cannot find python-config for $PYTHON.])])
-      ])
-      AC_MSG_CHECKING([python include flags])
-      PYTHON_INCS=`$PYTHON_CONFIG --includes`
-      PYTHON_LIBS=`$PYTHON_CONFIG --ldflags`
-      AC_MSG_RESULT([$PYTHON_INCS])
-      AC_MSG_RESULT([$PYTHON_LIBS])
-  ])
-  have_python="yes"
-  AC_DEFINE([HAVE_PYTHON],1,[Python appears to be present.])
-fi
-AC_SUBST([PYTHON_INCS])
-AC_SUBST([PYTHON_LIBS])
-AM_CONDITIONAL([HAVEPYTHON],[test -n "$PYTHON_INCS"])
-
 
 # Check for HDF5. This is required.
 AX_LIB_HDF5
@@ -1662,6 +1624,7 @@ with_subgrid_stars=none
 with_subgrid_star_formation=none
 with_subgrid_feedback=none
 with_subgrid_sink=none
+with_subgrid_extra_io=none
 
 case "$with_subgrid" in
    yes)
@@ -1678,6 +1641,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=GEAR
 	with_subgrid_black_holes=none
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=no
    ;;
    QLA)
@@ -1690,6 +1654,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=none
 	with_subgrid_black_holes=none
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=no
    ;;
    EAGLE)
@@ -1702,6 +1667,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=EAGLE
 	with_subgrid_black_holes=EAGLE
 	with_subgrid_sink=none
+	with_subgrid_extra_io=none
 	enable_fof=yes
    ;;
    EAGLE-XL)
@@ -1714,6 +1680,7 @@ case "$with_subgrid" in
 	with_subgrid_feedback=EAGLE
 	with_subgrid_black_holes=EAGLE
 	with_subgrid_sink=none
+	with_subgrid_extra_io=EAGLE
 	enable_fof=yes
    ;;
    *)
@@ -2191,6 +2158,35 @@ case "$with_tracers" in
    ;;
    *)
       AC_MSG_ERROR([Unknown tracers choice: $with_tracers])
+   ;;
+esac
+
+#  Extra fields added to snapshots at i/o time
+AC_ARG_WITH([extra_io],
+   [AS_HELP_STRING([--with-extra-io=<function>],
+      [chemistry function @<:@none, EAGLE default: none@:>@]
+   )],
+   [with_extra_io="$withval"],
+   [with_extra_io="none"]
+)
+
+if test "$with_subgrid" != "none"; then
+   if test "$with_extra_io" != "none"; then
+      AC_MSG_ERROR([Cannot provide with-subgrid and with-extra_io together])
+   else
+      with_extra_io="$with_subgrid_extra_io"
+   fi
+fi
+
+case "$with_extra_io" in
+   none)
+      AC_DEFINE([EXTRA_IO_NONE], [1], [No extra_io function])
+   ;;
+   EAGLE)
+      AC_DEFINE([EXTRA_IO_EAGLE], [1], [Extra i/o fields taken from the EAGLE model])
+   ;;
+   *)
+      AC_MSG_ERROR([Unknown extra-io choice: $with_extra_io])
    ;;
 esac
 
@@ -2718,7 +2714,8 @@ AC_MSG_RESULT([
    Sink particle model  : $with_sink
    Black holes model    : $with_black_holes
    Radiative transfer   : $with_rt$rt_extra_msg
-
+   Extra i/o            : $with_extra_io
+   
    Atomic operations in tasks  : $enable_atomics_within_tasks
    Individual timers           : $enable_timers
    Task debugging              : $enable_task_debugging
@@ -2735,6 +2732,5 @@ AC_MSG_RESULT([
    Planetary fixed entropy     : $planetary_fixed_entropy
 
    Continuous Sim. Data Stream : $with_csds
-   Python enabled              : $have_python
 
  ------------------------])

@@ -33,6 +33,14 @@
 #include "lightcone_map_types.h"
 
 
+/* Required for the xrays */
+#ifndef SWIFT_EXTRA_IO_EAGLE_H
+#define SWIFT_EXTRA_IO_EAGLE_H
+
+#include "extra.h"
+#include "io_properties.h"
+
+
 /**
  * @brief Determine if a particle type contributes to this map type
  *
@@ -251,6 +259,58 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
   switch (gp->type) {
   case swift_type_neutrino: {
     return gp->mass;
+  } break;
+  default:
+    error("lightcone map function called on wrong particle type");
+    return -1.0;  /* Prevent 'missing return' error */
+  }
+}
+
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_xray_erosita_low_intrinsic_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+/**
+ * @brief Make a healpix map of projected erosita-low intrinsic flux in each pixel
+ *
+ * @param e the #engine structure
+ * @param gp the #gpart to add to the map
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the lightcone
+ */
+double lightcone_map_xray_erosita_low_intrinsicl_get_value(const struct engine *e,
+                                        const struct gpart *gp, const double a_cross,
+                                        const double x_cross[3]) {
+
+  /* Handle on the other particle types */
+  const struct space *s = e->s;
+  const struct part *parts = s->parts;
+
+  switch (gp->type) {
+  case swift_type_gas: {
+    const struct part *p = &parts[-gp->id_or_neg_offset];
+
+    const double z_cross = (1 / a_cross) - 1;
+    const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
+
+    const double luminosity = extra_io_get_xray_fluxes(
+    p, xp, e, xray_band_types_erosita_low_intrinsic_photons);
+
+    const double flux = luminsoity / (4 * M_PI * pow(cdist_cross, 2) * (1 + z_cross)); // photon luminosity distance
+
+    return flux;
   } break;
   default:
     error("lightcone map function called on wrong particle type");
