@@ -265,6 +265,21 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
 }
 
 /**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_compton_y_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+/**
  * @brief Make a healpix map of the compton y parameter
  *
  * @param e the #engine structure
@@ -311,6 +326,21 @@ double lightcone_map_compton_y_get_value(const struct engine *e,
       error("lightcone map function called on wrong particle type");
       return -1.0;  /* Prevent 'missing return' error */
       break;
+  }
+}
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_doppler_b_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
   }
 }
 
@@ -380,6 +410,21 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
       error("lightcone map function called on wrong particle type");
       return -1.0;  /* Prevent 'missing return' error */
       break;
+  }
+}
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_dispersion_meassure_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
   }
 }
 
