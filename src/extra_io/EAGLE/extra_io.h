@@ -149,6 +149,7 @@ INLINE static void extra_io_write_flavour(hid_t h_grp, hid_t h_grp_columns) {
    Healpix map of intrinsic erosita-low photons band
 */
 double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
@@ -156,6 +157,7 @@ double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct e
    Healpix map of intrinsic erosita-low energy band
 */
 double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
@@ -163,6 +165,7 @@ double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct en
    Healpix map of intrinsic erosita-high photons band
 */
 double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
@@ -170,6 +173,7 @@ double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct 
    Healpix map of intrinsic erosita-high energy band
 */
 double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
@@ -177,6 +181,7 @@ double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct e
    Healpix map of intrinsic ROSAT photons band
 */
 double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 
@@ -184,6 +189,7 @@ double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine 
    Healpix map of intrinsic ROSAT energy band
 */
 double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 

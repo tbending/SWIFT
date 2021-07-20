@@ -46,6 +46,7 @@
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -86,6 +87,7 @@ double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct e
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -126,6 +128,7 @@ double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct en
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -166,6 +169,7 @@ double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct 
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -206,6 +210,7 @@ double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct e
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
@@ -246,6 +251,7 @@ double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine 
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
 double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]) {
 
