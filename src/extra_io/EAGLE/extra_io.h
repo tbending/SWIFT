@@ -142,4 +142,61 @@ INLINE static void extra_io_write_flavour(hid_t h_grp, hid_t h_grp_columns) {
 }
 #endif
 
+/*
+  Extra lightcone map types
+*/
+/* 
+   Healpix map of intrinsic erosita-low photons band
+*/
+double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic erosita-low energy band
+*/
+double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic erosita-high photons band
+*/
+double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic erosita-high energy band
+*/
+double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic ROSAT photons band
+*/
+double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+/* 
+   Healpix map of intrinsic ROSAT energy band
+*/
+double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *e,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+
+static const struct lightcone_map_type extra_lightcone_map_types[] = {
+  {"XrayErositaLowIntrinsicPhotons", lightcone_map_xray_erosita_low_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"XrayErositaLowIntrinsicEnergies", lightcone_map_xray_erosita_low_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"XrayErositaHighIntrinsicPhotons", lightcone_map_xray_erosita_high_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"XrayErositaHighIntrinsicEnergies", lightcone_map_xray_erosita_high_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"XrayROSATIntrinsicPhotons", lightcone_map_xray_rosat_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"XrayROSATIntrinsicEnergies", lightcone_map_xray_rosat_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"", NULL, NULL, UNIT_CONV_NO_UNITS},
+  /* NULL functions indicate end of array */
+};
+
 #endif /* SWIFT_EXTRA_IO_EAGLE_H */

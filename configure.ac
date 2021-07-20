@@ -2584,6 +2584,9 @@ DX_DOXYGEN_FEATURE(OFF)
 DX_INIT_DOXYGEN(SWIFT, doc/Doxyfile, doc/)
 AM_CONDITIONAL([HAVE_DOXYGEN], [test "$ac_cv_path_ac_pt_DX_DOXYGEN" != ""])
 
+# Check if using EAGLE extra I/O
+AM_CONDITIONAL([HAVEEAGLEEXTRAIO], [test "${with_extra_io:0:5}" = "EAGLE"])
+
 # Check if using QLA cooling
 AM_CONDITIONAL([HAVEQLACOOLING], [test "${with_cooling:0:3}" = "QLA"])
 

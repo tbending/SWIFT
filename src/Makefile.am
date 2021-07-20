@@ -70,6 +70,12 @@ include_HEADERS += lightcone.h lightcone_particle_io.h lightcone_replications.h 
 include_HEADERS += lightcone_array.h lightcone_map.h lightcone_map_types.h particle_buffer.h exchange_structs.h
 include_HEADERS += healpix_smoothing.h projected_kernel.h lightcone_shell.h
 
+# source files for EAGLE extra I/O
+EAGLE_EXTRA_IO_SOURCES=
+if HAVEEAGLEEXTRAIO
+EAGLE_EXTRA_IO_SOURCES += extra_io/EAGLE/extra_lightcone_map_types.c
+endif
+
 # source files for EAGLE cooling
 QLA_COOLING_SOURCES =
 if HAVEQLACOOLING
@@ -145,6 +151,7 @@ AM_SOURCES += neutrino/Default/fermi_dirac.c neutrino/Default/neutrino.c
 AM_SOURCES += lightcone.c lightcone_particle_io.c lightcone_replications.c particle_buffer.c
 AM_SOURCES += lightcone_array.c lightcone_map.c lightcone_map_types.c exchange_structs.c
 AM_SOURCES += healpix_smoothing.cxx projected_kernel.c lightcone_shell.c
+AM_SOURCES += $(EAGLE_EXTRA_IO_SOURCES)
 AM_SOURCES += $(QLA_COOLING_SOURCES) 
 AM_SOURCES += $(EAGLE_COOLING_SOURCES) $(EAGLE_FEEDBACK_SOURCES) 
 AM_SOURCES += $(GRACKLE_COOLING_SOURCES) $(GEAR_FEEDBACK_SOURCES) 

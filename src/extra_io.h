@@ -66,6 +66,15 @@ INLINE static void extra_io_struct_dump(const struct extra_io_properties* props,
 
 INLINE static void extra_io_struct_restore(struct extra_io_properties* props,
                                            FILE* stream) {}
+
+
+/* In this case there are no extra lightcone map types */
+static const struct lightcone_map_type extra_lightcone_map_types[] = {
+  {"", NULL, NULL, UNIT_CONV_NO_UNITS},
+  /* NULL functions indicate end of array */
+};
+
+
 #else
 #error "Invalid choice of extra-i/o."
 #endif
