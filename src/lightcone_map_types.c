@@ -263,10 +263,6 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
   }
 }
 
-
-#ifndef SWIFT_EXTRA_IO_EAGLE_H
-#define SWIFT_EXTRA_IO_EAGLE_H
-
 /**
  * @brief Determine if a particle type contributes to this map type
  *
@@ -604,5 +600,4 @@ double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *
   }
 }
 
-#endif /* SWIFT_EXTRA_IO_EAGLE_H */
 
