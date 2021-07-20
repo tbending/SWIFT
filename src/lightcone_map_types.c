@@ -274,8 +274,9 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
  * lightcone
  */
 double lightcone_map_compton_y_get_value(const struct engine *e,
-                             const struct gpart *gp, const double a_cross,
-                             const double x_cross[3]) {
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]) {
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
@@ -300,7 +301,7 @@ double lightcone_map_compton_y_get_value(const struct engine *e,
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
-      double pixel_size_2 = map->pixel_area_steradians;
+      double pixel_size_2 = lightcone_props->pixel_area_steradians;
 
       double y_for_map = y_compton / (pixel_size_2 * angular_diameter_distance_2);
 
@@ -323,8 +324,9 @@ double lightcone_map_compton_y_get_value(const struct engine *e,
  * lightcone
  */
 double lightcone_map_doppler_b_get_value(const struct engine *e,
-                             const struct gpart *gp, const double a_cross,
-                             const double x_cross[3]) {
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]) {
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
@@ -367,7 +369,7 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
            p->v[2] * x_cross[2] * a_cross) /
           angular_diameter_distance;
 
-      double pixel_size_2 = map->pixel_area_steradians;
+      double pixel_size_2 = lightcone_props->pixel_area_steradians;
 
       double b_for_map = doppler_b_factor * radial_velocity /
                   (pixel_size_2 * angular_diameter_distance_2);
@@ -391,8 +393,9 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
  * lightcone
  */
 double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
-                             const struct gpart *gp, const double a_cross,
-                             const double x_cross[3]) {
+                                                   const struct lightcone_props *lightcone_props,
+                                                   const struct gpart *gp, const double a_cross,
+                                                   const double x_cross[3]) {
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
@@ -424,7 +427,7 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
-      double pixel_size_2 = map->pixel_area_steradians;
+      double pixel_size_2 = lightcone_props->pixel_area_steradians;
 
       double dm_for_map = number_of_electrons /
                   (pixel_size_2 * angular_diameter_distance_2);

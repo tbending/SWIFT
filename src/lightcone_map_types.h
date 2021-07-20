@@ -104,24 +104,27 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
 int lightcone_map_compton_y_type_contributes(int ptype);
 
 double lightcone_map_compton_y_get_value(const struct engine *e,
-                                       const struct gpart *gp, const double a_cross,
-                                       const double x_cross[3]);
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]);
 /* 
    Healpix map of doppler b
 */
 int lightcone_map_doppler_b_type_contributes(int ptype);
 
 double lightcone_map_doppler_b_get_value(const struct engine *e,
-                                       const struct gpart *gp, const double a_cross,
-                                       const double x_cross[3]);
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]);
 /* 
    Healpix map of dispersion meassure
 */
 int lightcone_map_dispersion_meassure_type_contributes(int ptype);
 
 double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
-                                                 const struct gpart *gp, const double a_cross,
-                                                 const double x_cross[3]);
+                                                   const struct lightcone_props *lightcone_props,
+                                                   const struct gpart *gp, const double a_cross,
+                                                   const double x_cross[3]);
 
 
 /* This associates map names to the appropriate update function and unit info */
