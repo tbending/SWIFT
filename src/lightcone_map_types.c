@@ -34,7 +34,7 @@
 
 
 /* Required for the xrays */
-#include "extra_io/EAGLE/extra.h"
+#include "extra_io.h"
 #include "io_properties.h"
 
 
