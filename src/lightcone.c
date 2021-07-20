@@ -385,6 +385,9 @@ void lightcone_init(struct lightcone_props *props,
                                             props->map_type, props->nside, total_nr_pix,
                                             props->part_type, props->buffer_chunk_size,
                                             &props->nr_shells);
+
+  /* Compute area of a healpix pixel */
+  props->pixel_area_steradians = 4*M_PI/total_nr_pix;
   
   /* Report shell radii */
   const int nr_shells = props->nr_shells;
@@ -1109,7 +1112,7 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
       /* Loop over healpix maps which this particle type contributes to and find values to add */
       for(int i=0; i<part_type_info->nr_maps; i+=1) {
         int map_nr = part_type_info->map_index[i];
-        data[3+i] = props->map_type[map_nr].update_map(e, gp, a_cross, x_cross);
+        data[3+i] = props->map_type[map_nr].update_map(e, props, gp, a_cross, x_cross);
 
 #ifdef LIGHTCONE_MAP_CHECK_TOTAL
         /* Accumulate total quantity added to each map for consistency check */
