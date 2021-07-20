@@ -30,11 +30,12 @@
 
 /* Avoid cyclic inclusions */
 struct engine;
-struct lightcone_map;
+struct lightcone_props;
 struct gpart;
 
 /* Type to store pointer to function for updating a healpix map */
 typedef double (*map_update_function_t)(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]);
 
@@ -58,6 +59,7 @@ struct lightcone_map_type {
 int lightcone_map_total_mass_type_contributes(int ptype);
 
 double lightcone_map_total_mass_get_value(const struct engine *e,
+                                          const struct lightcone_props *lightcone_props,
                                           const struct gpart *gp, const double a_cross,
                                           const double x_cross[3]);
 /* 
@@ -66,6 +68,7 @@ double lightcone_map_total_mass_get_value(const struct engine *e,
 int lightcone_map_gas_mass_type_contributes(int ptype);
 
 double lightcone_map_gas_mass_get_value(const struct engine *e,
+                                        const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]);
 /* 
@@ -74,6 +77,7 @@ double lightcone_map_gas_mass_get_value(const struct engine *e,
 int lightcone_map_dark_matter_mass_type_contributes(int ptype);
 
 double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
+                                                const struct lightcone_props *lightcone_props,
                                                 const struct gpart *gp, const double a_cross,
                                                 const double x_cross[3]);
 /* 
@@ -82,14 +86,16 @@ double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
 int lightcone_map_stellar_mass_type_contributes(int ptype);
 
 double lightcone_map_stellar_mass_get_value(const struct engine *e,
-                                                const struct gpart *gp, const double a_cross,
-                                                const double x_cross[3]);
+                                            const struct lightcone_props *lightcone_props,
+                                            const struct gpart *gp, const double a_cross,
+                                            const double x_cross[3]);
 /* 
    Healpix map of neutrino mass
 */
 int lightcone_map_neutrino_mass_type_contributes(int ptype);
 
 double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
 /* 
