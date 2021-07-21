@@ -374,7 +374,7 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
     case swift_type_gas: {
       const struct part *p = &parts[-gp->id_or_neg_offset];
       const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
-      double n_e = cooling_get_electron_pressure(phys_const, hydro_props, us, cosmo,
+      double n_e = cooling_get_electron_density(phys_const, hydro_props, us, cosmo,
                                           cool_func, p, xp);
 
       double rho = hydro_get_physical_density(p, cosmo);
@@ -458,7 +458,7 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
     case swift_type_gas: {
       const struct part *p = &parts[-gp->id_or_neg_offset];
       const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
-      double n_e = cooling_get_electron_pressure(phys_const, hydro_props, us, cosmo,
+      double n_e = cooling_get_electron_density(phys_const, hydro_props, us, cosmo,
                                           cool_func, p, xp);
 
       double rho = hydro_get_physical_density(p, cosmo);
