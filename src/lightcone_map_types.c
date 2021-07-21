@@ -348,7 +348,6 @@ int lightcone_map_compton_y_type_contributes(int ptype) {
 }
 
 /**
-<<<<<<< src/lightcone_map_types.c
  * @brief Make a healpix map of the compton y parameter
  *
  * @param e the #engine structure
