@@ -52,6 +52,10 @@ struct lightcone_map_type {
   enum unit_conversion_factor units;
 };
 
+/*
+  Function used for defining maps which only include gas (e.g. EAGLE x-ray outputs)
+*/
+int lightcone_map_gas_only(int ptype);
 
 /* 
    Healpix map of total mass
@@ -98,7 +102,6 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
-
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {

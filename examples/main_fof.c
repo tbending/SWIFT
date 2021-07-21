@@ -645,15 +645,16 @@ int main(int argc, char *argv[]) {
       /*feedback_properties=*/NULL, /*rt_properties=*/NULL, &mesh,
       /*potential=*/NULL,
       /*cooling_func=*/NULL, /*starform=*/NULL, /*chemistry=*/NULL,
-      &fof_properties, /*los_properties=*/NULL, /*lightcone_properties=*/NULL);
+      /*extra_io_props=*/NULL, &fof_properties, /*los_properties=*/NULL,
+      /*lightcone_properties=*/NULL);
   engine_config(/*restart=*/0, /*fof=*/1, &e, params, nr_nodes, myrank,
                 nr_threads, nr_threads, with_aff, talking, NULL);
 
   /* Get some info to the user. */
   if (myrank == 0) {
     const long long N_DM = N_total[swift_type_dark_matter] +
-                           N_total[swift_type_dark_matter_background] +
-                           N_total[swift_type_neutrino];
+                           N_total[swift_type_dark_matter_background];
+
     message(
         "Running FOF on %lld gas particles, %lld sink particles, %lld stars "
         "particles %lld black hole particles, %lld neutrino particles, and "

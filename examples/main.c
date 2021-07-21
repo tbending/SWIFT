@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
   struct cooling_function_data cooling_func;
   struct cosmology cosmo;
   struct external_potential potential;
+  struct extra_io_properties extra_io_props;
   struct star_formation starform;
   struct pm_mesh mesh;
   struct gpart *gparts = NULL;
@@ -1121,6 +1122,10 @@ int main(int argc, char *argv[]) {
     chemistry_init(params, &us, &prog_const, &chemistry);
     if (myrank == 0) chemistry_print(&chemistry);
 
+    /* Initialise the extra i/o */
+    bzero(&extra_io_props, sizeof(struct extra_io_properties));
+    extra_io_init(params, &us, &prog_const, &cosmo, &extra_io_props);     
+    
     /* Initialise the FOF properties */
     bzero(&fof_properties, sizeof(struct fof_props));
 #ifdef WITH_FOF
@@ -1228,26 +1233,27 @@ int main(int argc, char *argv[]) {
 #if defined(WITH_MPI)
     long long N_long[swift_type_count + 1] = {0};
     N_long[swift_type_gas] = Ngas;
-    N_long[swift_type_dark_matter] =
-        with_gravity ? Ngpart - Ngpart_background - Nbaryons : 0;
     N_long[swift_type_dark_matter_background] = Ngpart_background;
     N_long[swift_type_sink] = Nsink;
     N_long[swift_type_stars] = Nspart;
     N_long[swift_type_black_hole] = Nbpart;
     N_long[swift_type_neutrino] = Nnupart;
     N_long[swift_type_count] = Ngpart;
+    N_long[swift_type_dark_matter] =
+        with_gravity ? Ngpart - Ngpart_background - Nbaryons - Nnupart : 0;
+
     MPI_Allreduce(&N_long, &N_total, swift_type_count + 1, MPI_LONG_LONG_INT,
                   MPI_SUM, MPI_COMM_WORLD);
 #else
     N_total[swift_type_gas] = Ngas;
-    N_total[swift_type_dark_matter] =
-        with_gravity ? Ngpart - Ngpart_background - Nbaryons : 0;
     N_total[swift_type_dark_matter_background] = Ngpart_background;
     N_total[swift_type_sink] = Nsink;
     N_total[swift_type_stars] = Nspart;
     N_total[swift_type_black_hole] = Nbpart;
     N_total[swift_type_neutrino] = Nnupart;
     N_total[swift_type_count] = Ngpart;
+    N_total[swift_type_dark_matter] =
+        with_gravity ? Ngpart - Ngpart_background - Nbaryons - Nnupart : 0;
 #endif
 
     if (myrank == 0)
@@ -1440,8 +1446,8 @@ int main(int argc, char *argv[]) {
                 &entropy_floor, &gravity_properties, &stars_properties,
                 &black_holes_properties, &sink_properties, &neutrino_properties,
                 &feedback_properties, &rt_properties, &mesh, &potential,
-                &cooling_func, &starform, &chemistry, &fof_properties,
-                &los_properties, &lightcone_array_properties);
+                &cooling_func, &starform, &chemistry, &extra_io_props,
+		            &fof_properties, &los_properties, &lightcone_array_properties);
     engine_config(/*restart=*/0, /*fof=*/0, &e, params, nr_nodes, myrank,
                   nr_threads, nr_pool_threads, with_aff, talking, restart_file);
 
@@ -1453,8 +1459,7 @@ int main(int argc, char *argv[]) {
     /* Get some info to the user. */
     if (myrank == 0) {
       const long long N_DM = N_total[swift_type_dark_matter] +
-                             N_total[swift_type_dark_matter_background] +
-                             N_total[swift_type_neutrino];
+                             N_total[swift_type_dark_matter_background];
       message(
           "Running on %lld gas particles, %lld sink particles, %lld stars "
           "particles %lld black hole particles, %lld neutrino particles, and "
@@ -1811,6 +1816,7 @@ int main(int argc, char *argv[]) {
   if (with_feedback) feedback_clean(e.feedback_props);
   if (with_lightcone) lightcone_array_clean(e.lightcone_array_properties);
   if (with_rt) rt_clean(e.rt_props);
+  extra_io_clean(e.io_extra_props);
   engine_clean(&e, /*fof=*/0, restart);
   free(params);
   free(output_options);

@@ -33,6 +33,27 @@
 #include "lightcone_map_types.h"
 
 
+/* Required for the xrays */
+#include "extra_io.h"
+#include "io_properties.h"
+
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_gas_only(int ptype) {
+
+  switch(ptype) {
+  case swift_type_gas:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+
 /**
  * @brief Determine if a particle type contributes to this map type
  *
@@ -267,4 +288,3 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
     return -1.0;  /* Prevent 'missing return' error */
   }
 }
-
