@@ -385,8 +385,6 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
 
       const double sigma_thompson = phys_const->const_thomson_cross_section;
 
-      double doppler_b_factor = n_e * m * sigma_thompson / (rho * c);
-
       double x_squared = x_cross[0] * x_cross[0] * a_cross * a_cross;
       double y_squared = x_cross[1] * x_cross[1] * a_cross * a_cross;
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
@@ -401,8 +399,8 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
 
       double pixel_size_2 = lightcone_props->pixel_area_steradians;
 
-      double b_for_map = doppler_b_factor * radial_velocity /
-                  (pixel_size_2 * angular_diameter_distance_2);
+      double b_for_map = n_e * m * sigma_thompson * radial_velocity /
+                  (pixel_size_2 * angular_diameter_distance_2 * rho * c);
 
       return b_for_map;
     } break;
@@ -465,8 +463,6 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
 
       double m = hydro_get_mass(p);
 
-      double number_of_electrons = n_e * m / (rho);
-
       double x_squared = x_cross[0] * x_cross[0] * a_cross * a_cross;
       double y_squared = x_cross[1] * x_cross[1] * a_cross * a_cross;
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
@@ -474,8 +470,8 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
 
       double pixel_size_2 = lightcone_props->pixel_area_steradians;
 
-      double dm_for_map = number_of_electrons /
-                  (pixel_size_2 * angular_diameter_distance_2);
+      double dm_for_map = n_e * m /
+                  (pixel_size_2 * angular_diameter_distance_2 * rho);
 
       return dm_for_map;
     } break;
