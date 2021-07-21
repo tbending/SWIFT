@@ -35,6 +35,7 @@
 #include "cosmology.h"
 #include "engine.h"
 #include "error.h"
+#include "extra_io.h"
 #include "hydro.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
@@ -184,6 +185,14 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
       if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
         props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
         props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
+      }
+      type_nr += 1;
+    }
+    type_nr = 0;
+    while(extra_lightcone_map_types[type_nr].update_map) {
+      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
+        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
       }
       type_nr += 1;
     }
@@ -343,6 +352,17 @@ void lightcone_init(struct lightcone_props *props,
         props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
         if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                   index, map_nr, lightcone_map_types[type_nr].name);
+      }
+      type_nr += 1;
+    }
+    type_nr = 0;
+    while(extra_lightcone_map_types[type_nr].update_map) {
+      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
+        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
+        props->map_type[map_nr].units = extra_lightcone_map_types[type_nr].units;
+        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
+                                  index, map_nr, extra_lightcone_map_types[type_nr].name);
       }
       type_nr += 1;
     }

@@ -66,6 +66,7 @@
 #include "debug.h"
 #include "equation_of_state.h"
 #include "error.h"
+#include "extra_io.h"
 #include "feedback.h"
 #include "fof.h"
 #include "gravity.h"
@@ -2792,6 +2793,7 @@ void engine_unpin(void) {
  * @param cooling_func The properties of the cooling function.
  * @param starform The #star_formation model of this run.
  * @param chemistry The chemistry information.
+ * @param io_extra_props The properties needed for the extra i/o fields.
  * @param fof_properties The #fof_props of this run.
  * @param los_properties the #los_props of this run.
  * @param lightcone_array_properties the #lightcone_array_props of this run.
@@ -2813,6 +2815,7 @@ void engine_init(
     struct cooling_function_data *cooling_func,
     const struct star_formation *starform,
     const struct chemistry_global_data *chemistry,
+    struct extra_io_properties *io_extra_props,
     struct fof_props *fof_properties, struct los_props *los_properties,
     struct lightcone_array_props *lightcone_array_properties) {
 
@@ -2916,6 +2919,7 @@ void engine_init(
   e->feedback_props = feedback;
   e->rt_props = rt;
   e->chemistry = chemistry;
+  e->io_extra_props = io_extra_props;
   e->fof_properties = fof_properties;
   e->parameter_file = params;
   e->output_options = output_options;
@@ -3347,6 +3351,7 @@ void engine_clean(struct engine *e, const int fof, const int restart) {
     free((void *)e->cooling_func);
     free((void *)e->star_formation);
     free((void *)e->feedback_props);
+    free((void *)e->io_extra_props);
 #ifdef WITH_FOF
     free((void *)e->fof_properties);
 #endif
@@ -3407,6 +3412,7 @@ void engine_struct_dump(struct engine *e, FILE *stream) {
   sink_struct_dump(e->sink_properties, stream);
   neutrino_struct_dump(e->neutrino_properties, stream);
   chemistry_struct_dump(e->chemistry, stream);
+  extra_io_struct_dump(e->io_extra_props, stream);
 #ifdef WITH_FOF
   fof_struct_dump(e->fof_properties, stream);
 #endif
@@ -3546,6 +3552,11 @@ void engine_struct_restore(struct engine *e, FILE *stream) {
           sizeof(struct chemistry_global_data));
   chemistry_struct_restore(chemistry, stream);
   e->chemistry = chemistry;
+
+  struct extra_io_properties *extra_io_props =
+      (struct extra_io_properties *)malloc(sizeof(struct extra_io_properties));
+  extra_io_struct_restore(extra_io_props, stream);
+  e->io_extra_props = extra_io_props;
 
 #ifdef WITH_FOF
   struct fof_props *fof_props =

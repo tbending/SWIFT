@@ -52,6 +52,10 @@ struct lightcone_map_type {
   enum unit_conversion_factor units;
 };
 
+/*
+  Function used for defining maps which only include gas (e.g. EAGLE x-ray outputs)
+*/
+int lightcone_map_gas_only(int ptype);
 
 /* 
    Healpix map of total mass
@@ -98,7 +102,16 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
-/* 
+/*
+   Healpix map of star formation rate
+*/
+int lightcone_map_sfr_type_contributes(int ptype);
+
+double lightcone_map_sfr_get_value(const struct engine *e,
+                                   const struct lightcone_props *lightcone_props,
+                                   const struct gpart *gp, const double a_cross,
+                                   const double x_cross[3]);
+/*
    Healpix map of compton y
 */
 int lightcone_map_compton_y_type_contributes(int ptype);
@@ -134,6 +147,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"DarkMatterMass", lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS},
   {"StellarMass",    lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS},
   {"NeutrinoMass",   lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS},
+  {"StarFormationRate", lightcone_map_sfr_get_value,           lightcone_map_sfr_type_contributes,              UNIT_CONV_SFR},
   {"ComptonY",       lightcone_map_compton_y_get_value,        lightcone_map_compton_y_type_contributes,    UNIT_CONV_NO_UNITS},
   {"DopplerB",       lightcone_map_doppler_b_get_value,        lightcone_map_doppler_b_type_contributes,    UNIT_CONV_NO_UNITS},
   {"DM",             lightcone_map_dispersion_meassure_get_value, lightcone_map_dispersion_meassure_type_contributes, UNIT_CONV_INV_AREA},
