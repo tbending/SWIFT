@@ -59,6 +59,61 @@ extern int engine_rank;
 
 
 /**
+ * @brief Identify which healpix map types we're making
+ *
+ * @param props the #lightcone_props structure
+ *
+ * For each requested map type find the update functions by matching names.
+ * Map types are defined in lightcone_map_types.h and there may be extra
+ * types defined in extra_io.h.
+ *
+ * This function assumes that props->map_type is already allocated and
+ * props->map_type[:].name has been set to the list of map names from the
+ * .yml file. It sets the update_map, ptype_contributes and units fields
+ * in the props->map_type array.
+ *
+ */
+static void lightcone_identify_map_types(struct lightcone_props *props) {
+  
+  /* Loop over requested map types */
+  for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1) {
+
+    /* Use null function pointer to indicate not found yet */
+    props->map_type[map_nr].update_map = NULL;
+
+    /* First we search the default set of map types in lightcone_map_types.c */
+    int type_nr = 0;
+    while(lightcone_map_types[type_nr].update_map) {
+      if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
+        props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
+        props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
+        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
+                                  props->index, map_nr, lightcone_map_types[type_nr].name);
+      }
+      type_nr += 1;
+    }
+
+    /* Then try any additional map types from extra_io.h */
+    type_nr = 0;
+    while(extra_lightcone_map_types[type_nr].update_map) {
+      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
+        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
+        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
+        props->map_type[map_nr].units = extra_lightcone_map_types[type_nr].units;
+        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
+                                  props->index, map_nr, extra_lightcone_map_types[type_nr].name);
+      }
+      type_nr += 1;
+    }
+
+    if(!props->map_type[map_nr].update_map)error("Unable to locate lightcone map type %s",
+                                                 props->map_type[map_nr].name);
+  }
+}
+
+
+/**
  * @brief Allocate particle I/O buffers for a lightcone
  *
  * @param props the #lightcone_props structure
@@ -179,26 +234,7 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
   }
 
   /* Restore pointers to functions for updating healpix maps */
-  for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1) {
-    int type_nr = 0;
-    while(lightcone_map_types[type_nr].update_map) {
-      if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
-      }
-      type_nr += 1;
-    }
-    type_nr = 0;
-    while(extra_lightcone_map_types[type_nr].update_map) {
-      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
-      }
-      type_nr += 1;
-    }
-    if(!props->map_type[map_nr].update_map)error("Unable to locate lightcone map type %s",
-                                                 props->map_type[map_nr].name);
-  }
+  lightcone_identify_map_types(props);
 
   /* Re-initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
@@ -338,37 +374,8 @@ void lightcone_init(struct lightcone_props *props,
   }
   parser_free_param_string_array(props->nr_maps, map_names);
 
-  /* Each type of map has a pointer to an update function. First, null them all. */
-  for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1)
-    props->map_type[map_nr].update_map = NULL;
-
-  /* Then, for each requested map type find the update function by matching names */
-  for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1) {
-    int type_nr = 0;
-    while(lightcone_map_types[type_nr].update_map) {
-      if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
-        props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
-        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
-                                  index, map_nr, lightcone_map_types[type_nr].name);
-      }
-      type_nr += 1;
-    }
-    type_nr = 0;
-    while(extra_lightcone_map_types[type_nr].update_map) {
-      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
-        props->map_type[map_nr].units = extra_lightcone_map_types[type_nr].units;
-        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
-                                  index, map_nr, extra_lightcone_map_types[type_nr].name);
-      }
-      type_nr += 1;
-    }
-    if(!props->map_type[map_nr].update_map)error("Unable to locate lightcone map type %s",
-                                                 props->map_type[map_nr].name);
-  }
+  /* For each requested map type find the update function by matching names */
+  lightcone_identify_map_types(props);
 
   /* For each particle type, determine which healpix maps will be updated */
   const int nr_maps = props->nr_maps;
