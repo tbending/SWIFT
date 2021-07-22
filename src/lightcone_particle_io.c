@@ -55,9 +55,9 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_gas][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_gas][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_gas][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_gas][n++] = lightcone_io_make_output_field("SmoothingLengths", DOUBLE, 1, OFFSET(h), UNIT_CONV_LENGTH, 0.0);
-  field[swift_type_gas][n++] = lightcone_io_make_output_field("ExpansionFactor",  DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_gas][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_gas][n++] = lightcone_io_make_output_field("SmoothingLengths", FLOAT, 1, OFFSET(h), UNIT_CONV_LENGTH, 0.0);
+  field[swift_type_gas][n++] = lightcone_io_make_output_field("ExpansionFactor",  FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_gas] = n;
 #undef OFFSET
 
@@ -66,8 +66,8 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("ExpansionFactor", DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_dark_matter][n++] = lightcone_io_make_output_field("ExpansionFactor", FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_dark_matter] = n;
 #undef OFFSET
 
@@ -76,8 +76,8 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("ExpansionFactor", DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_dark_matter_background][n++] = lightcone_io_make_output_field("ExpansionFactor", FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_dark_matter_background] = n;
 #undef OFFSET
 
@@ -86,8 +86,8 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_stars][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_stars][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_stars][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_stars][n++] = lightcone_io_make_output_field("ExpansionFactor", DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_stars][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_stars][n++] = lightcone_io_make_output_field("ExpansionFactor", FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_stars] = n;
 #undef OFFSET
 
@@ -96,8 +96,8 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_black_hole][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_black_hole][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_black_hole][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_black_hole][n++] = lightcone_io_make_output_field("ExpansionFactor", DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_black_hole][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_black_hole][n++] = lightcone_io_make_output_field("ExpansionFactor", FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_black_hole] = n;
 #undef OFFSET
 
@@ -106,8 +106,8 @@ void lightcone_io_make_output_fields(void) {
   n = 0;
   field[swift_type_neutrino][n++] = lightcone_io_make_output_field("ParticleIDs", LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   field[swift_type_neutrino][n++] = lightcone_io_make_output_field("Coordinates", DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH, 1.0);
-  field[swift_type_neutrino][n++] = lightcone_io_make_output_field("Masses",      DOUBLE,   1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
-  field[swift_type_neutrino][n++] = lightcone_io_make_output_field("ExpansionFactor", DOUBLE, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
+  field[swift_type_neutrino][n++] = lightcone_io_make_output_field("Masses",      FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS, 0.0);
+  field[swift_type_neutrino][n++] = lightcone_io_make_output_field("ExpansionFactor", FLOAT, 1, OFFSET(a), UNIT_CONV_NO_UNITS, 0.0);
   num_fields[swift_type_neutrino] = n;
 #undef OFFSET
 
