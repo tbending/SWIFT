@@ -94,8 +94,9 @@ struct lightcone_gas_data {
   long long id;
   double x[3];
   float mass;
-  float h;
   float a;
+  float h;
+  float rho;
 };
 
 int lightcone_store_gas(const struct engine *e,
