@@ -29,6 +29,7 @@
 #include "lightcone_map_types.h"
 #include "lightcone_replications.h"
 #include "lightcone_shell.h"
+#include "lightcone_particle_io.h"
 #include "parser.h"
 #include "part_type.h"
 #include "particle_buffer.h"
@@ -150,6 +151,9 @@ struct lightcone_props {
 
   /*! Healpix smoothing information */
   struct healpix_smoothing_info *smoothing_info;
+
+  /*! Output fields */
+  struct lightcone_io_field_list particle_fields[swift_type_count];
 
 };
 

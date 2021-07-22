@@ -205,6 +205,26 @@ void lightcone_struct_dump(const struct lightcone_props *props, FILE *stream) {
 
 
 /**
+ * @brief Initialise the particle output fields for each particle type.
+ *
+ * @param props the #lightcone_props structure
+ */
+void lightcone_define_output_fields(struct lightcone_props *props) {
+  
+  for(int ptype=0; ptype<swift_type_count; ptype+=1)
+    lightcone_io_field_list_init(&props->particle_fields[ptype]);
+
+  /* Add the default set of fields for all models, from lightcone_particle_io.c */
+  lightcone_io_append_gas_output_fields(&props->particle_fields[swift_type_gas]);
+  lightcone_io_append_dark_matter_output_fields(&props->particle_fields[swift_type_dark_matter]);
+  lightcone_io_append_dark_matter_background_output_fields(&props->particle_fields[swift_type_dark_matter_background]);
+  lightcone_io_append_stars_output_fields(&props->particle_fields[swift_type_stars]);
+  lightcone_io_append_black_hole_output_fields(&props->particle_fields[swift_type_black_hole]);
+  lightcone_io_append_neutrino_output_fields(&props->particle_fields[swift_type_neutrino]);
+}
+
+
+/**
  * @brief Restore lightcone_props struct from the input stream.
  *
  * @param props the #lightcone_props structure
@@ -243,7 +263,7 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
   lightcone_allocate_buffers(props);
 
   /* Define output quantities */
-  lightcone_io_make_output_fields();
+  lightcone_define_output_fields(props);
 }
 
 
@@ -282,7 +302,7 @@ void lightcone_init(struct lightcone_props *props,
   props->verbose = verbose;
 
   /* Define output quantities */
-  lightcone_io_make_output_fields();
+  lightcone_define_output_fields(props);
 
   /* Which particle types we should write out particle data for */
   for(int i=0; i<swift_type_count; i+=1)
@@ -787,6 +807,10 @@ void lightcone_clean(struct lightcone_props *props) {
   
   /* Tidy up C++ healpix smoothing code */
   healpix_smoothing_clean(props->smoothing_info);
+
+  /* Free lists of output quantities */
+  for(int ptype=0; ptype<swift_type_count; ptype+=1)
+    lightcone_io_field_list_clean(&props->particle_fields[ptype]);
 }
 
 
