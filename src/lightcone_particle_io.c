@@ -28,6 +28,7 @@
 #include "lightcone_particle_io.h"
 
 /* Local headers */
+#include "cooling.h"
 #include "error.h"
 #include "gravity.h"
 #include "lightcone.h"
@@ -96,12 +97,14 @@ void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
 void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_gas_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs", LONGLONG, 1, OFFSET(id), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0);
   lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0);
+  lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0);
+
 #undef OFFSET
 }
 
@@ -213,7 +216,9 @@ int lightcone_store_gas(const struct engine *e,
   data->a    = a_cross;
   data->h    = p->h;
   data->rho  = p->rho;
-
+  data->temperature = cooling_get_temperature(e->physical_constants, e->hydro_properties,
+                                              e->internal_units, e->cosmology,
+                                              e->cooling_func, p, xp);
   return 1;
 }
 

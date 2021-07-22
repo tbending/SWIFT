@@ -101,6 +101,7 @@ struct lightcone_gas_data {
   float a;
   float h;
   float rho;
+  float temperature;
 };
 
 int lightcone_store_gas(const struct engine *e,
