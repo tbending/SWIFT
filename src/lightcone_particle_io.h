@@ -107,6 +107,11 @@ struct lightcone_gas_data {
   float smoothed_metal_mass_fraction[chemistry_element_count];
   float metal_mass_fraction_total;
   float smoothed_metal_mass_fraction_total;
+#ifdef COOLING_COLIBRE
+  float electron_density;
+  double ycompton;
+#endif
+  long long group_id;
 };
 
 int lightcone_store_gas(const struct engine *e,
