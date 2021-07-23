@@ -29,6 +29,8 @@
 
 /* Local headers */
 #include "cooling.h"
+#include "chemistry.h"
+#include "chemistry_struct.h"
 #include "error.h"
 #include "gravity.h"
 #include "lightcone.h"
@@ -99,12 +101,15 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
 #define OFFSET(x) offsetof(struct lightcone_gas_data, x)
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0);
   lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0);
   lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0);
-
+  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction),       UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1,                       OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1,                       OFFSET(metal_mass_fraction_total),          UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
 }
 
@@ -117,6 +122,7 @@ void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_lis
 #define OFFSET(x) offsetof(struct lightcone_dark_matter_data, x)
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
@@ -131,6 +137,7 @@ void lightcone_io_append_dark_matter_background_output_fields(struct lightcone_i
 #define OFFSET(x) offsetof(struct lightcone_dark_matter_data, x) /* Uses same struct as dark matter */
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
@@ -145,6 +152,7 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
 #define OFFSET(x) offsetof(struct lightcone_stars_data, x)
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
@@ -159,6 +167,7 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
 #define OFFSET(x) offsetof(struct lightcone_black_hole_data, x)
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
@@ -173,6 +182,7 @@ void lightcone_io_append_neutrino_output_fields(struct lightcone_io_field_list *
 #define OFFSET(x) offsetof(struct lightcone_neutrino_data, x)
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
 #undef OFFSET
@@ -212,6 +222,9 @@ int lightcone_store_gas(const struct engine *e,
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
   data->x[2] = x_cross[2];
+  data->vel[0] = xp->v_full[0] / a_cross; // TODO: extrapolate velocities to a_cross?
+  data->vel[1] = xp->v_full[1] / a_cross;
+  data->vel[2] = xp->v_full[2] / a_cross;
   data->mass = p->mass;
   data->a    = a_cross;
   data->h    = p->h;
@@ -219,6 +232,11 @@ int lightcone_store_gas(const struct engine *e,
   data->temperature = cooling_get_temperature(e->physical_constants, e->hydro_properties,
                                               e->internal_units, e->cosmology,
                                               e->cooling_func, p, xp);
+  for(int i=0; i<chemistry_element_count; i+=1)
+    data->smoothed_metal_mass_fraction[i] = p->chemistry_data.smoothed_metal_mass_fraction[i];
+  data->metal_mass_fraction_total = p->chemistry_data.metal_mass_fraction_total;
+  data->smoothed_metal_mass_fraction_total = p->chemistry_data.smoothed_metal_mass_fraction_total;
+
   return 1;
 }
 
@@ -244,6 +262,9 @@ int lightcone_store_dark_matter(const struct engine *e,
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
   data->x[2] = x_cross[2];
+  data->vel[0] = gp->v_full[0] / a_cross; // TODO: extrapolate velocities to a_cross?
+  data->vel[1] = gp->v_full[1] / a_cross;
+  data->vel[2] = gp->v_full[2] / a_cross;
   data->mass = gp->mass;
   data->a = a_cross;
   
@@ -273,6 +294,9 @@ int lightcone_store_stars(const struct engine *e,
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
   data->x[2] = x_cross[2];
+  data->vel[0] = sp->v[0] / a_cross; // TODO: extrapolate velocities to a_cross?
+  data->vel[1] = sp->v[1] / a_cross;
+  data->vel[2] = sp->v[2] / a_cross;
   data->mass = sp->mass;
   data->a = a_cross;
 
@@ -302,6 +326,9 @@ int lightcone_store_black_hole(const struct engine *e,
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
   data->x[2] = x_cross[2];
+  data->vel[0] = bp->v[0] / a_cross; // TODO: extrapolate velocities to a_cross?
+  data->vel[1] = bp->v[1] / a_cross;
+  data->vel[2] = bp->v[2] / a_cross;
   data->mass = bp->mass;
   data->a = a_cross;
 
@@ -329,6 +356,9 @@ int lightcone_store_neutrino(const struct engine *e,
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
   data->x[2] = x_cross[2];
+  data->vel[0] = gp->v_full[0] / a_cross; // TODO: extrapolate velocities to a_cross?
+  data->vel[1] = gp->v_full[1] / a_cross;
+  data->vel[2] = gp->v_full[2] / a_cross;
   data->mass = gp->mass;
   data->a = a_cross;
   

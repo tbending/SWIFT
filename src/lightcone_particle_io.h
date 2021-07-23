@@ -31,6 +31,7 @@
 #include "lightcone_particle_io.h"
 
 /* Local headers. */
+#include "chemistry_struct.h"
 #include "common_io.h"
 #include "error.h"
 #include "part_type.h"
@@ -97,11 +98,15 @@ struct lightcone_io_field_list {
 struct lightcone_gas_data {
   long long id;
   double x[3];
+  float vel[3];
   float mass;
   float a;
   float h;
   float rho;
   float temperature;
+  float smoothed_metal_mass_fraction[chemistry_element_count];
+  float metal_mass_fraction_total;
+  float smoothed_metal_mass_fraction_total;
 };
 
 int lightcone_store_gas(const struct engine *e,
@@ -116,6 +121,7 @@ int lightcone_store_gas(const struct engine *e,
 struct lightcone_dark_matter_data {
   long long id;
   double x[3];
+  float vel[3];
   float mass;
   float a;
 };
@@ -131,6 +137,7 @@ int lightcone_store_dark_matter(const struct engine *e,
 struct lightcone_stars_data {
   long long id;
   double x[3];
+  float vel[3];
   float mass;
   float a;
 };
@@ -147,6 +154,7 @@ int lightcone_store_stars(const struct engine *e,
 struct lightcone_black_hole_data {
   long long id;
   double x[3];
+  float vel[3];
   float mass;
   float a;
 };
@@ -163,6 +171,7 @@ int lightcone_store_black_hole(const struct engine *e,
 struct lightcone_neutrino_data {
   long long id;
   double x[3];
+  float vel[3];
   float mass;
   float a;
 };
