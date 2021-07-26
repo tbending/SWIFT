@@ -102,7 +102,7 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
-/* 
+/*
    Healpix map of star formation rate
 */
 int lightcone_map_sfr_type_contributes(int ptype);
@@ -111,7 +111,6 @@ double lightcone_map_sfr_get_value(const struct engine *e,
                                    const struct lightcone_props *lightcone_props,
                                    const struct gpart *gp, const double a_cross,
                                    const double x_cross[3]);
-
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {

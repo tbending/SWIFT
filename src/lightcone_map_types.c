@@ -164,7 +164,6 @@ double lightcone_map_gas_mass_get_value(const struct engine *e,
   }
 }
 
-
 /**
  * @brief Determine if a particle type contributes to this map type
  *
@@ -180,7 +179,6 @@ int lightcone_map_dark_matter_mass_type_contributes(int ptype) {
     return 0;
   }
 }
-
 
 /**
  * @brief Make a healpix map of projected dark matter mass in each pixel
@@ -205,7 +203,6 @@ double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
     return -1.0;  /* Prevent 'missing return' error */
   }
 }
-
 
 /**
  * @brief Determine if a particle type contributes to this map type
@@ -250,7 +247,6 @@ double lightcone_map_stellar_mass_get_value(const struct engine *e,
     return -1.0; /* Prevent 'missing return' error */
   }
 }
-
 
 /**
  * @brief Determine if a particle type contributes to this map type

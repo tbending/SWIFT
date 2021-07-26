@@ -192,7 +192,33 @@ double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *
                                              const struct lightcone_props *lightcone_props,
                                              const struct gpart *gp, const double a_cross,
                                              const double x_cross[3]);
+/*
+   Healpix map of compton y
+*/
+int lightcone_map_compton_y_type_contributes(int ptype);
 
+double lightcone_map_compton_y_get_value(const struct engine *e,
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]);
+/* 
+   Healpix map of doppler b
+*/
+int lightcone_map_doppler_b_type_contributes(int ptype);
+
+double lightcone_map_doppler_b_get_value(const struct engine *e,
+                                         const struct lightcone_props *lightcone_props,
+                                         const struct gpart *gp, const double a_cross,
+                                         const double x_cross[3]);
+/* 
+   Healpix map of dispersion meassure
+*/
+int lightcone_map_dispersion_meassure_type_contributes(int ptype);
+
+double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
+                                                   const struct lightcone_props *lightcone_props,
+                                                   const struct gpart *gp, const double a_cross,
+                                                   const double x_cross[3]);
 
 static const struct lightcone_map_type extra_lightcone_map_types[] = {
   {"XrayErositaLowIntrinsicPhotons", lightcone_map_xray_erosita_low_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
@@ -201,6 +227,9 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
   {"XrayErositaHighIntrinsicEnergies", lightcone_map_xray_erosita_high_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
   {"XrayROSATIntrinsicPhotons", lightcone_map_xray_rosat_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
   {"XrayROSATIntrinsicEnergies", lightcone_map_xray_rosat_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"ComptonY", lightcone_map_compton_y_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"DopplerB", lightcone_map_doppler_b_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS},
+  {"DM", lightcone_map_dispersion_meassure_get_value, lightcone_map_gas_only, UNIT_CONV_INV_AREA},
   {"", NULL, NULL, UNIT_CONV_NO_UNITS},
   /* NULL functions indicate end of array */
 };
