@@ -115,6 +115,9 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
   lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0);
 #endif
   lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0);
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #undef OFFSET
 }
 
@@ -257,6 +260,9 @@ int lightcone_store_gas(const struct engine *e,
                                         e->cooling_func, p, xp);
 #endif
   data->group_id = (long long) gp->fof_data.group_id;
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  data->last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
+#endif
 
   return 1;
 }

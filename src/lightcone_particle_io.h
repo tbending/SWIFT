@@ -112,6 +112,9 @@ struct lightcone_gas_data {
   double ycompton;
 #endif
   long long group_id;
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  float last_AGN_injection_scale_factor;
+#endif
 };
 
 int lightcone_store_gas(const struct engine *e,
@@ -145,8 +148,10 @@ struct lightcone_stars_data {
   float vel[3];
   float mass;
   float a;
+#ifdef STARS_EAGLE
   float mass_init;
   float birth_scale_factor;
+#endif
 };
 
 int lightcone_store_stars(const struct engine *e,
