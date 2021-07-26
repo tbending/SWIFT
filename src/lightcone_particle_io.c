@@ -168,9 +168,13 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+#ifdef WITH_FOF
+  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #ifdef STARS_EAGLE
   lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0);
   lightcone_io_field_list_append(list, "BirthScaleFactors", FLOAT, 1, OFFSET(birth_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "BirthDensities",    FLOAT, 1, OFFSET(birth_density),      UNIT_CONV_DENSITY, 0.0);
   lightcone_io_field_list_append(list, "Luminosities", FLOAT, luminosity_bands_count, OFFSET(luminosities), UNIT_CONV_NO_UNITS, 0.0);
 #endif
 #ifdef CHEMISTRY_EAGLE
@@ -348,9 +352,14 @@ int lightcone_store_stars(const struct engine *e,
   data->mass = sp->mass;
   data->a = a_cross;
 
+#ifdef WITH_FOF
+  data->group_id = (long long) gp->fof_data.group_id;
+#endif
+
 #ifdef STARS_EAGLE
   data->mass_init = sp->mass_init;
   data->birth_scale_factor = sp->birth_scale_factor;
+  data->birth_density = sp->birth_density;
   stars_get_luminosities(sp, e->policy & engine_policy_cosmology, e->cosmology,
                          e->time, e->physical_constants, e->stars_properties,
                          data->luminosities);

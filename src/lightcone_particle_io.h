@@ -153,9 +153,13 @@ struct lightcone_stars_data {
   float vel[3];
   float mass;
   float a;
+#ifdef WITH_FOF
+  long long group_id;
+#endif
 #ifdef STARS_EAGLE
   float mass_init;
   float birth_scale_factor;
+  float birth_density;
   float luminosities[luminosity_bands_count];
 #endif
 #ifdef CHEMISTRY_EAGLE
