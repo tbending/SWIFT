@@ -35,6 +35,7 @@
 #include "gravity.h"
 #include "lightcone.h"
 #include "particle_buffer.h"
+#include "stars.h"
 #include "engine.h"
 
 
@@ -170,6 +171,7 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
 #ifdef STARS_EAGLE
   lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0);
   lightcone_io_field_list_append(list, "BirthScaleFactors", FLOAT, 1, OFFSET(birth_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "Luminosities", FLOAT, luminosity_bands_count, OFFSET(luminosities), UNIT_CONV_NO_UNITS, 0.0);
 #endif
 #ifdef CHEMISTRY_EAGLE
   lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0);
@@ -345,6 +347,9 @@ int lightcone_store_stars(const struct engine *e,
 #ifdef STARS_EAGLE
   data->mass_init = sp->mass_init;
   data->birth_scale_factor = sp->birth_scale_factor;
+  stars_get_luminosities(sp, e->policy & engine_policy_cosmology, e->cosmology,
+                         e->time, e->physical_constants, e->stars_properties,
+                         data->luminosities);
 #endif
 #ifdef CHEMISTRY_EAGLE
   for(int i=0; i<chemistry_element_count; i+=1)

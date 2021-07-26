@@ -31,10 +31,11 @@
 #include "lightcone_particle_io.h"
 
 /* Local headers. */
-#include "chemistry_struct.h"
+#include "chemistry.h"
 #include "common_io.h"
 #include "error.h"
 #include "part_type.h"
+#include "stars.h"
 #include "units.h"
 
 /* Forward declarations */
@@ -155,6 +156,7 @@ struct lightcone_stars_data {
 #ifdef STARS_EAGLE
   float mass_init;
   float birth_scale_factor;
+  float luminosities[luminosity_bands_count];
 #endif
 #ifdef CHEMISTRY_EAGLE
   float smoothed_metal_mass_fraction[chemistry_element_count];
