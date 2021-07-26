@@ -104,14 +104,18 @@ struct lightcone_gas_data {
   float h;
   float rho;
   float temperature;
+#ifdef CHEMISTRY_EAGLE
   float smoothed_metal_mass_fraction[chemistry_element_count];
   float metal_mass_fraction_total;
   float smoothed_metal_mass_fraction_total;
+#endif
 #ifdef COOLING_COLIBRE
   float electron_density;
   double ycompton;
 #endif
+#ifdef WITH_FOF
   long long group_id;
+#endif
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   float last_AGN_injection_scale_factor;
 #endif

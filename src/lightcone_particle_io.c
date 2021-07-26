@@ -107,14 +107,18 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
   lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0);
   lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0);
   lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0);
-  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction),       UNIT_CONV_NO_UNITS, 0.0);
+#ifdef CHEMISTRY_EAGLE
+  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total),          UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #ifdef COOLING_COLIBRE
   lightcone_io_field_list_append(list, "ElectronNumberDensities", FLOAT,  1, OFFSET(electron_density), UNIT_CONV_NUMBER_DENSITY, 0.0);
   lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0);
 #endif
+#ifdef WITH_FOF
   lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
 #endif
@@ -244,10 +248,17 @@ int lightcone_store_gas(const struct engine *e,
   data->temperature = cooling_get_temperature(e->physical_constants, e->hydro_properties,
                                               e->internal_units, e->cosmology,
                                               e->cooling_func, p, xp);
+
+#ifdef WITH_FOF
+  data->group_id = (long long) gp->fof_data.group_id;
+#endif
+
+#ifdef CHEMISTRY_EAGLE
   for(int i=0; i<chemistry_element_count; i+=1)
     data->smoothed_metal_mass_fraction[i] = p->chemistry_data.smoothed_metal_mass_fraction[i];
   data->metal_mass_fraction_total = p->chemistry_data.metal_mass_fraction_total;
   data->smoothed_metal_mass_fraction_total = p->chemistry_data.smoothed_metal_mass_fraction_total;
+#endif
 
 #ifdef COOLING_COLIBRE
   data->electron_density = cooling_get_electron_density(e->physical_constants,
@@ -259,7 +270,7 @@ int lightcone_store_gas(const struct engine *e,
                                         e->internal_units, e->cosmology,
                                         e->cooling_func, p, xp);
 #endif
-  data->group_id = (long long) gp->fof_data.group_id;
+
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   data->last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
 #endif
