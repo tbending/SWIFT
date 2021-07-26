@@ -610,20 +610,16 @@ INLINE static float interpolate_xray(const float *emissivity,
  * @return The X-ray emmisivity in the corresponding band in CGS units.
  */
 INLINE static float do_xray_interpolation(
-    const struct xray_properties *xrays, const float He_fraction,
+    const struct xray_properties *xrays, const float log10_He_fraction,
     const float log_nH_cgs, const float log_T, const float redshift,
     const float solar_ratio[colibre_cooling_N_elementtypes],
     const enum xray_band_types band) {
-
-  /* Convert to log10(X_He) */
-  const float log10_X_He =
-      He_fraction + xrays->Log10_solar_metallicity[chemistry_element_He];
 
   /* Get indices in the interpolation table along the He, nH, T
    * and z dimensions */
   int He_index, log_nH_cgs_index, log_T_index, z_index;
   float d_He, d_log_nH_cgs, d_log_T, d_z;
-  get_index_1d_irregular(xrays->He_bins, xray_emission_N_helium, log10_X_He,
+  get_index_1d_irregular(xrays->He_bins, xray_emission_N_helium, log10_He_fraction,
                          &He_index, &d_He);
 
   get_index_1d(xrays->Densities, xray_emission_N_density, log_nH_cgs,
