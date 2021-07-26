@@ -145,6 +145,8 @@ struct lightcone_stars_data {
   float vel[3];
   float mass;
   float a;
+  float mass_init;
+  float birth_scale_factor;
 };
 
 int lightcone_store_stars(const struct engine *e,

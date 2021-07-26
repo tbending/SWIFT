@@ -160,6 +160,10 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+#ifdef STARS_EAGLE
+  lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0);
+  lightcone_io_field_list_append(list, "BirthScaleFactors", FLOAT, 1, OFFSET(birth_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #undef OFFSET
 }
 
@@ -316,6 +320,10 @@ int lightcone_store_stars(const struct engine *e,
   data->vel[2] = sp->v[2] / a_cross;
   data->mass = sp->mass;
   data->a = a_cross;
+#ifdef STARS_EAGLE
+  data->mass_init = sp->mass_init;
+  data->birth_scale_factor = sp->birth_scale_factor;
+#endif
 
   return 1;
 }
