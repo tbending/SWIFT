@@ -156,6 +156,11 @@ struct lightcone_stars_data {
   float mass_init;
   float birth_scale_factor;
 #endif
+#ifdef CHEMISTRY_EAGLE
+  float smoothed_metal_mass_fraction[chemistry_element_count];
+  float metal_mass_fraction_total;
+  float smoothed_metal_mass_fraction_total;
+#endif
 };
 
 int lightcone_store_stars(const struct engine *e,
