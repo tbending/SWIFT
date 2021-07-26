@@ -163,6 +163,9 @@ struct lightcone_stars_data {
   float metal_mass_fraction_total;
   float smoothed_metal_mass_fraction_total;
 #endif
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  float last_AGN_injection_scale_factor;
+#endif
 };
 
 int lightcone_store_stars(const struct engine *e,

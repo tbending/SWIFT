@@ -178,6 +178,9 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
   lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
   lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
 #endif
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+#endif
 #undef OFFSET
 }
 
@@ -344,6 +347,7 @@ int lightcone_store_stars(const struct engine *e,
   data->vel[2] = sp->v[2] / a_cross;
   data->mass = sp->mass;
   data->a = a_cross;
+
 #ifdef STARS_EAGLE
   data->mass_init = sp->mass_init;
   data->birth_scale_factor = sp->birth_scale_factor;
@@ -351,11 +355,16 @@ int lightcone_store_stars(const struct engine *e,
                          e->time, e->physical_constants, e->stars_properties,
                          data->luminosities);
 #endif
+
 #ifdef CHEMISTRY_EAGLE
   for(int i=0; i<chemistry_element_count; i+=1)
     data->smoothed_metal_mass_fraction[i] = sp->chemistry_data.smoothed_metal_mass_fraction[i];
   data->metal_mass_fraction_total = sp->chemistry_data.metal_mass_fraction_total;
   data->smoothed_metal_mass_fraction_total = sp->chemistry_data.smoothed_metal_mass_fraction_total;
+#endif
+
+#if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
+  data->last_AGN_injection_scale_factor = sp->tracers_data.last_AGN_injection_scale_factor;
 #endif
 
   return 1;
