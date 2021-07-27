@@ -34,6 +34,7 @@
 #include "chemistry.h"
 #include "common_io.h"
 #include "error.h"
+#include "io_compression.h"
 #include "part_type.h"
 #include "stars.h"
 #include "units.h"
@@ -70,9 +71,11 @@ struct lightcone_io_field {
   /* Scale-factor exponent to apply for unit conversion to physical */
   float scale_factor_exponent;
 
+  /* Lossy compression to use for this field */
+  enum lossy_compression_schemes compression;
+
   /* Pointer to the next field */
   struct lightcone_io_field *next;
-
 };
 
 
@@ -240,10 +243,11 @@ inline static size_t lightcone_io_struct_size(int ptype) {
 void lightcone_io_field_list_init(struct lightcone_io_field_list *list);
 void lightcone_io_field_list_clean(struct lightcone_io_field_list *list);
 void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
-                                       char *name, enum IO_DATA_TYPE type,
-                                       int dimension, size_t offset,
-                                       enum unit_conversion_factor units,
-                                       float scale_factor_exponent);
+                                    char *name, enum IO_DATA_TYPE type,
+                                    int dimension, size_t offset,
+                                    enum unit_conversion_factor units,
+                                    float scale_factor_exponent,
+                                    char *compression);
 
 void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list);
 void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_list *list);

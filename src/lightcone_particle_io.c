@@ -69,7 +69,8 @@ void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
                                     char *name, enum IO_DATA_TYPE type,
                                     int dimension, size_t offset,
                                     enum unit_conversion_factor units,
-                                    float scale_factor_exponent) {
+                                    float scale_factor_exponent,
+                                    char *compression) {
 
   /* Make the new lightcone_io_field struct */
   struct lightcone_io_field *r = malloc(sizeof(struct lightcone_io_field));
@@ -80,6 +81,7 @@ void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
   r->offset = offset;
   r->units = units;
   r->scale_factor_exponent = scale_factor_exponent;
+  r->compression = compression_scheme_from_name(compression);
   r->next = NULL;
 
   /* Append to the linked list */
@@ -100,28 +102,28 @@ void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
 void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_gas_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0);
-  lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0);
-  lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0, "on");
+  lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0, "FMantissa9");
 #ifdef CHEMISTRY_EAGLE
-  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
 #endif
 #ifdef COOLING_COLIBRE
-  lightcone_io_field_list_append(list, "ElectronNumberDensities", FLOAT,  1, OFFSET(electron_density), UNIT_CONV_NUMBER_DENSITY, 0.0);
-  lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0);
+  lightcone_io_field_list_append(list, "ElectronNumberDensities", FLOAT,  1, OFFSET(electron_density), UNIT_CONV_NUMBER_DENSITY, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0, "FMantissa9");
 #endif
 #ifdef WITH_FOF
-  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
-  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "BFloat16");
 #endif
 #undef OFFSET
 }
@@ -133,11 +135,11 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
 void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_dark_matter_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -148,11 +150,11 @@ void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_lis
 void lightcone_io_append_dark_matter_background_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_dark_matter_data, x) /* Uses same struct as dark matter */
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -163,27 +165,27 @@ void lightcone_io_append_dark_matter_background_output_fields(struct lightcone_i
 void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_stars_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on"); 
 #ifdef WITH_FOF
-  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
 #ifdef STARS_EAGLE
-  lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0);
-  lightcone_io_field_list_append(list, "BirthScaleFactors", FLOAT, 1, OFFSET(birth_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "BirthDensities",    FLOAT, 1, OFFSET(birth_density),      UNIT_CONV_DENSITY, 0.0);
-  lightcone_io_field_list_append(list, "Luminosities", FLOAT, luminosity_bands_count, OFFSET(luminosities), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "BirthScaleFactors", FLOAT, 1, OFFSET(birth_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "BirthDensities",    FLOAT, 1, OFFSET(birth_density),      UNIT_CONV_DENSITY, 0.0, "BFloat16");
+  lightcone_io_field_list_append(list, "Luminosities", FLOAT, luminosity_bands_count, OFFSET(luminosities), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
 #endif
 #ifdef CHEMISTRY_EAGLE
-  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "SmoothedElementMassFractions", FLOAT, chemistry_element_count, OFFSET(smoothed_metal_mass_fraction), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "SmoothedMetalMassFractions",   FLOAT, 1, OFFSET(smoothed_metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
 #endif
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
-  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "BFloat16");
 #endif
 #undef OFFSET
 }
@@ -195,11 +197,11 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
 void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_black_hole_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -210,11 +212,11 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
 void lightcone_io_append_neutrino_output_fields(struct lightcone_io_field_list *list) {
   
 #define OFFSET(x) offsetof(struct lightcone_neutrino_data, x)
-  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0);
-  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0);
-  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0);
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0);
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0);
+  lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
+  lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
+  lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
+  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -448,8 +450,8 @@ int lightcone_store_neutrino(const struct engine *e,
 void append_dataset(const struct unit_system *snapshot_units,
                     enum unit_conversion_factor units, float scale_factor_exponent,
                     hid_t loc_id, const char *name, hid_t mem_type_id, hsize_t chunk_size,
-                    const int rank, const hsize_t *dims, const hsize_t num_written,
-                    const void *data) {
+                    enum lossy_compression_schemes compression, const int rank,
+                    const hsize_t *dims, const hsize_t num_written, const void *data) {
   
   const int max_rank = 2;
   if(rank > max_rank)error("HDF5 dataset has too may dimensions. Increase max_rank.");
@@ -489,10 +491,22 @@ void append_dataset(const struct unit_system *snapshot_units,
     /* We need to create a new dataset */
     file_space_id = H5Screate_simple(rank, full_dims, max_dims);    
     hid_t prop_id = H5Pcreate(H5P_DATASET_CREATE);
+
+    /* Type of the dataset to create - this is initially the same as the type
+       in memory but may be modified by lossy compression. */
+    hid_t file_type_id = H5Tcopy(mem_type_id);
+
+    /* Set chunk size and lossy compression scheme, if any  */
     H5Pset_chunk(prop_id, rank, chunk_dims);
-    dataset_id = H5Dcreate(loc_id, name, mem_type_id, file_space_id, H5P_DEFAULT, prop_id, H5P_DEFAULT);
+    char filter_name[32];
+    if(compression != compression_write_lossless)
+      set_hdf5_lossy_compression(&prop_id, &file_type_id, compression, name, filter_name);
+
+    /* Create the dataset */
+    dataset_id = H5Dcreate(loc_id, name, file_type_id, file_space_id, H5P_DEFAULT, prop_id, H5P_DEFAULT);
     if(dataset_id < 0)error("Failed to create new dataset: %s", name);
     H5Pclose(prop_id);
+    H5Tclose(file_type_id);
 
     /* Write unit conversion factors for this data set */
     char buffer[FIELD_BUFFER_SIZE] = {0};
@@ -594,6 +608,7 @@ void lightcone_write_particles(struct lightcone_props *props,
       hid_t dtype_id = io_hdf5_type(f->type);           /* HDF5 data type */
       size_t type_size = io_sizeof_type(f->type);       /* Bytes per value */
       const size_t field_size = f->dimension*type_size; /* Bytes per particle */
+      const enum lossy_compression_schemes compression = f->compression; /* Compression scheme */
 
       /* Find unit conversion factor for this quantity */
       const double conversion_factor =
@@ -653,7 +668,7 @@ void lightcone_write_particles(struct lightcone_props *props,
       int rank = 1;
       if(f->dimension > 1)rank = 2;
       append_dataset(snapshot_units, f->units, f->scale_factor_exponent,
-                     group_id, f->name, dtype_id, chunk_size,
+                     group_id, f->name, dtype_id, chunk_size, compression,
                      rank, dims, num_written, outbuf);
       
       /* Free the output buffer */
