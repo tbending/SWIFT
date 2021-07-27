@@ -450,8 +450,9 @@ int lightcone_store_neutrino(const struct engine *e,
 void append_dataset(const struct unit_system *snapshot_units,
                     enum unit_conversion_factor units, float scale_factor_exponent,
                     hid_t loc_id, const char *name, hid_t mem_type_id, hsize_t chunk_size,
-                    enum lossy_compression_schemes compression, const int rank,
-                    const hsize_t *dims, const hsize_t num_written, const void *data) {
+                    int lossy_compression, enum lossy_compression_schemes compression_scheme,
+                    int gzip_level, const int rank, const hsize_t *dims, 
+                    const hsize_t num_written, const void *data) {
   
   const int max_rank = 2;
   if(rank > max_rank)error("HDF5 dataset has too may dimensions. Increase max_rank.");
@@ -499,8 +500,14 @@ void append_dataset(const struct unit_system *snapshot_units,
     /* Set chunk size and lossy compression scheme, if any  */
     H5Pset_chunk(prop_id, rank, chunk_dims);
     char filter_name[32];
-    if(compression != compression_write_lossless)
-      set_hdf5_lossy_compression(&prop_id, &file_type_id, compression, name, filter_name);
+    if(lossy_compression && (compression_scheme != compression_write_lossless))
+      set_hdf5_lossy_compression(&prop_id, &file_type_id, compression_scheme, name, filter_name);
+
+    /* Set lossless compression, if any */
+    if(gzip_level > 0) {
+      H5Pset_shuffle(prop_id);
+      H5Pset_deflate(prop_id, gzip_level);
+    }
 
     /* Create the dataset */
     dataset_id = H5Dcreate(loc_id, name, file_type_id, file_space_id, H5P_DEFAULT, prop_id, H5P_DEFAULT);
@@ -608,7 +615,7 @@ void lightcone_write_particles(struct lightcone_props *props,
       hid_t dtype_id = io_hdf5_type(f->type);           /* HDF5 data type */
       size_t type_size = io_sizeof_type(f->type);       /* Bytes per value */
       const size_t field_size = f->dimension*type_size; /* Bytes per particle */
-      const enum lossy_compression_schemes compression = f->compression; /* Compression scheme */
+      const enum lossy_compression_schemes compression_scheme = f->compression; /* Compression scheme */
 
       /* Find unit conversion factor for this quantity */
       const double conversion_factor =
@@ -668,8 +675,8 @@ void lightcone_write_particles(struct lightcone_props *props,
       int rank = 1;
       if(f->dimension > 1)rank = 2;
       append_dataset(snapshot_units, f->units, f->scale_factor_exponent,
-                     group_id, f->name, dtype_id, chunk_size, compression,
-                     rank, dims, num_written, outbuf);
+                     group_id, f->name, dtype_id, chunk_size, props->lossy_compression,
+                     compression_scheme, props->gzip_level, rank, dims, num_written, outbuf);
       
       /* Free the output buffer */
       free(outbuf);

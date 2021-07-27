@@ -80,6 +80,12 @@ struct lightcone_props {
   /*! Size of chunks in HDF5 output files */
   int hdf5_chunk_size;
 
+  /*! Whether to apply lossy compression */
+  int lossy_compression;
+
+  /*! Lossless compression level (0 to disable) */
+  int gzip_level;
+
   /*! Simulation box size (volume must be a cube) */
   double boxsize;
 

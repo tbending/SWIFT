@@ -340,6 +340,10 @@ void lightcone_init(struct lightcone_props *props,
   /* Chunk size for particles buffered in memory  */
   props->hdf5_chunk_size = parser_get_opt_param_int(params, YML_NAME("hdf5_chunk_size"), 16384);
 
+  /* Compression options */
+  props->lossy_compression = parser_get_opt_param_int(params, YML_NAME("particles_lossy_compression"), 0);
+  props->gzip_level = parser_get_opt_param_int(params, YML_NAME("particles_gzip_level"), 0);
+
   /* Get the size of the simulation box */
   props->boxsize = s->dim[0];
   if(s->dim[1] != s->dim[0] || s->dim[2] != s->dim[0])
