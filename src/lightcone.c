@@ -63,39 +63,51 @@ extern int engine_rank;
  */
 static void read_map_types_file(const char *map_types_file, int *nr_map_types,
                                 struct lightcone_map_type **map_types) {
-  
-  FILE *fd = fopen(map_types_file, "r");
-  if(!fd)error("Failed to open lightcone radius file %s", map_types_file);
 
-  /* Count number of non-zero length lines */
-  size_t len = 0;
-  char *line = NULL;
-  int nr_lines = 0;
-  while (getline(&line, &len, fd) != -1) nr_lines+=1;
-  rewind(fd);
+  int map_type_nr = 0;  
+  if(engine_rank == 0) {
 
-  /* Allocate output arrays */
-  *map_types = malloc(sizeof(struct lightcone_map_type)*nr_lines);
+    FILE *fd = fopen(map_types_file, "r");
+    if(!fd)error("Failed to open lightcone radius file %s", map_types_file);
 
-  /* Read lines */
-  int map_type_nr = 0;
-  for(int i=0; i<nr_lines; i+=1) {
+    /* Count number of non-zero length lines */
+    size_t len = 0;
+    char *line = NULL;
+    int nr_lines = 0;
+    while (getline(&line, &len, fd) != -1) nr_lines+=1;
+    rewind(fd);
 
-    /* Get name and compression type from this line */
-    char compression[PARSER_MAX_LINE_SIZE];
-    if(fscanf(fd, "%s, %s\n", (*map_types)[map_type_nr].name, compression) != 2)
-      error("Failed to read line from map types file");
+    /* Allocate output arrays */
+    *map_types = calloc(nr_lines, sizeof(struct lightcone_map_type));
 
-    /* Look up compression scheme */
-    (*map_types)[map_type_nr].compression = compression_scheme_from_name(compression);
+    /* Read lines */
+    for(int i=0; i<nr_lines; i+=1) {
 
-    /* Only keep maps which have not been disabled */
-    if((*map_types)[map_type_nr].compression != compression_do_not_write)
-      map_type_nr += 1;
+      printf("line=%d\n", i);
+      
+      /* Get name and compression type from this line */
+      char compression[PARSER_MAX_LINE_SIZE];
+      if(fscanf(fd, "%s %s", (*map_types)[map_type_nr].name, compression) != 2)
+        error("Failed to read line from map types file");
+
+      /* Look up compression scheme */
+      (*map_types)[map_type_nr].compression = compression_scheme_from_name(compression);
+
+      /* Only keep maps which have not been disabled */
+      if((*map_types)[map_type_nr].compression != compression_do_not_write)
+        map_type_nr += 1;
+
+    }
+    fclose(fd);
+    free(line);
 
   }
-  fclose(fd);
-  free(line);
+
+#ifdef WITH_MPI
+  MPI_Bcast(&map_type_nr, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if(engine_rank != 0)*map_types = calloc(map_type_nr, sizeof(struct lightcone_map_type));
+  MPI_Bcast(*map_types, sizeof(struct lightcone_map_type)*map_type_nr, MPI_BYTE, 0, MPI_COMM_WORLD);
+#endif
 
   /* Return number of enabled map types */
   *nr_map_types = map_type_nr;
