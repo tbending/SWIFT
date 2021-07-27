@@ -341,8 +341,9 @@ void lightcone_init(struct lightcone_props *props,
   props->hdf5_chunk_size = parser_get_opt_param_int(params, YML_NAME("hdf5_chunk_size"), 16384);
 
   /* Compression options */
-  props->lossy_compression = parser_get_opt_param_int(params, YML_NAME("particles_lossy_compression"), 0);
-  props->gzip_level = parser_get_opt_param_int(params, YML_NAME("particles_gzip_level"), 0);
+  props->particles_lossy_compression = parser_get_opt_param_int(params, YML_NAME("particles_lossy_compression"), 0);
+  props->particles_gzip_level = parser_get_opt_param_int(params, YML_NAME("particles_gzip_level"), 0);
+  props->maps_gzip_level = parser_get_opt_param_int(params, YML_NAME("maps_gzip_level"), 0);
 
   /* Get the size of the simulation box */
   props->boxsize = s->dim[0];
@@ -751,7 +752,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         /* Write the lightcone maps for this shell */
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
           lightcone_map_write(&(props->shell[shell_nr].map[map_nr]), file_id, props->map_type[map_nr].name,
-                              internal_units, snapshot_units, collective);
+                              internal_units, snapshot_units, collective, props->maps_gzip_level,
+                              props->hdf5_chunk_size);
 
         /* Close the file */
         H5Pclose(fapl_id);

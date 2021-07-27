@@ -160,7 +160,8 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
 void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const char *name,
                          const struct unit_system *internal_units,
                          const struct unit_system *snapshot_units,
-                         const int collective) {
+                         const int collective, const int gzip_level,
+                         const int chunk_size) {
 
 #ifdef WITH_MPI
   int comm_rank;
@@ -209,11 +210,33 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
 #endif
 #endif
 
+  /* Property list for creating the dataset */
+  hid_t prop_id = H5Pcreate(H5P_DATASET_CREATE);
+
+  /* Use chunked writes and possibly filters in non-collective mode */
+  if(!collective) {
+
+    /* Set the chunk size */
+    const hsize_t dim[1] = {(hsize_t) chunk_size};
+    if(H5Pset_chunk(prop_id, 1, dim) < 0)
+      error("Unable to set HDF5 chunk size for healpix map");
+
+    /* Set any lossy compression here, once implemented... */
+
+    /* Set lossless compression */
+    if(gzip_level > 0) {
+      H5Pset_shuffle(prop_id);
+      if(H5Pset_deflate(prop_id, gzip_level) < 0)
+        error("Unable to set HDF5 deflate filter for healpix map");
+    }
+  }
+
   /* Create the dataset */
   hid_t dset_id = H5Dcreate(loc_id, name, H5T_NATIVE_DOUBLE, file_space_id,
-                            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+                            H5P_DEFAULT, prop_id, H5P_DEFAULT);
+  H5Pclose(prop_id);
   if(dset_id < 0)error("Unable to create dataset %s", name);
-    
+
   /* Write attributes */
   io_write_attribute_i(dset_id, "nside", map->nside);
   io_write_attribute_l(dset_id, "number_of_pixels", map->total_nr_pix);

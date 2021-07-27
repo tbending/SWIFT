@@ -675,8 +675,9 @@ void lightcone_write_particles(struct lightcone_props *props,
       int rank = 1;
       if(f->dimension > 1)rank = 2;
       append_dataset(snapshot_units, f->units, f->scale_factor_exponent,
-                     group_id, f->name, dtype_id, chunk_size, props->lossy_compression,
-                     compression_scheme, props->gzip_level, rank, dims, num_written, outbuf);
+                     group_id, f->name, dtype_id, chunk_size,
+                     props->particles_lossy_compression, compression_scheme,
+                     props->particles_gzip_level, rank, dims, num_written, outbuf);
       
       /* Free the output buffer */
       free(outbuf);

@@ -100,7 +100,8 @@ void lightcone_map_free_pixels(struct lightcone_map *map);
 void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const char *name,
                          const struct unit_system *internal_units,
                          const struct unit_system *snapshot_units,
-                         const int collective);
+                         const int collective, const int maps_gzip_level,
+                         const int chunk_size);
 #endif
 
 #endif /* #ifndef SWIFT_LIGHTCONE_MAP_H */

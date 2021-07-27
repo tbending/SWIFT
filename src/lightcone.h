@@ -81,10 +81,13 @@ struct lightcone_props {
   int hdf5_chunk_size;
 
   /*! Whether to apply lossy compression */
-  int lossy_compression;
+  int particles_lossy_compression;
 
-  /*! Lossless compression level (0 to disable) */
-  int gzip_level;
+  /*! Lossless compression level for particles (0 to disable) */
+  int particles_gzip_level;
+
+  /*! Lossless compression level for healpix maps (0 to disable) */
+  int maps_gzip_level;
 
   /*! Simulation box size (volume must be a cube) */
   double boxsize;
