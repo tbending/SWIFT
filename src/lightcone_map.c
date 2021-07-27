@@ -159,7 +159,8 @@ void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream) {
  */
 void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const char *name,
                          const struct unit_system *internal_units,
-                         const struct unit_system *snapshot_units) {
+                         const struct unit_system *snapshot_units,
+                         const int collective) {
 
 #ifdef WITH_MPI
   int comm_rank;
@@ -181,21 +182,30 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   hid_t mem_space_id = H5Screate_simple(1, mem_dims, NULL);
   if(mem_space_id < 0)error("Unable to create memory dataspace");
   
-  /* Create dataspace in the file corresponding to the full map */
-  const hsize_t file_dims[1] = {(hsize_t) map->total_nr_pix};
+  /* Create dataspace corresponding to the part of the map in this file. */
+  hsize_t file_dims[1];
+  if(collective) {
+    /* For collective writes the file contains the full map */
+    file_dims[0] = (hsize_t) map->total_nr_pix;
+  } else {
+    /* For distributed writes the file contains the local pixels only */
+    file_dims[0] = (hsize_t) map->local_nr_pix;
+  }
   hid_t file_space_id = H5Screate_simple(1, file_dims, NULL);
   if(file_space_id < 0)error("Unable to create file dataspace");
 
   /* Select the part of the dataset in the file to write to */
 #ifdef WITH_MPI
 #ifdef HAVE_PARALLEL_HDF5
-  const size_t pixel_offset = map->local_pix_offset;
-  const hsize_t start[1] = {(hsize_t) pixel_offset};
-  const hsize_t count[1] = {(hsize_t) map->local_nr_pix};
-  if(H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, start, NULL, count, NULL) < 0)
-    error("Unable to select part of file dataspace to write to");
+  if(collective) {
+    const size_t pixel_offset = map->local_pix_offset;
+    const hsize_t start[1] = {(hsize_t) pixel_offset};
+    const hsize_t count[1] = {(hsize_t) map->local_nr_pix};
+    if(H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, start, NULL, count, NULL) < 0)
+      error("Unable to select part of file dataspace to write to");
+  }
 #else
-  error("Writing lightcone maps with MPI requires parallel HDF5");
+  if(collective)error("Writing lightcone maps with collective I/O requires parallel HDF5");
 #endif
 #endif
 
@@ -244,8 +254,14 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   /* Set up property list for the write */
   hid_t h_plist_id = H5Pcreate(H5P_DATASET_XFER);
 #if defined(WITH_MPI)
-  if(H5Pset_dxpl_mpio(h_plist_id, H5FD_MPIO_COLLECTIVE) < 0)
-    error("Unable to set collective transfer mode");
+#ifdef HAVE_PARALLEL_HDF5
+  if(collective) {
+    if(H5Pset_dxpl_mpio(h_plist_id, H5FD_MPIO_COLLECTIVE) < 0)
+      error("Unable to set collective transfer mode");
+  }
+#else
+  if(collective)error("Writing lightcone maps with MPI requires parallel HDF5");
+#endif
 #endif
 
   /* Write the data */

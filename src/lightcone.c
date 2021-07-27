@@ -382,6 +382,9 @@ void lightcone_init(struct lightcone_props *props,
   /* Update lightcone pixel data if more than this number of updates are buffered */
   props->max_updates_buffered = parser_get_opt_param_int(params, YML_NAME("max_updates_buffered"), 1000000);
   
+  /*! Whether to write distributed maps in MPI mode */
+  props->distributed_maps = parser_get_opt_param_int(params, YML_NAME("distributed_maps"), 1);
+
   /* Name of the file with radii of spherical shells */
   parser_get_param_string(params, YML_NAME("radius_file"), props->radius_file);
   
@@ -708,23 +711,34 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         if(need_flush) lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
                                                          props->part_type, props->smoothing_info);
 
-        /* Get the name of the file to write */
+        /* Get the name of the file to write:
+           In collective mode all ranks get the same file name.
+           In distributed mode we include engine_rank in the file name. */
         char fname[FILENAME_BUFFER_SIZE];
-        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s.shell_%d.hdf5",
-                           props->basename, shell_nr);
+        int file_num = props->distributed_maps ? engine_rank : 0;
+        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s.shell_%d.%d.hdf5",
+                           props->basename, shell_nr, file_num);
         if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
           error("Lightcone map output filename truncation or output error");
         
         /* Create the output file for this shell */
         hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+
+        /* Set MPI collective mode, if necessary */
+        int collective = 0;
 #ifdef WITH_MPI
 #ifdef HAVE_PARALLEL_HDF5
-        if(H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL) < 0)
-          error("Unable to set HDF5 MPI-IO file access mode");
+        if(!props->distributed_maps) {
+          if(H5Pset_fapl_mpio(fapl_id, MPI_COMM_WORLD, MPI_INFO_NULL) < 0)
+            error("Unable to set HDF5 MPI-IO file access mode");
+          collective = 1;
+        }
 #else
-        error("Writing lightcone maps with MPI requires parallel HDF5");
+        if(!props->distributed_maps)   
+          error("Writing lightcone maps in MPI collective mode requires parallel HDF5");
 #endif
 #endif
+        /* Create the output file(s) */
         hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
         if(file_id < 0)error("Unable to create file %s", fname);
 
@@ -737,7 +751,7 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         /* Write the lightcone maps for this shell */
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
           lightcone_map_write(&(props->shell[shell_nr].map[map_nr]), file_id, props->map_type[map_nr].name,
-                              internal_units, snapshot_units);
+                              internal_units, snapshot_units, collective);
 
         /* Close the file */
         H5Pclose(fapl_id);

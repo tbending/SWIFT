@@ -125,6 +125,9 @@ struct lightcone_props {
   /*! Number of pending map updates to trigger communication */
   int max_updates_buffered;
 
+  /*! Whether to write distributed maps in MPI mode */
+  int distributed_maps;
+
   /*! Name of the file with radii of spherical shells */
   char radius_file[PARSER_MAX_LINE_SIZE];
 
