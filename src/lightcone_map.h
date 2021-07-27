@@ -39,6 +39,7 @@
 #endif
 
 /* Local headers */
+#include "io_compression.h"
 #include "units.h"
 
 /**
@@ -101,7 +102,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
                          const struct unit_system *internal_units,
                          const struct unit_system *snapshot_units,
                          const int collective, const int maps_gzip_level,
-                         const int chunk_size);
+                         const int chunk_size, enum lossy_compression_schemes compression);
 #endif
 
 #endif /* #ifndef SWIFT_LIGHTCONE_MAP_H */

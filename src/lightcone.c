@@ -59,6 +59,50 @@ extern int engine_rank;
 
 
 /**
+ * @brief Read in map types and compression info from a text file
+ */
+static void read_map_types_file(const char *map_types_file, int *nr_map_types,
+                                struct lightcone_map_type **map_types) {
+  
+  FILE *fd = fopen(map_types_file, "r");
+  if(!fd)error("Failed to open lightcone radius file %s", map_types_file);
+
+  /* Count number of non-zero length lines */
+  size_t len = 0;
+  char *line = NULL;
+  int nr_lines = 0;
+  while (getline(&line, &len, fd) != -1) nr_lines+=1;
+  rewind(fd);
+
+  /* Allocate output arrays */
+  *map_types = malloc(sizeof(struct lightcone_map_type)*nr_lines);
+
+  /* Read lines */
+  int map_type_nr = 0;
+  for(int i=0; i<nr_lines; i+=1) {
+
+    /* Get name and compression type from this line */
+    char compression[PARSER_MAX_LINE_SIZE];
+    if(fscanf(fd, "%s, %s\n", (*map_types)[map_type_nr].name, compression) != 2)
+      error("Failed to read line from map types file");
+
+    /* Look up compression scheme */
+    (*map_types)[map_type_nr].compression = compression_scheme_from_name(compression);
+
+    /* Only keep maps which have not been disabled */
+    if((*map_types)[map_type_nr].compression != compression_do_not_write)
+      map_type_nr += 1;
+
+  }
+  fclose(fd);
+  free(line);
+
+  /* Return number of enabled map types */
+  *nr_map_types = map_type_nr;
+}
+
+
+/**
  * @brief Identify which healpix map types we're making
  *
  * @param props the #lightcone_props structure
@@ -392,15 +436,10 @@ void lightcone_init(struct lightcone_props *props,
   /* Whether we smooth the maps */
   props->smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
 
-  /* Names of the healpix maps to make for this lightcone */
-  char **map_names;
-  parser_get_param_string_array(params, YML_NAME("map_names"), &props->nr_maps, &map_names);
-  props->map_type = malloc(props->nr_maps*sizeof(struct lightcone_map_type));
-  for(int i=0; i<props->nr_maps; i+=1) {
-    int len = snprintf(props->map_type[i].name, PARSER_MAX_LINE_SIZE, "%s", map_names[i]);
-    if(len >= PARSER_MAX_LINE_SIZE || len < 0) error("Map type name truncated or encoding error");
-  }
-  parser_free_param_string_array(props->nr_maps, map_names);
+  /* Get names of the healpix maps to make for this lightcone */
+  char map_types_file[FILENAME_BUFFER_SIZE];
+  parser_get_param_string(params, YML_NAME("map_names_file"), map_types_file);
+  read_map_types_file(map_types_file, &props->nr_maps, &props->map_type);
 
   /* For each requested map type find the update function by matching names */
   lightcone_identify_map_types(props);
@@ -753,7 +792,7 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
           lightcone_map_write(&(props->shell[shell_nr].map[map_nr]), file_id, props->map_type[map_nr].name,
                               internal_units, snapshot_units, collective, props->maps_gzip_level,
-                              props->hdf5_chunk_size);
+                              props->hdf5_chunk_size, props->map_type[map_nr].compression);
 
         /* Close the file */
         H5Pclose(fapl_id);

@@ -24,6 +24,7 @@
 #include "../config.h"
 
 /* Local headers */
+#include "io_compression.h"
 #include "parser.h"
 #include "part_type.h"
 #include "units.h"
@@ -50,6 +51,7 @@ struct lightcone_map_type {
   map_update_function_t update_map;
   map_contrib_function_t ptype_contributes;
   enum unit_conversion_factor units;
+  enum lossy_compression_schemes compression;
 };
 
 /*
