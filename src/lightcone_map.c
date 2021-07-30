@@ -45,7 +45,7 @@
 void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t total_nr_pix,
                         const size_t pix_per_rank, const size_t local_nr_pix,
                         const size_t local_pix_offset, const double r_min, const double r_max,
-                        enum unit_conversion_factor units) {
+                        struct lightcone_map_type type) {
 
   /*Store number of pixels in the map etc */
   map->nside = nside;
@@ -57,10 +57,10 @@ void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t
   /* Pixel data is initially not allocated */
   map->data = NULL;
   
-  /* Store resolution parameter, shell size, units */
+  /* Store resolution parameter, shell size, units etc */
   map->r_min = r_min;
   map->r_max = r_max;
-  map->units = units;
+  map->type  = type;
 
   /* Initialize total for consistency check */
   map->total = 0.0;
@@ -170,7 +170,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
 
   /* Find unit conversion factor for this quantity */
   const double conversion_factor =
-    units_conversion_factor(internal_units, snapshot_units, map->units);
+    units_conversion_factor(internal_units, snapshot_units, map->type.units);
   
   /* Convert units if necessary */
   if(conversion_factor != 1.0) {
@@ -253,9 +253,9 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
 
   /* Write unit conversion factors for this data set */
   char buffer[FIELD_BUFFER_SIZE] = {0};
-  units_cgs_conversion_string(buffer, snapshot_units, map->units, 0.f);
+  units_cgs_conversion_string(buffer, snapshot_units, map->type.units, 0.f);
   float baseUnitsExp[5];
-  units_get_base_unit_exponents_array(baseUnitsExp, map->units);
+  units_get_base_unit_exponents_array(baseUnitsExp, map->type.units);
   io_write_attribute_f(dset_id, "U_M exponent", baseUnitsExp[UNIT_MASS]);
   io_write_attribute_f(dset_id, "U_L exponent", baseUnitsExp[UNIT_LENGTH]);
   io_write_attribute_f(dset_id, "U_t exponent", baseUnitsExp[UNIT_TIME]);
@@ -266,7 +266,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   io_write_attribute_s(dset_id, "Expression for physical CGS units", buffer);
 
   /* Write the actual number this conversion factor corresponds to */
-  const double cgs_factor = units_cgs_conversion_factor(snapshot_units, map->units);
+  const double cgs_factor = units_cgs_conversion_factor(snapshot_units, map->type.units);
   io_write_attribute_d(dset_id,
                        "Conversion factor to CGS (not including cosmological corrections)",
                        cgs_factor);

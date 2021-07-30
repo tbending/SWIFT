@@ -43,6 +43,9 @@ typedef double (*map_update_function_t)(const struct engine *e,
 /* Type to store pointer to function to check which types contribute to a map */
 typedef int (*map_contrib_function_t)(int ptype);
 
+
+enum lightcone_map_smoothing{map_unsmoothed, map_smoothed};
+
 /**
  * @brief Struct to store information on one type of lightcone map
  */
@@ -51,6 +54,7 @@ struct lightcone_map_type {
   map_update_function_t update_map;
   map_contrib_function_t ptype_contributes;
   enum unit_conversion_factor units;
+  enum lightcone_map_smoothing smoothing;
   enum lossy_compression_schemes compression;
 };
 
@@ -116,13 +120,14 @@ double lightcone_map_sfr_get_value(const struct engine *e,
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
-  {"TotalMass",      lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       UNIT_CONV_MASS},
-  {"GasMass",        lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS},
-  {"DarkMatterMass", lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS},
-  {"StellarMass",    lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS},
-  {"NeutrinoMass",   lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS},
-  {"StarFormationRate", lightcone_map_sfr_get_value,           lightcone_map_sfr_type_contributes,              UNIT_CONV_SFR},
-  {"",               NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS},
+  {"TotalMass",         lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       UNIT_CONV_MASS,     map_unsmoothed},
+  {"SmoothedGasMass",   lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS,     map_smoothed},
+  {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS,     map_unsmoothed},
+  {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS,     map_unsmoothed},
+  {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS,     map_unsmoothed},
+  {"NeutrinoMass",      lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS,     map_unsmoothed},
+  {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              UNIT_CONV_SFR,      map_unsmoothed},
+  {"",                  NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS, map_unsmoothed},
   /* NULL functions indicate end of array */
 };
 

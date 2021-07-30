@@ -57,8 +57,15 @@ struct lightcone_particle_type {
   
   /*! Number of lightcone maps this particle type contributes to */
   int nr_maps;
+
+  /*! Number of smoothed this particle type contributes to */
+  int nr_smoothed_maps;
+
+  /*! Number of un-smoothed this particle type contributes to */
+  int nr_unsmoothed_maps;
   
-  /*! Indices of the lightcone maps this particle type contributes to */
+  /*! Indices of the lightcone maps this particle type contributes to.
+    Smoothed maps will be stored first in the array. */
   int *map_index;
 
   /*! Amount of data to store per particle: theta, phi, radius and the value to add to each healpix map */

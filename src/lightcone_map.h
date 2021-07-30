@@ -39,6 +39,7 @@
 #endif
 
 /* Local headers */
+#include "lightcone_map_types.h"
 #include "io_compression.h"
 #include "units.h"
 
@@ -71,8 +72,8 @@ struct lightcone_map {
   /*! Outer radius */
   double r_max;
 
-  /*! Units of this map */
-  enum unit_conversion_factor units;
+  /*! Type of this map */
+  struct lightcone_map_type type;
 
 #ifdef LIGHTCONE_MAP_CHECK_TOTAL
   /*! Total quantity accumulated to this map, for consistency check */
@@ -85,7 +86,7 @@ struct lightcone_map {
 void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t total_nr_pix,
                         const size_t pix_per_rank, const size_t local_nr_pix,
                         const size_t local_pix_offset, const double r_min, const double r_max,
-                        enum unit_conversion_factor units);
+                        struct lightcone_map_type type);
 
 void lightcone_map_clean(struct lightcone_map *map);
 

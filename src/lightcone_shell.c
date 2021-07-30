@@ -221,7 +221,7 @@ struct lightcone_shell *lightcone_shell_array_init(const struct cosmology *cosmo
       lightcone_map_init(&shell[shell_nr].map[map_nr], nside, total_nr_pix,
                          pix_per_rank, local_nr_pix, local_pix_offset,
                          shell[shell_nr].rmin, shell[shell_nr].rmax,
-                         map_type[map_nr].units);
+                         map_type[map_nr]);
     }
   }
 
@@ -586,7 +586,10 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 
     if(radius < max_pixrad) {
 
-      /* Small particles are added to the maps directly. Find the pixel index. */
+      /* 
+         Small particles are added to the maps directly regardless of
+         whether the map is smoothed. Find the pixel index.
+      */
       size_t global_pix = healpix_smoothing_ang2pix(smoothing_info, theta, phi);
 
       /* Check the pixel is stored on this MPI rank */
@@ -595,7 +598,7 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
         /* Find local index of the pixel to update */
         const size_t local_pix = global_pix - local_pix_offset;
 
-        /* Update the healpix maps */
+        /* Add this particle to all healpix maps */
         for(int j=0; j<part_type->nr_maps; j+=1) {
           const int map_index = part_type->map_index[j];
           atomic_add_d(&shell->map[map_index].data[local_pix], value[j]);
@@ -604,35 +607,62 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 
     } else {
 
-      /* Large particles are SPH smoothed. Find neighbouring pixels. */
-      size_t nr_ngb;
-      struct healpix_neighbour_info *ngb;
-      healpix_smoothing_find_neighbours(smoothing_info, theta, phi, radius, &nr_ngb, &ngb);
+      /* 
+         Large particles are SPH smoothed onto smoothed maps and just added
+         to the appropriate pixel in un-smoothed maps.
+
+         First do the smoothed maps
+      */
+      if(part_type->nr_smoothed_maps > 0) {
+        
+        /* Find neighbour pixels */
+        size_t nr_ngb;
+        struct healpix_neighbour_info *ngb;
+        healpix_smoothing_find_neighbours(smoothing_info, theta, phi, radius, &nr_ngb, &ngb);
       
-      /* Loop over neighbour pixels */
-      for(size_t ngb_nr=0; ngb_nr<nr_ngb; ngb_nr+=1) {
+        /* Loop over neighbour pixels */
+        for(size_t ngb_nr=0; ngb_nr<nr_ngb; ngb_nr+=1) {
 
-        const size_t global_pix = ngb[ngb_nr].global_pix;
+          const size_t global_pix = ngb[ngb_nr].global_pix;
+          
+          /* Check if this pixel is stored locally */
+          if((global_pix >= local_pix_offset) && (global_pix < local_pix_offset+local_nr_pix)) {
 
-        /* Check if this pixel is stored locally */
+            /* Find local index of the pixel to update */
+            const size_t local_pix = global_pix - local_pix_offset;
+            
+            /* Update the smoothed healpix maps */
+            const double weight = ngb[ngb_nr].weight;
+            for(int j=0; j<part_type->nr_smoothed_maps; j+=1) {
+              const int map_index = part_type->map_index[j];
+              atomic_add_d(&shell->map[map_index].data[local_pix], value[j]*weight);
+            }          
+          }
+        }
+        /* Free the array of neighbouring pixels */
+        free(ngb);
+      } /* if part_type->nr_smoothed_maps > 0 */
+
+      /* Then do any un-smoothed maps */
+      if(part_type->nr_unsmoothed_maps > 0) {
+
+        size_t global_pix = healpix_smoothing_ang2pix(smoothing_info, theta, phi);
+
+        /* Check the pixel is stored on this MPI rank */
         if((global_pix >= local_pix_offset) && (global_pix < local_pix_offset+local_nr_pix)) {
 
           /* Find local index of the pixel to update */
           const size_t local_pix = global_pix - local_pix_offset;
 
-          /* Update the healpix maps */
-          const double weight = ngb[ngb_nr].weight;
-          for(int j=0; j<part_type->nr_maps; j+=1) {
+          /* Update the un-smoothed healpix maps */
+          for(int j=part_type->nr_smoothed_maps; j<part_type->nr_maps; j+=1) {
             const int map_index = part_type->map_index[j];
-            atomic_add_d(&shell->map[map_index].data[local_pix], value[j]*weight);
-          }          
+            atomic_add_d(&shell->map[map_index].data[local_pix], value[j]);
+          }
         }
-      }
-
-      /* Free the array of neighbouring pixels */
-      free(ngb);
+      } /* if part_type->nr_unsmoothed_maps > 0 */
     }
-  }
+  } /* End loop over updates to apply */
 }
 
 

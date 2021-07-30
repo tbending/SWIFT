@@ -472,10 +472,26 @@ void lightcone_init(struct lightcone_props *props,
     /* Store indexes of maps to update for this particle type */
     this_type->map_index = malloc(sizeof(int)*this_type->nr_maps);
     this_type->nr_maps = 0;
+    this_type->nr_smoothed_maps = 0;
+    this_type->nr_unsmoothed_maps = 0;
+
+    /* First the smoothed maps */
     for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
-      if(props->map_type[map_nr].ptype_contributes(ptype)) {
+      const struct lightcone_map_type *map_type = &(props->map_type[map_nr]);
+      if(map_type->ptype_contributes(ptype) && map_type->smoothing==map_smoothed) {
         this_type->map_index[this_type->nr_maps] = map_nr;
         this_type->nr_maps += 1;
+        this_type->nr_smoothed_maps += 1;
+      }
+    }
+
+    /* Then the un-smoothed maps */
+    for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+      const struct lightcone_map_type *map_type = &(props->map_type[map_nr]);
+      if(map_type->ptype_contributes(ptype) && map_type->smoothing==map_unsmoothed) {
+        this_type->map_index[this_type->nr_maps] = map_nr;
+        this_type->nr_maps += 1;
+        this_type->nr_unsmoothed_maps += 1;
       }
     }
 
