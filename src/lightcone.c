@@ -445,9 +445,6 @@ void lightcone_init(struct lightcone_props *props,
   /* Name of the file with radii of spherical shells */
   parser_get_param_string(params, YML_NAME("radius_file"), props->radius_file);
   
-  /* Whether we smooth the maps */
-  props->smooth = parser_get_opt_param_int(params, YML_NAME("smooth"), 1);
-
   /* Get names of the healpix maps to make for this lightcone */
   char map_types_file[FILENAME_BUFFER_SIZE];
   parser_get_param_string(params, YML_NAME("map_names_file"), map_types_file);
@@ -1223,7 +1220,7 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
 
   /* Get angular size of the particle */
   double radius;
-  if((gp->type == swift_type_gas) && props->smooth) {
+  if(gp->type == swift_type_gas) {
     const struct part *parts = e->s->parts;
     const struct part *p = &parts[-gp->id_or_neg_offset];
     radius = angular_smoothing_scale(x_cross, p->h);

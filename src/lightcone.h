@@ -158,9 +158,6 @@ struct lightcone_props {
   /*! Information about each particle type contributing to the maps */
   struct lightcone_particle_type part_type[swift_type_count];
 
-  /*! Whether we're smoothing the healpix maps */
-  int smooth;
-
   /*! Healpix smoothing information */
   struct healpix_smoothing_info *smoothing_info;
 
