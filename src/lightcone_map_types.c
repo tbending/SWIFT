@@ -279,7 +279,7 @@ double lightcone_map_black_hole_mass_get_value(const struct engine *e,
 
   /* Handle on the other particle types */
   const struct space *s = e->s;
-  const struct spart *sparts = s->sparts;
+  const struct bpart *bparts = s->bparts;
 
   switch (gp->type) {
   case swift_type_black_hole: {
