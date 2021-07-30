@@ -82,8 +82,6 @@ static void read_map_types_file(const char *map_types_file, int *nr_map_types,
 
     /* Read lines */
     for(int i=0; i<nr_lines; i+=1) {
-
-      printf("line=%d\n", i);
       
       /* Get name and compression type from this line */
       char compression[PARSER_MAX_LINE_SIZE];
