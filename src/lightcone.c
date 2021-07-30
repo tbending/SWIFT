@@ -113,7 +113,6 @@ static void read_map_types_file(const char *map_types_file, int *nr_map_types,
   *nr_map_types = map_type_nr;
 }
 
-
 /**
  * @brief Identify which healpix map types we're making
  *
@@ -323,11 +322,43 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
 }
 
 
-static char *yaml_name(char *buf, const char *str1, const char *str2) {
-  int len = snprintf(buf, PARSER_MAX_LINE_SIZE, "%s:%s", str1, str2);
+/**
+ * @brief Locate a lightcone parameter in the .yml file
+ *
+ * First check the section specific to this lightcone then
+ * fall back to LightconeCommon if not found.
+ *
+ */
+static char *find_parameter(struct swift_params *params,
+                            const int index, const char *name,
+                            char *outbuf) {
+  
+  char full_name[PARSER_MAX_LINE_SIZE];
+  int len;
+
+  /* Check section specific to this lightcone */
+  len = snprintf(full_name, PARSER_MAX_LINE_SIZE, "Lightcone%d:%s", index, name);
   if((len < 0) || (len >= PARSER_MAX_LINE_SIZE))
     error("Failed to generate parameter name");
-  return buf;
+  if(parser_does_param_exist(params, full_name)) {
+    strcpy(outbuf, full_name);
+    return outbuf;
+  }
+
+  /* Check LightconeCommon section if parameter was not found */
+  len = snprintf(full_name, PARSER_MAX_LINE_SIZE, "LightconeCommon:%s", name);
+  if((len < 0) || (len >= PARSER_MAX_LINE_SIZE))
+    error("Failed to generate parameter name");
+  if(parser_does_param_exist(params, full_name)) {
+    strcpy(outbuf, full_name);
+    return outbuf;
+  }
+  
+  /* If we can't find the parameter, complain! */
+  error("Unable to find parameter %s in Lightcone%d or LightconeCommon groups",
+        name, index);
+
+  return NULL;
 }
 
 
@@ -341,15 +372,14 @@ static char *yaml_name(char *buf, const char *str1, const char *str2) {
  * @param verbose the verbosity flag
  */
 void lightcone_init(struct lightcone_props *props,
-                    const char *name, int index,
-                    const struct space *s,
+                    const int index, const struct space *s,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
                     const int verbose) {
   
   /* Macro to generate parameter names given section name */
   char buf[PARSER_MAX_LINE_SIZE];
-#define YML_NAME(x) yaml_name(buf, name, x)
+#define YML_NAME(x) find_parameter(params, index, x, buf)
 
   /* Store index of this lightcone in the .yml file */
   props->index = index;

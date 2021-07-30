@@ -168,8 +168,7 @@ struct lightcone_props {
 
 
 void lightcone_init(struct lightcone_props *props,
-                    const char *name, int index,
-                    const struct space *s,
+                    const int index, const struct space *s,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
                     const int verbose);

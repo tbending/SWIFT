@@ -79,7 +79,7 @@ void lightcone_array_init(struct lightcone_array_props *props,
     if(parser_get_opt_param_int(params, name, 0)) {      
       snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d", props->nr_lightcones);
       lightcone_init(props->lightcone+lightcone_nr,
-                     name, lightcone_nr, s, cosmo, params, verbose);
+                     lightcone_nr, s, cosmo, params, verbose);
       props->nr_lightcones += 1;
     }
   }
