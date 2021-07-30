@@ -100,6 +100,15 @@ double lightcone_map_stellar_mass_get_value(const struct engine *e,
                                             const struct gpart *gp, const double a_cross,
                                             const double x_cross[3]);
 /* 
+   Healpix map of black hole mass
+*/
+int lightcone_map_black_hole_mass_type_contributes(int ptype);
+
+double lightcone_map_black_hole_mass_get_value(const struct engine *e,
+                                               const struct lightcone_props *lightcone_props,
+                                               const struct gpart *gp, const double a_cross,
+                                               const double x_cross[3]);
+/* 
    Healpix map of neutrino mass
 */
 int lightcone_map_neutrino_mass_type_contributes(int ptype);
@@ -125,6 +134,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS,     map_unsmoothed},
   {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS,     map_unsmoothed},
   {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS,     map_unsmoothed},
+  {"BlackHoleMass",     lightcone_map_black_hole_mass_get_value,  lightcone_map_black_hole_mass_type_contributes,  UNIT_CONV_MASS,     map_unsmoothed},
   {"NeutrinoMass",      lightcone_map_neutrino_mass_get_value,    lightcone_map_neutrino_mass_type_contributes,    UNIT_CONV_MASS,     map_unsmoothed},
   {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              UNIT_CONV_SFR,      map_unsmoothed},
   {"",                  NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS, map_unsmoothed},
