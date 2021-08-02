@@ -25,6 +25,9 @@
 #include "fermi_dirac.h"
 #include "neutrino.h"
 #include "neutrino_properties.h"
+#include "lightcone.h"
+#include "lightcone_map_types.h"
+
 
 /**
  * @brief Recover and store the initial Fermi-Dirac speed, vi, for a neutrino
@@ -128,5 +131,22 @@ __attribute__((always_inline)) INLINE static int neutrino_write_particles(
 
   return 2;
 }
+
+
+/*
+  Lightcone map of neutrino mass perturbation
+*/
+
+int lightcone_map_neutrino_mass_type_contributes(int ptype);
+double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]);
+
+static const struct lightcone_map_type neutrino_lightcone_map_types[] = {
+  {"NeutrinoMassPerturbation", lightcone_map_neutrino_mass_get_value, lightcone_map_neutrino_mass_type_contributes, UNIT_CONV_MASS, map_unsmoothed},
+  {"", NULL, NULL, UNIT_CONV_NO_UNITS},
+  /* NULL functions indicate end of array */
+};
 
 #endif /* SWIFT_DEFAULT_NEUTRINO_IO_H */

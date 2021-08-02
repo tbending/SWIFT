@@ -23,6 +23,10 @@
 /* Standard headers */
 #include <math.h>
 
+/* Local includes */
+#include "lightcone.h"
+#include "lightcone_map_types.h"
+
 /**
  * @brief Compute diagnostics for the neutrino delta-f method, including
  * the mean squared weight.
@@ -223,5 +227,51 @@ void neutrino_check_cosmology(const struct space *s,
           "cosmology in the parameter file: cosmo.Omega_nu = %e particles "
           "Omega_nu = %e",
           cosmo->Omega_nu_0, Omega_particles_nu);
+  }
+}
+
+/*
+  Lightcone map of neutrino mass perturbation
+*/
+
+/**
+ * @brief Determine if a particle type contributes to this map type
+ *
+ * @param part_type the particle type
+ */
+int lightcone_map_neutrino_mass_type_contributes(int ptype) {
+
+  switch(ptype) {
+  case swift_type_neutrino:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+/**
+ * @brief Make a healpix map of the neutrino mass perturbation
+ *
+ * When a neutrino particle crosses the lightcone this function
+ * should return the value to accumulate to the corresponding
+ * pixel in the healpix map.
+ *
+ * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
+ * @param gp the #gpart to add to the map
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the lightcone
+ */
+double lightcone_map_neutrino_mass_get_value(const struct engine *e,
+                                             const struct lightcone_props *lightcone_props,
+                                             const struct gpart *gp, const double a_cross,
+                                             const double x_cross[3]) {
+  switch (gp->type) {
+  case swift_type_neutrino: {
+    return gp->mass;
+  } break;
+  default:
+    error("lightcone map function called on wrong particle type");
+    return -1.0;  /* Prevent 'missing return' error */
   }
 }

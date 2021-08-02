@@ -297,44 +297,6 @@ double lightcone_map_black_hole_mass_get_value(const struct engine *e,
  *
  * @param part_type the particle type
  */
-int lightcone_map_neutrino_mass_type_contributes(int ptype) {
-
-  switch(ptype) {
-  case swift_type_neutrino:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-/**
- * @brief Make a healpix map of projected neutrino mass in each pixel
- *
- * @param e the #engine structure
- * @param lightcone_props properties of the lightcone to update
- * @param gp the #gpart to add to the map
- * @param a_cross expansion factor at which the particle crosses the lightcone
- * @param x_cross comoving coordinates at which the particle crosses the lightcone
- */
-double lightcone_map_neutrino_mass_get_value(const struct engine *e,
-                                             const struct lightcone_props *lightcone_props,
-                                             const struct gpart *gp, const double a_cross,
-                                             const double x_cross[3]) {
-  switch (gp->type) {
-  case swift_type_neutrino: {
-    return gp->mass;
-  } break;
-  default:
-    error("lightcone map function called on wrong particle type");
-    return -1.0;  /* Prevent 'missing return' error */
-  }
-}
-
-/**
- * @brief Determine if a particle type contributes to this map type
- *
- * @param part_type the particle type
- */
 int lightcone_map_sfr_type_contributes(int ptype) {
 
   switch(ptype) {

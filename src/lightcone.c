@@ -39,6 +39,7 @@
 #include "hydro.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
+#include "neutrino_io.h"
 #include "lock.h"
 #include "parser.h"
 #include "part_type.h"
@@ -118,7 +119,8 @@ static void read_map_types_file(const char *map_types_file, int *nr_map_types,
  *
  * For each requested map type find the update functions by matching names.
  * Map types are defined in lightcone_map_types.h and there may be extra
- * types defined in extra_io.h.
+ * types defined by various physics modules. The array map_type_array
+ * below determines where we look for extra map types.
  *
  * This function assumes that props->map_type is already allocated and
  * props->map_type[:].name has been set to the list of map names from the
@@ -134,32 +136,31 @@ static void lightcone_identify_map_types(struct lightcone_props *props) {
     /* Use null function pointer to indicate not found yet */
     props->map_type[map_nr].update_map = NULL;
 
-    /* First we search the default set of map types in lightcone_map_types.c */
-    int type_nr = 0;
-    while(lightcone_map_types[type_nr].update_map) {
-      if(strcmp(lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = lightcone_map_types[type_nr].ptype_contributes;
-        props->map_type[map_nr].units = lightcone_map_types[type_nr].units;
-        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
-                                  props->index, map_nr, lightcone_map_types[type_nr].name);
-      }
-      type_nr += 1;
-    }
+    /* Places to search for lightcone map types:
+       extra map types are provided by various physics modules. */
+    const int num_places = 3;
+    const struct lightcone_map_type *map_type_array[num_places] = {lightcone_map_types,
+                                                                   extra_lightcone_map_types,
+                                                                   neutrino_lightcone_map_types};
 
-    /* Then try any additional map types from extra_io.h */
-    type_nr = 0;
-    while(extra_lightcone_map_types[type_nr].update_map) {
-      if(strcmp(extra_lightcone_map_types[type_nr].name, props->map_type[map_nr].name)==0) {
-        props->map_type[map_nr].update_map = extra_lightcone_map_types[type_nr].update_map;
-        props->map_type[map_nr].ptype_contributes = extra_lightcone_map_types[type_nr].ptype_contributes;
-        props->map_type[map_nr].units = extra_lightcone_map_types[type_nr].units;
-        if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
-                                  props->index, map_nr, extra_lightcone_map_types[type_nr].name);
-      }
-      type_nr += 1;
-    }
+    /* Loop over places to search for map types */
+    for(int i=0; i<num_places; i+=1) {
 
+      int type_nr = 0;
+      const struct lightcone_map_type *map_types_to_search = map_type_array[i];
+      while(map_types_to_search[type_nr].update_map) {
+        if(strcmp(map_types_to_search[type_nr].name, props->map_type[map_nr].name)==0) {
+          props->map_type[map_nr].update_map = map_types_to_search[type_nr].update_map;
+          props->map_type[map_nr].ptype_contributes = map_types_to_search[type_nr].ptype_contributes;
+          props->map_type[map_nr].units = map_types_to_search[type_nr].units;
+          if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
+                                    props->index, map_nr, map_types_to_search[type_nr].name);
+        }
+        type_nr += 1;
+      }
+      
+    } /* Next place to search */
+    
     if(!props->map_type[map_nr].update_map)error("Unable to locate lightcone map type %s",
                                                  props->map_type[map_nr].name);
   }
