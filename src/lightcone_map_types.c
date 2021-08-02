@@ -68,8 +68,9 @@ int lightcone_map_total_mass_type_contributes(int ptype) {
   case swift_type_black_hole:
   case swift_type_dark_matter:
   case swift_type_dark_matter_background:
-  case swift_type_neutrino:
     return 1;
+  case swift_type_neutrino:
+    /* Neutrino maps store mass perturbations, so don't include them here */
   default:
     return 0;
   }
@@ -110,10 +111,11 @@ double lightcone_map_total_mass_get_value(const struct engine *e,
     return bp->mass;
   } break;
   case swift_type_dark_matter:
-  case swift_type_dark_matter_background:
-  case swift_type_neutrino: {
+  case swift_type_dark_matter_background: {
     return gp->mass;
   } break;
+  case swift_type_neutrino:
+    /* Neutrino maps store mass perturbations, so don't include them here */
   default:
     error("lightcone map function called on wrong particle type");
     return -1.0; /* Prevent 'missing return' error */
