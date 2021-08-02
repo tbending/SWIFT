@@ -145,7 +145,7 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
                                              const double x_cross[3]);
 
 static const struct lightcone_map_type neutrino_lightcone_map_types[] = {
-  {"NeutrinoMassPerturbation", lightcone_map_neutrino_mass_get_value, lightcone_map_neutrino_mass_type_contributes, lightcone_map_neutrino_baseline_value, UNIT_CONV_MASS, map_unsmoothed, compression_write_lossless},
+  {"NeutrinoMass", lightcone_map_neutrino_mass_get_value, lightcone_map_neutrino_mass_type_contributes, lightcone_map_neutrino_baseline_value, UNIT_CONV_MASS, map_unsmoothed, compression_write_lossless},
   {"", NULL, NULL, NULL, UNIT_CONV_NO_UNITS, map_unsmoothed, compression_write_lossless},
   /* NULL functions indicate end of array */
 };
