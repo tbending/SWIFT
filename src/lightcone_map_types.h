@@ -30,7 +30,9 @@
 #include "units.h"
 
 /* Avoid cyclic inclusions */
+struct cosmology;
 struct engine;
+struct lightcone_map;
 struct lightcone_props;
 struct gpart;
 
@@ -39,6 +41,13 @@ typedef double (*map_update_function_t)(const struct engine *e,
                                         const struct lightcone_props *lightcone_props,
                                         const struct gpart *gp, const double a_cross,
                                         const double x_cross[3]);
+
+/* Type to store pointer to function for providing baseline map value */
+typedef double (*map_baseline_function_t)(
+    const struct cosmology *c,
+    const struct lightcone_props *lightcone_props,
+    const struct lightcone_map *map);
+
 
 /* Type to store pointer to function to check which types contribute to a map */
 typedef int (*map_contrib_function_t)(int ptype);
@@ -53,6 +62,7 @@ struct lightcone_map_type {
   char name[PARSER_MAX_LINE_SIZE];
   map_update_function_t update_map;
   map_contrib_function_t ptype_contributes;
+  map_baseline_function_t baseline_func;
   enum unit_conversion_factor units;
   enum lightcone_map_smoothing smoothing;
   enum lossy_compression_schemes compression;
@@ -120,14 +130,14 @@ double lightcone_map_sfr_get_value(const struct engine *e,
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
-  {"TotalMass",         lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       UNIT_CONV_MASS,     map_unsmoothed},
-  {"SmoothedGasMass",   lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS,     map_smoothed},
-  {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         UNIT_CONV_MASS,     map_unsmoothed},
-  {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, UNIT_CONV_MASS,     map_unsmoothed},
-  {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     UNIT_CONV_MASS,     map_unsmoothed},
-  {"BlackHoleMass",     lightcone_map_black_hole_mass_get_value,  lightcone_map_black_hole_mass_type_contributes,  UNIT_CONV_MASS,     map_unsmoothed},
-  {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              UNIT_CONV_SFR,      map_unsmoothed},
-  {"",                  NULL,                                     NULL,                                            UNIT_CONV_NO_UNITS, map_unsmoothed},
+  {"TotalMass",         lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"SmoothedGasMass",   lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_smoothed,       compression_write_lossless},
+  {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"BlackHoleMass",     lightcone_map_black_hole_mass_get_value,  lightcone_map_black_hole_mass_type_contributes,  NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              NULL,       UNIT_CONV_SFR,      map_unsmoothed,     compression_write_lossless},
+  {"",                  NULL,                                     NULL,                                            NULL,                                    UNIT_CONV_NO_UNITS, map_unsmoothed,     compression_write_lossless},
   /* NULL functions indicate end of array */
 };
 

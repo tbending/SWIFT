@@ -262,10 +262,12 @@ int lightcone_map_neutrino_mass_type_contributes(int ptype) {
  * @param a_cross expansion factor at which the particle crosses the lightcone
  * @param x_cross comoving coordinates at which the particle crosses the lightcone
  */
-double lightcone_map_neutrino_mass_get_value(const struct engine *e,
-                                             const struct lightcone_props *lightcone_props,
-                                             const struct gpart *gp, const double a_cross,
-                                             const double x_cross[3]) {
+double lightcone_map_neutrino_mass_get_value(
+    const struct engine *e,
+    const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross,
+    const double x_cross[3]) {
+
   switch (gp->type) {
   case swift_type_neutrino: {
     return gp->mass;
@@ -274,4 +276,36 @@ double lightcone_map_neutrino_mass_get_value(const struct engine *e,
     error("lightcone map function called on wrong particle type");
     return -1.0;  /* Prevent 'missing return' error */
   }
+}
+
+/**
+ * @brief Return baseline value for neutrino mass lightcone maps.
+ *
+ * This is the mean neutrino density integrated over the volume of the pixel.
+ *
+ * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
+ * @param map The lightcone map
+ */
+double lightcone_map_neutrino_baseline_value(
+    const struct cosmology *c,
+    const struct lightcone_props *lightcone_props,
+    const struct lightcone_map *map) {
+
+  /* Fetch the area of healpix pixels */
+  const double area = lightcone_props->pixel_area_steradians;
+
+  /* Fetch the inner and outer radii */
+  const double r_inner = map->r_min;
+  const double r_outer = map->r_max;
+  const double r_inner_3 = r_inner * r_inner * r_inner;
+  const double r_outer_3 = r_outer * r_outer * r_outer;
+
+  /* The volume mapped into a healpix pixel */
+  const double volume = area * (r_outer_3 - r_inner_3);
+
+  /* The mean comoving neutrino density at z = 0 */
+  const double rho_nu_0 = c->critical_density_0 * c->Omega_nu_0;
+
+  return rho_nu_0 * volume;
 }

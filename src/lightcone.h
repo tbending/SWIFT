@@ -214,4 +214,8 @@ void lightcone_report_memory_use(struct lightcone_props *props);
 
 void lightcone_write_index(struct lightcone_props *props);
 
+void lightcone_map_set_baseline(const struct cosmology *c,
+                                struct lightcone_props *props,
+                                struct lightcone_map *map);
+
 #endif /* SWIFT_LIGHTCONE_H */

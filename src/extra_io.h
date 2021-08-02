@@ -70,7 +70,7 @@ INLINE static void extra_io_struct_restore(struct extra_io_properties* props,
 
 /* In this case there are no extra lightcone map types */
 static const struct lightcone_map_type extra_lightcone_map_types[] = {
-  {"", NULL, NULL, UNIT_CONV_NO_UNITS},
+  {"", NULL, NULL, NULL, UNIT_CONV_NO_UNITS, map_unsmoothed, compression_write_lossless},
   /* NULL functions indicate end of array */
 };
 

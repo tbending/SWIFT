@@ -139,7 +139,7 @@ static void lightcone_identify_map_types(struct lightcone_props *props) {
     /* Places to search for lightcone map types:
        extra map types are provided by various physics modules. */
     const int num_places = 3;
-    const struct lightcone_map_type *map_type_array[num_places] = {lightcone_map_types,
+    const struct lightcone_map_type *map_type_array[] = {lightcone_map_types,
                                                                    extra_lightcone_map_types,
                                                                    neutrino_lightcone_map_types};
 
@@ -152,6 +152,7 @@ static void lightcone_identify_map_types(struct lightcone_props *props) {
         if(strcmp(map_types_to_search[type_nr].name, props->map_type[map_nr].name)==0) {
           props->map_type[map_nr].update_map = map_types_to_search[type_nr].update_map;
           props->map_type[map_nr].ptype_contributes = map_types_to_search[type_nr].ptype_contributes;
+          props->map_type[map_nr].baseline_func = map_types_to_search[type_nr].baseline_func;
           props->map_type[map_nr].units = map_types_to_search[type_nr].units;
           if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                     props->index, map_nr, map_types_to_search[type_nr].name);
@@ -805,6 +806,10 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         if(need_flush) lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
                                                          props->part_type, props->smoothing_info);
 
+        /* Set the baseline value for the maps */
+        for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
+          lightcone_map_set_baseline(c, props, &(props->shell[shell_nr].map[map_nr]));
+
         /* Get the name of the file to write:
            In collective mode all ranks get the same file name.
            In distributed mode we include engine_rank in the file name. */
@@ -1421,4 +1426,26 @@ void lightcone_write_index(struct lightcone_props *props) {
   }
 
   free(current_file_on_rank);
+}
+
+/**
+ * @brief Add the baseline value to a lightcone map
+ *
+ * @param map the #lightcone_map structure
+ */
+void lightcone_map_set_baseline(const struct cosmology *c,
+                                struct lightcone_props *props,
+                                struct lightcone_map *map) {
+
+  /* Nothing to do if there is no baseline function */
+  if (map->type.baseline_func == NULL) return;
+
+  /* Fetch the baseline value */
+  double baseline_value = map->type.baseline_func(c, props, map);
+
+  /* Add it to the map if necessary */
+  if(baseline_value != 0.0) {
+    for(size_t i=0; i<map->local_nr_pix; i+=1)
+      map->data[i] += baseline_value;
+  }
 }
