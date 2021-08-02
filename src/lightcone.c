@@ -1387,8 +1387,12 @@ void lightcone_write_index(struct lightcone_props *props) {
     hid_t group_id = H5Gcreate2(file_id, "Lightcone", H5P_DEFAULT,
                                 H5P_DEFAULT, H5P_DEFAULT);
     io_write_attribute_i(group_id, "nr_mpi_ranks", comm_size);
-    io_write_attribute(group_id, "final_file_on_rank", INT,
+    io_write_attribute(group_id, "final_particle_file_on_rank", INT,
                        current_file_on_rank, comm_size);
+
+    /* Write number of files the lightcone maps are distributed over */
+    int nr_files_per_shell = props->distributed_maps ? comm_size : 1;
+    io_write_attribute_i(group_id, "nr_files_per_shell", nr_files_per_shell);
 
     /* Write observer position and redshift limits */
     io_write_attribute(group_id, "observer_position", DOUBLE,
