@@ -221,16 +221,16 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
                                                    const double x_cross[3]);
 
 static const struct lightcone_map_type extra_lightcone_map_types[] = {
-  {"XrayErositaLowIntrinsicPhotons", lightcone_map_xray_erosita_low_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"XrayErositaLowIntrinsicEnergies", lightcone_map_xray_erosita_low_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"XrayErositaHighIntrinsicPhotons", lightcone_map_xray_erosita_high_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"XrayErositaHighIntrinsicEnergies", lightcone_map_xray_erosita_high_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"XrayROSATIntrinsicPhotons", lightcone_map_xray_rosat_intrinsic_photons_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"XrayROSATIntrinsicEnergies", lightcone_map_xray_rosat_intrinsic_energy_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"ComptonY", lightcone_map_compton_y_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"DopplerB", lightcone_map_doppler_b_get_value, lightcone_map_gas_only, UNIT_CONV_NO_UNITS, map_smoothed},
-  {"DM", lightcone_map_dispersion_meassure_get_value, lightcone_map_gas_only, UNIT_CONV_INV_AREA, map_smoothed},
-  {"", NULL, NULL, UNIT_CONV_NO_UNITS},
+  {"XrayErositaLowIntrinsicPhotons",   lightcone_map_xray_erosita_low_intrinsic_photons_get_value,  lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"XrayErositaLowIntrinsicEnergies",  lightcone_map_xray_erosita_low_intrinsic_energy_get_value,   lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"XrayErositaHighIntrinsicPhotons",  lightcone_map_xray_erosita_high_intrinsic_photons_get_value, lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"XrayErositaHighIntrinsicEnergies", lightcone_map_xray_erosita_high_intrinsic_energy_get_value,  lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"XrayROSATIntrinsicPhotons",        lightcone_map_xray_rosat_intrinsic_photons_get_value,        lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"XrayROSATIntrinsicEnergies",       lightcone_map_xray_rosat_intrinsic_energy_get_value,         lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"ComptonY",                         lightcone_map_compton_y_get_value,                           lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"DopplerB",                         lightcone_map_doppler_b_get_value,                           lightcone_map_gas_only, NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
+  {"DM",                               lightcone_map_dispersion_meassure_get_value,                 lightcone_map_gas_only, NULL, UNIT_CONV_INV_AREA, map_smoothed, compression_write_lossless},
+  {"",                                 NULL,                                                        NULL,                   NULL, UNIT_CONV_NO_UNITS, map_smoothed, compression_write_lossless},
   /* NULL functions indicate end of array */
 };
 

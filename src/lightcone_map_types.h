@@ -137,7 +137,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
   {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
   {"BlackHoleMass",     lightcone_map_black_hole_mass_get_value,  lightcone_map_black_hole_mass_type_contributes,  NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
   {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              NULL,       UNIT_CONV_SFR,      map_unsmoothed,     compression_write_lossless},
-  {"",                  NULL,                                     NULL,                                            NULL,                                    UNIT_CONV_NO_UNITS, map_unsmoothed,     compression_write_lossless},
+  {"",                  NULL,                                     NULL,                                            NULL,       UNIT_CONV_NO_UNITS, map_unsmoothed,     compression_write_lossless},
   /* NULL functions indicate end of array */
 };
 
