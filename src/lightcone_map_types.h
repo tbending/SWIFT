@@ -82,6 +82,11 @@ double lightcone_map_total_mass_get_value(const struct engine *e,
                                           const struct lightcone_props *lightcone_props,
                                           const struct gpart *gp, const double a_cross,
                                           const double x_cross[3]);
+
+double lightcone_map_total_mass_baseline_value(const struct cosmology *c,
+                                               const struct lightcone_props *lightcone_props,
+                                               const struct lightcone_map *map);
+
 /* 
    Healpix map of gas mass
 */
@@ -130,7 +135,7 @@ double lightcone_map_sfr_get_value(const struct engine *e,
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
-  {"TotalMass",         lightcone_map_total_mass_get_value,       lightcone_map_total_mass_type_contributes,       NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
+  {"TotalMass", lightcone_map_total_mass_get_value, lightcone_map_total_mass_type_contributes, lightcone_map_total_mass_baseline_value, UNIT_CONV_MASS, map_unsmoothed, compression_write_lossless},
   {"SmoothedGasMass",   lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_smoothed,       compression_write_lossless},
   {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
   {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},

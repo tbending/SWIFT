@@ -26,6 +26,7 @@
 #include "gravity.h"
 #include "hydro.h"
 #include "lightcone_map.h"
+#include "neutrino.h"
 #include "part.h"
 #include "stars.h"
 #include "star_formation.h"
@@ -68,9 +69,8 @@ int lightcone_map_total_mass_type_contributes(int ptype) {
   case swift_type_black_hole:
   case swift_type_dark_matter:
   case swift_type_dark_matter_background:
-    return 1;
   case swift_type_neutrino:
-    /* Neutrino maps store mass perturbations, so don't include them here */
+    return 1;
   default:
     return 0;
   }
@@ -111,16 +111,34 @@ double lightcone_map_total_mass_get_value(const struct engine *e,
     return bp->mass;
   } break;
   case swift_type_dark_matter:
-  case swift_type_dark_matter_background: {
+  case swift_type_dark_matter_background:
+  case swift_type_neutrino: {
     return gp->mass;
   } break;
-  case swift_type_neutrino:
-    /* Neutrino maps store mass perturbations, so don't include them here */
   default:
     error("lightcone map function called on wrong particle type");
     return -1.0; /* Prevent 'missing return' error */
   }
 }
+
+/**
+ * Return background neutrino density to add to the total mass map
+ *
+ * The neutrino particles trace density perturbations relative
+ * to a constant background so we need to add in the background
+ * to get the total mass.
+ *
+ * @param e the #engine structure
+ * @param lightcone_props properties of the lightcone to update
+ * @param map The lightcone map
+ *
+ */
+double lightcone_map_total_mass_baseline_value(const struct cosmology *c,
+                                               const struct lightcone_props *lightcone_props,
+                                               const struct lightcone_map *map) {
+  return lightcone_map_neutrino_baseline_value(c, lightcone_props, map);
+}
+
 
 /**
  * @brief Determine if a particle type contributes to this map type
