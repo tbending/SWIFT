@@ -36,6 +36,7 @@
 #include "engine.h"
 #include "error.h"
 #include "extra_io.h"
+#include "gravity_io.h"
 #include "hydro.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
@@ -154,6 +155,7 @@ static void lightcone_identify_map_types(struct lightcone_props *props) {
           props->map_type[map_nr].ptype_contributes = map_types_to_search[type_nr].ptype_contributes;
           props->map_type[map_nr].baseline_func = map_types_to_search[type_nr].baseline_func;
           props->map_type[map_nr].units = map_types_to_search[type_nr].units;
+          props->map_type[map_nr].smoothing = map_types_to_search[type_nr].smoothing;
           if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                     props->index, map_nr, map_types_to_search[type_nr].name);
         }
