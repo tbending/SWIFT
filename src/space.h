@@ -438,6 +438,7 @@ void space_free_foreign_parts(struct space *s, const int clear_cell_pointers);
 void space_struct_dump(struct space *s, FILE *stream);
 void space_struct_restore(struct space *s, FILE *stream);
 void space_write_cell_hierarchy(const struct space *s, int j);
+void space_write_ghost_stats(const struct space *s, int j);
 void space_compute_star_formation_stats(const struct space *s,
                                         struct star_formation *star_form);
 void space_check_unskip_flags(const struct space *s);

@@ -792,6 +792,26 @@ void cell_reset_task_counters(struct cell *c) {
 }
 
 /**
+ * @brief Resets all the individual cell task counters to 0.
+ *
+ * Should only be used for debugging purposes.
+ *
+ * @param c The #cell to reset.
+ */
+void cell_reset_ghost_histograms(struct cell *c) {
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+  for (int b = 0; b < 30; ++b) {
+    c->ghost_histogram_hydro[b] = 0.;
+    c->ghost_histogram_stars[b] = 0.;
+  }
+  for (int k = 0; k < 8; ++k)
+    if (c->progeny[k] != NULL) cell_reset_ghost_histograms(c->progeny[k]);
+#else
+  error("Calling debugging code without debugging flag activated.");
+#endif
+}
+
+/**
  * @brief Recursively construct all the multipoles in a cell hierarchy.
  *
  * @param c The #cell.

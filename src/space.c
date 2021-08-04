@@ -2310,6 +2310,9 @@ void space_reset_task_counters(struct space *s) {
 #ifdef SWIFT_DEBUG_CHECKS
   for (int i = 0; i < s->nr_cells; ++i) {
     cell_reset_task_counters(&s->cells_top[i]);
+#ifdef SWIFT_GHOST_STATS
+    cell_reset_ghost_histograms(&s->cells_top[i]);
+#endif
   }
 #else
   error("Calling debugging code without debugging flag activated.");
@@ -2662,6 +2665,61 @@ void space_write_cell_hierarchy(const struct space *s, int j) {
   for (int i = 0; i < s->nr_cells; i++) {
     struct cell *c = &s->cells_top[i];
     if (c->nodeID == engine_rank) space_write_cell(s, f, c);
+  }
+
+  /* Cleanup */
+  fclose(f);
+#endif
+}
+
+/**
+ * @brief write a single cell in a csv file.
+ *
+ * @param s The #space.
+ * @param f The file to use (already open).
+ * @param c The current #cell.
+ */
+void space_write_cell_ghost_stats(FILE *f, const struct cell *c) {
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+
+  if (c == NULL) return;
+
+  /* Write line for current cell */
+  fprintf(f, "%lld", c->cellID);
+  for (int b = 0; b < 30; ++b) {
+    fprintf(f, "\t%g", c->ghost_histogram_hydro[b]);
+  }
+  for (int b = 0; b < 30; ++b) {
+    fprintf(f, "\t%g", c->ghost_histogram_stars[b]);
+  }
+  fprintf(f, "\n");
+
+  /* Write children */
+  for (int i = 0; i < 8; i++) {
+    space_write_cell_ghost_stats(f, c->progeny[i]);
+  }
+#endif
+}
+
+void space_write_ghost_stats(const struct space *s, int j) {
+
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+
+  /* Open file */
+  char filename[200];
+  sprintf(filename, "ghost_stats_%04i_%04i.txt", j, engine_rank);
+  FILE *f = fopen(filename, "w");
+  if (f == NULL) error("Error opening ghost stats file.");
+
+  /* Write header */
+  if (engine_rank == 0) {
+    fprintf(f, "# cellID\thydro stats[30]\tstars stats[30]\n");
+  }
+
+  /* Write all the top level cells (and their children) */
+  for (int i = 0; i < s->nr_cells; i++) {
+    struct cell *c = &s->cells_top[i];
+    if (c->nodeID == engine_rank) space_write_cell_ghost_stats(f, c);
   }
 
   /* Cleanup */

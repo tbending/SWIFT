@@ -456,6 +456,13 @@ struct cell {
   char subtasks_executed[task_type_count];
 #endif
 
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+  /*! Histograms counting the number of particles that require updates during
+      the first 30 iterations. */
+  double ghost_histogram_hydro[30];
+  double ghost_histogram_stars[30];
+#endif
+
 } SWIFT_STRUCT_ALIGN;
 
 /* Convert cell location to ID. */
@@ -533,6 +540,7 @@ void cell_check_spart_drift_point(struct cell *c, void *data);
 void cell_check_sink_drift_point(struct cell *c, void *data);
 void cell_check_multipole_drift_point(struct cell *c, void *data);
 void cell_reset_task_counters(struct cell *c);
+void cell_reset_ghost_histograms(struct cell *c);
 int cell_unskip_hydro_tasks(struct cell *c, struct scheduler *s);
 int cell_unskip_stars_tasks(struct cell *c, struct scheduler *s,
                             const int with_star_formation,

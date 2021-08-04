@@ -144,6 +144,12 @@ void runner_do_stars_ghost(struct runner *r, struct cell *c, int timer) {
     for (int num_reruns = 0; scount > 0 && num_reruns < max_smoothing_iter;
          num_reruns++) {
 
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+      if (num_reruns < 30) {
+        c->ghost_histogram_stars[num_reruns] += scount;
+      }
+#endif
+
       /* Reset the redo-count. */
       redo = 0;
 
@@ -1109,6 +1115,12 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
     /* While there are particles that need to be updated... */
     for (int num_reruns = 0; count > 0 && num_reruns < max_smoothing_iter;
          num_reruns++) {
+
+#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+      if (num_reruns < 30) {
+        c->ghost_histogram_hydro[num_reruns] += count;
+      }
+#endif
 
       /* Reset the redo-count. */
       redo = 0;
