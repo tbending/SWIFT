@@ -123,6 +123,9 @@ struct lightcone_gas_data {
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   float last_AGN_injection_scale_factor;
 #endif
+#ifdef STAR_FORMATION_EAGLE
+  float sfr;
+#endif
 };
 
 int lightcone_store_gas(const struct engine *e,

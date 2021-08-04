@@ -125,6 +125,9 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "BFloat16");
 #endif
+#ifdef STAR_FORMATION_EAGLE
+  lightcone_io_field_list_append(list, "StarFormationRates", FLOAT, 1, OFFSET(sfr), UNIT_CONV_SFR, 0.0, "on");
+#endif
 #undef OFFSET
 }
 
@@ -289,6 +292,10 @@ int lightcone_store_gas(const struct engine *e,
 
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   data->last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
+#endif
+
+#ifdef STAR_FORMATION_EAGLE
+  data->sfr = xp->sf_data.SFR;
 #endif
 
   return 1;
