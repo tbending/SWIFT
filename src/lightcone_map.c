@@ -278,7 +278,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   MPI_Allreduce(&map->total, &total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
   total *= conversion_factor;
-  io_write_attribute_f(dset_id, "expected_sum", total);
+  io_write_attribute_d(dset_id, "expected_sum", total);
 #endif
 
   /* Set up property list for the write */
