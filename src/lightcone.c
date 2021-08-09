@@ -1447,7 +1447,11 @@ void lightcone_map_set_baseline(const struct cosmology *c,
 
   /* Add it to the map if necessary */
   if(baseline_value != 0.0) {
-    for(size_t i=0; i<map->local_nr_pix; i+=1)
+    for(size_t i=0; i<map->local_nr_pix; i+=1) {
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
+      map->total += baseline_value;
+#endif
       map->data[i] += baseline_value;
+    }
   }
 }
