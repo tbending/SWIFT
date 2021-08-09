@@ -1622,7 +1622,7 @@ int main(int argc, char *argv[]) {
     }
 #endif
 
-#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+#ifdef SWIFT_GHOST_STATS
     space_write_ghost_stats(e.s, j + 1);
 #endif
 

@@ -144,9 +144,12 @@ void runner_do_stars_ghost(struct runner *r, struct cell *c, int timer) {
     for (int num_reruns = 0; scount > 0 && num_reruns < max_smoothing_iter;
          num_reruns++) {
 
-#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
-      if (num_reruns < 30) {
+#ifdef SWIFT_GHOST_STATS
+      if (num_reruns < SWIFT_GHOST_STATS) {
         c->ghost_histogram_stars[num_reruns] += scount;
+      } else {
+        /* accumulate in highest bin, so we can spot out-of-bounds values */
+        c->ghost_histogram_stars[SWIFT_GHOST_STATS - 1] += scount;
       }
 #endif
 
@@ -1116,9 +1119,12 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
     for (int num_reruns = 0; count > 0 && num_reruns < max_smoothing_iter;
          num_reruns++) {
 
-#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
-      if (num_reruns < 30) {
+#ifdef SWIFT_GHOST_STATS
+      if (num_reruns < SWIFT_GHOST_STATS) {
         c->ghost_histogram_hydro[num_reruns] += count;
+      } else {
+        /* accumulate in highest bin, so we can spot out-of-bounds values */
+        c->ghost_histogram_hydro[SWIFT_GHOST_STATS - 1] += count;
       }
 #endif
 

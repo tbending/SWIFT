@@ -456,11 +456,11 @@ struct cell {
   char subtasks_executed[task_type_count];
 #endif
 
-#if defined(SWIFT_DEBUG_CHECKS) && defined(SWIFT_GHOST_STATS)
+#ifdef SWIFT_GHOST_STATS
   /*! Histograms counting the number of particles that require updates during
-      the first 30 iterations. */
-  double ghost_histogram_hydro[30];
-  double ghost_histogram_stars[30];
+      the first SWIFT_GHOST_STATS iterations. */
+  double ghost_histogram_hydro[SWIFT_GHOST_STATS];
+  double ghost_histogram_stars[SWIFT_GHOST_STATS];
 #endif
 
 } SWIFT_STRUCT_ALIGN;

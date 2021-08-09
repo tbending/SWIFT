@@ -1651,6 +1651,10 @@ void engine_launch(struct engine *e, const char *call) {
   space_reset_task_counters(e->s);
 #endif
 
+#ifdef SWIFT_GHOST_STATS
+  space_reset_ghost_histograms(e->s);
+#endif
+
   /* Prepare the scheduler. */
   atomic_inc(&e->sched.waiting);
 

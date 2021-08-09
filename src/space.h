@@ -430,6 +430,7 @@ void space_check_cosmology(struct space *s, const struct cosmology *cosmo,
                            const int with_hydro, const int rank,
                            const int check_neutrinos);
 void space_reset_task_counters(struct space *s);
+void space_reset_ghost_histograms(struct space *s);
 void space_clean(struct space *s);
 void space_free_cells(struct space *s);
 
