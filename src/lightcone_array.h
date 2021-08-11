@@ -67,9 +67,8 @@ void lightcone_array_struct_restore(struct lightcone_array_props *props, FILE *s
 
 void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
                                       const struct cosmology *cosmo,
-                                      const integertime_t ti_old,
-                                      const integertime_t ti_current,
-                                      const double dt_max);
+                                      const integertime_t ti_earliest_undrifted,
+                                      const integertime_t ti_current);
 
 int lightcone_array_trigger_map_update(struct lightcone_array_props *props);
 

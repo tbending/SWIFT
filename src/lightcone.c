@@ -981,9 +981,8 @@ void lightcone_clean(struct lightcone_props *props) {
  */
 void lightcone_prepare_for_step(struct lightcone_props *props,
                                 const struct cosmology *cosmo,
-                                const integertime_t ti_old,
-                                const integertime_t ti_current,
-                                const double dt_max) {
+                                const integertime_t ti_earliest_undrifted,
+                                const integertime_t ti_current) {
   ticks tic = getticks();
 
   /* Deallocate the old list, if there is one */
@@ -993,10 +992,7 @@ void lightcone_prepare_for_step(struct lightcone_props *props,
   const double boxsize = props->boxsize;
 
   /* Get a lower limit on earliest time particle may be drifted from */
-  float dt = cosmo->time_end - cosmo->time_begin;
-  while (dt > dt_max) dt /= 2.f;
-  timebin_t bin = get_time_bin(dt*cosmo->time_base_inv);
-  integertime_t ti_lim = get_integer_time_begin(ti_old, bin);
+  const integertime_t ti_lim = ti_earliest_undrifted;
 
   /* Get expansion factor at earliest and latest times particles might be drifted between */
   double a_current = cosmo->a_begin * exp(ti_current * cosmo->time_base);

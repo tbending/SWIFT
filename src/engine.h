@@ -181,6 +181,9 @@ struct engine {
   double time;
   integertime_t ti_current;
 
+  /* The earliest time any particle may still need to be drifted from */
+  integertime_t ti_earliest_undrifted;
+
   /* The highest active bin at this time */
   timebin_t max_active_bin;
 

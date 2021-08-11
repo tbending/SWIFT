@@ -181,9 +181,8 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream);
 
 void lightcone_prepare_for_step(struct lightcone_props *props,
                                 const struct cosmology *cosmo,
-                                const integertime_t ti_old,
-                                const integertime_t ti_current,
-                                const double dt_max);
+                                const integertime_t ti_earliest_undrifted,
+                                const integertime_t ti_current);
 
 void lightcone_buffer_particle(struct lightcone_props *props,
                                const struct engine *e, const struct gpart *gp,

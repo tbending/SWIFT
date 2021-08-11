@@ -2159,7 +2159,7 @@ void engine_step(struct engine *e) {
   /* Determine which periodic replications could contribute to the lightcone
      during this time step */
   lightcone_array_prepare_for_step(e->lightcone_array_properties, e->cosmology,
-                                   e->ti_old, e->ti_current, e->dt_max);
+                                   e->ti_earliest_undrifted, e->ti_current);
 #endif
 
   /*****************************************************/
@@ -2414,6 +2414,14 @@ void engine_step(struct engine *e) {
   e->s_updates_since_rebuild += e->collect_group1.s_updated;
   e->sink_updates_since_rebuild += e->collect_group1.sink_updated;
   e->b_updates_since_rebuild += e->collect_group1.b_updated;
+
+  /* Check if we updated all of the particles on this step */
+  if((e->collect_group1.updated == e->total_nr_parts) &&
+     (e->collect_group1.g_updated == e->total_nr_gparts) &&
+     (e->collect_group1.s_updated == e->total_nr_sparts) &&
+     (e->collect_group1.sink_updated == e->total_nr_sinks) &&
+     (e->collect_group1.b_updated == e->total_nr_bparts))
+    e->ti_earliest_undrifted = e->ti_current;
 
 #ifdef SWIFT_DEBUG_CHECKS
   /* Verify that all cells have correct time-step information */
@@ -2841,6 +2849,7 @@ void engine_init(
   e->reparttype = reparttype;
   e->ti_old = 0;
   e->ti_current = 0;
+  e->ti_earliest_undrifted = 0;
   e->time_step = 0.;
   e->time_base = 0.;
   e->time_base_inv = 0.;

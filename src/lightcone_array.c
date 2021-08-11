@@ -134,12 +134,11 @@ void lightcone_array_struct_restore(struct lightcone_array_props *props, FILE *s
 
 void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
                                       const struct cosmology *cosmo,
-                                      const integertime_t ti_old,
-                                      const integertime_t ti_current,
-                                      const double dt_max) {
+                                      const integertime_t ti_earliest_undrifted,
+                                      const integertime_t ti_current) {
 
   for(int i=0; i<props->nr_lightcones; i+=1)
-    lightcone_prepare_for_step(props->lightcone+i, cosmo, ti_old, ti_current, dt_max);
+    lightcone_prepare_for_step(props->lightcone+i, cosmo, ti_earliest_undrifted, ti_current);
 }
 
 

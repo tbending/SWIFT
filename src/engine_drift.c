@@ -340,7 +340,7 @@ void engine_drift_all(struct engine *e, const int drift_mpoles) {
   /* Determine which periodic replications could contribute to the lightcone
      during this time step */
   lightcone_array_prepare_for_step(e->lightcone_array_properties, e->cosmology,
-                                   e->ti_old, e->ti_current, e->dt_max);
+                                   e->ti_earliest_undrifted, e->ti_current);
 #endif
 
   if (!e->restarting) {
@@ -429,6 +429,9 @@ void engine_drift_all(struct engine *e, const int drift_mpoles) {
                     e->s->nr_sinks, e->s->nr_sparts, e->s->nr_bparts,
                     e->verbose);
 #endif
+
+  /* All particles have now been drifted to ti_current */
+  e->ti_earliest_undrifted = e->ti_current;
 
   if (e->verbose)
     message("took %.3f %s.", clocks_from_ticks(getticks() - tic),
