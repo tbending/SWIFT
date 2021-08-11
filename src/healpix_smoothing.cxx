@@ -166,8 +166,10 @@ extern "C" {
       // Get direction vector to centre of this pixel
       vec3 pixel_vec = smooth_info->healpix_base.pix2vec(pixels[i]);
 
-      // Find angle between this pixel centre and the particle
-      const double angle = acos(dotprod(pixel_vec, part_vec));
+      // Find angle between this pixel centre and the particle.
+      // Dot product may be a tiny bit greater than one due to rounding error
+      const double dp = dotprod(pixel_vec, part_vec);
+      const double angle = dp < 1.0 ? acos(dp) : 0.0;
       
       // Evaluate the kernel at this radius
       ngb[i].global_pix = (size_t) pixels[i];
