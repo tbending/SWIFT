@@ -114,7 +114,7 @@ struct lightcone_gas_data {
   float smoothed_metal_mass_fraction_total;
 #endif
 #ifdef COOLING_COLIBRE
-  float electron_density;
+  double electron_density;
   double ycompton;
 #endif
 #ifdef WITH_FOF
