@@ -75,6 +75,9 @@ struct lightcone_map {
   /*! Type of this map */
   struct lightcone_map_type type;
 
+  /*! Factor for retrieving values from the update buffer */
+  double buffer_scale_factor_inv;
+
 #ifdef LIGHTCONE_MAP_CHECK_TOTAL
   /*! Total quantity accumulated to this map, for consistency check */
   double total;

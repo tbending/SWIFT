@@ -153,6 +153,7 @@ static const struct lightcone_map_type neutrino_lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     /* NULL functions indicate end of array */
@@ -163,6 +164,7 @@ static const struct lightcone_map_type neutrino_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
 };
 

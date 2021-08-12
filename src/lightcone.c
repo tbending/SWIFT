@@ -151,11 +151,7 @@ static void lightcone_identify_map_types(struct lightcone_props *props) {
       const struct lightcone_map_type *map_types_to_search = map_type_array[i];
       while(map_types_to_search[type_nr].update_map) {
         if(strcmp(map_types_to_search[type_nr].name, props->map_type[map_nr].name)==0) {
-          props->map_type[map_nr].update_map = map_types_to_search[type_nr].update_map;
-          props->map_type[map_nr].ptype_contributes = map_types_to_search[type_nr].ptype_contributes;
-          props->map_type[map_nr].baseline_func = map_types_to_search[type_nr].baseline_func;
-          props->map_type[map_nr].units = map_types_to_search[type_nr].units;
-          props->map_type[map_nr].smoothing = map_types_to_search[type_nr].smoothing;
+          props->map_type[map_nr] = map_types_to_search[type_nr];
           if(engine_rank==0)message("lightcone %d: lightcone map %d is of type %s", 
                                     props->index, map_nr, map_types_to_search[type_nr].name);
         }
@@ -1279,13 +1275,16 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
       /* Loop over healpix maps which this particle type contributes to and find values to add */
       for(int i=0; i<part_type_info->nr_maps; i+=1) {
         int map_nr = part_type_info->map_index[i];
-        data[3+i].f = props->map_type[map_nr].update_map(e, props, gp, a_cross, x_cross);
-
+        /* The value to add to the map may need to be scaled to fit in a float */
+        const double fac = props->map_type[map_nr].buffer_scale_factor;
+        /* Fetch the value to add to the map */
+        const double val = props->map_type[map_nr].update_map(e, props, gp, a_cross, x_cross);
+        /* Store the scaled value */
+        data[3+i].f = fac*val;
 #ifdef LIGHTCONE_MAP_CHECK_TOTAL
         /* Accumulate total quantity added to each map for consistency check */
         atomic_add_d(&props->shell[shell_nr].map[map_nr].total, data[3+i].f);
 #endif
-
       }
 
       /* Buffer the updates */

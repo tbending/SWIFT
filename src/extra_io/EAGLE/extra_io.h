@@ -229,6 +229,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0e-62, /* to keep in range of a float */
   },
   {
     .name = "XrayErositaLowIntrinsicEnergies",
@@ -238,6 +239,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "XrayErositaHighIntrinsicPhotons",
@@ -247,6 +249,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0e-62, /* to keep in range of a float */
   },
   {
     .name = "XrayErositaHighIntrinsicEnergies",
@@ -256,6 +259,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "XrayROSATIntrinsicPhotons",
@@ -265,6 +269,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0e-62, /* to keep in range of a float */
   },
   {
     .name = "XrayROSATIntrinsicEnergies",
@@ -274,6 +279,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "ComptonY",
@@ -283,6 +289,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "DopplerB",
@@ -292,6 +299,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "DM",
@@ -301,6 +309,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_INV_AREA,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 3.40367719e-68, /* convert 1/Mpc^2 to pc/cm^3 so value fits in a float */
   },
   {
     /* NULL functions indicate end of array */
@@ -311,6 +320,7 @@ static const struct lightcone_map_type extra_lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
 };
 

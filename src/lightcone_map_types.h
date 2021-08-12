@@ -66,6 +66,7 @@ struct lightcone_map_type {
   enum unit_conversion_factor units;
   enum lightcone_map_smoothing smoothing;
   enum lossy_compression_schemes compression;
+  double buffer_scale_factor;
 };
 
 /*
@@ -144,6 +145,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "SmoothedGasMass",
@@ -153,6 +155,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_smoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "UnsmoothedGasMass",
@@ -162,6 +165,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "DarkMatterMass",
@@ -171,6 +175,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "StellarMass",
@@ -180,6 +185,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "BlackHoleMass",
@@ -189,6 +195,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_MASS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     .name = "StarFormationRate",
@@ -198,6 +205,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_SFR,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
   {
     /* NULL functions indicate end of array */
@@ -208,6 +216,7 @@ static const struct lightcone_map_type lightcone_map_types[] = {
     .units = UNIT_CONV_NO_UNITS,
     .smoothing = map_unsmoothed,
     .compression = compression_write_lossless,
+    .buffer_scale_factor = 1.0,
   },
 };
 

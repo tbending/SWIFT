@@ -601,7 +601,9 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
         /* Add this particle to all healpix maps */
         for(int j=0; j<part_type->nr_maps; j+=1) {
           const int map_index = part_type->map_index[j];
-          const double value_to_add = value[j].f;
+          const double buffered_value = value[j].f;
+          const double fac_inv = shell->map[map_index].buffer_scale_factor_inv;
+          const double value_to_add = buffered_value*fac_inv;
           atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add);
         }
       }
@@ -636,7 +638,9 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
             const double weight = ngb[ngb_nr].weight;
             for(int j=0; j<part_type->nr_smoothed_maps; j+=1) {
               const int map_index = part_type->map_index[j];
-              const double value_to_add = value[j].f;
+              const double buffered_value = value[j].f;
+              const double fac_inv = shell->map[map_index].buffer_scale_factor_inv;
+              const double value_to_add = buffered_value*fac_inv;
               atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add*weight);
             }
           }
@@ -659,7 +663,9 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
           /* Update the un-smoothed healpix maps */
           for(int j=part_type->nr_smoothed_maps; j<part_type->nr_maps; j+=1) {
             const int map_index = part_type->map_index[j];
-            const double value_to_add = value[j].f;
+            const double buffered_value = value[j].f;
+            const double fac_inv = shell->map[map_index].buffer_scale_factor_inv;
+            const double value_to_add = buffered_value*fac_inv;
             atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add);
           }
         }

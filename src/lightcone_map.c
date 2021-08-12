@@ -62,8 +62,14 @@ void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t
   map->r_max = r_max;
   map->type  = type;
 
+  /* Store factor used to retrieve values from the update buffer */
+  map->buffer_scale_factor_inv = 1.0/(type.buffer_scale_factor);
+
+#ifdef LIGHTCONE_MAP_CHECK_TOTAL
   /* Initialize total for consistency check */
   map->total = 0.0;
+#endif
+  
 }
 
 
