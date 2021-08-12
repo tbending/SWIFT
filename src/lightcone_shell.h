@@ -28,6 +28,7 @@
 
 /* Local headers */
 #include "cosmology.h"
+#include "error.h"
 #include "healpix_smoothing.h"
 #include "lightcone_map.h"
 #include "lightcone_map_types.h"
@@ -39,6 +40,37 @@ enum lightcone_shell_state {
   shell_current,
   shell_complete,
 };
+
+
+union lightcone_map_buffer_entry {
+  int i;
+  float f;
+};
+
+
+/**
+ * @brief Encode an angle in the range 0 to 2pi as an int
+ *
+ * @param angle the angle to encode
+ */
+__attribute__((always_inline)) INLINE static int angle_to_int(const double angle) {
+  
+  if(angle < 0.0 || angle > 2*M_PI)error("angle is out of range!");
+  const double fac = ((1<<30)-1) / M_PI;
+  return (int) (angle*fac);
+}
+
+
+/**
+ * @brief Convert an encoded angle back to a double
+ *
+ * @param i the int containing the angle
+ */
+__attribute__((always_inline)) INLINE static double int_to_angle(const int i) {
+  
+  const double fac = M_PI/((1<<30)-1);
+  return i*fac;
+}
 
 
 /**

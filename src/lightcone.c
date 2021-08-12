@@ -527,7 +527,7 @@ void lightcone_init(struct lightcone_props *props,
     /* Determine how much data we need to store per particle of this type.
        We need theta and phi angular coordinates, angular size of the particle,
        and the values to be added to the healpix maps */
-    this_type->buffer_element_size = (3+this_type->nr_maps) * sizeof(double);
+    this_type->buffer_element_size = (3+this_type->nr_maps) * sizeof(union lightcone_map_buffer_entry);
   }
 
   /* Set up the array of lightcone shells for this lightcone */
@@ -1271,19 +1271,19 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
         error("Attempt to update shell which has been written out");
 
       /* Allocate storage for updates and set particle coordinates and radius */
-      double *data = malloc(part_type_info->buffer_element_size);
-      data[0] = theta;
-      data[1] = phi;
-      data[2] = radius;
+      union lightcone_map_buffer_entry *data = malloc(part_type_info->buffer_element_size);
+      data[0].i = angle_to_int(theta);
+      data[1].i = angle_to_int(phi);
+      data[2].f = radius;
 
       /* Loop over healpix maps which this particle type contributes to and find values to add */
       for(int i=0; i<part_type_info->nr_maps; i+=1) {
         int map_nr = part_type_info->map_index[i];
-        data[3+i] = props->map_type[map_nr].update_map(e, props, gp, a_cross, x_cross);
+        data[3+i].f = props->map_type[map_nr].update_map(e, props, gp, a_cross, x_cross);
 
 #ifdef LIGHTCONE_MAP_CHECK_TOTAL
         /* Accumulate total quantity added to each map for consistency check */
-        atomic_add_d(&props->shell[shell_nr].map[map_nr].total, data[3+i]);
+        atomic_add_d(&props->shell[shell_nr].map[map_nr].total, data[3+i].f);
 #endif
 
       }

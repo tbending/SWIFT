@@ -356,7 +356,7 @@ struct healpix_smoothing_mapper_data {
   struct healpix_smoothing_info *smoothing_info;
 
   /*! Pointer to the send buffer for communication */
-  double *sendbuf;
+  union lightcone_map_buffer_entry *sendbuf;
 
 };
 
@@ -442,14 +442,14 @@ static void count_elements_to_send_mapper(void *map_data, int num_elements,
     }
     
     /* Loop over lightcone map contributions in this block */
-    double *update_data = (double *) block->data;
+    union lightcone_map_buffer_entry *update_data = (union lightcone_map_buffer_entry *) block->data;
     for(size_t i=0; i<block->num_elements; i+=1) {
 
       /* Find the particle angular coordinates and size for this update */
       size_t index = i*(3+nr_maps);
-      const double theta  = update_data[index+0];
-      const double phi    = update_data[index+1];
-      const double radius = update_data[index+2];
+      const double theta  = int_to_angle(update_data[index+0].i);
+      const double phi    = int_to_angle(update_data[index+1].i);
+      const double radius = update_data[index+2].f;
 
       /* Determine which MPI ranks this contribution needs to go to */
       size_t first_pixel, last_pixel;
@@ -490,10 +490,10 @@ static void store_elements_to_send_mapper(void *map_data, int num_elements,
   struct lightcone_particle_type *part_type = mapper_data->part_type;
 
   /* Find the send buffer where we will place the updates from this block */
-  double *sendbuf = mapper_data->sendbuf;
+  union lightcone_map_buffer_entry *sendbuf = mapper_data->sendbuf;
 
-  /* Find how many doubles we have per update */
-  const int nr_doubles_per_update = 3+part_type->nr_maps;
+  /* Find how many elements we have per update */
+  const int nr_elements_per_update = 3+part_type->nr_maps;
 
   /* Loop over blocks to process on this call */
   for(int block_nr=0; block_nr<num_elements; block_nr+=1) {
@@ -511,20 +511,20 @@ static void store_elements_to_send_mapper(void *map_data, int num_elements,
     struct particle_buffer_block *block = block_info[block_nr].block;
     
     /* Loop over lightcone map updates in this block */
-    double *update_data = (double *) block->data;
+    union lightcone_map_buffer_entry *update_data = (union lightcone_map_buffer_entry *) block->data;
     for(size_t i=0; i<block->num_elements; i+=1) {
 
       /* Find the data to send for this update */
-      const double *block_data = &update_data[i*nr_doubles_per_update];
+      union lightcone_map_buffer_entry *block_data = &update_data[i*nr_elements_per_update];
 
       /* Store this contribution to the send buffer (possibly multiple times) */
       for(int rank=first_dest_rank[i]; rank<=last_dest_rank[i]; rank+=1) {
 
         /* Find where in the send buffer to write the update */
-        double *dest = sendbuf+(offset[rank]*nr_doubles_per_update);
+        union lightcone_map_buffer_entry *dest = sendbuf+(offset[rank]*nr_elements_per_update);
 
         /* Copy the update to the send buffer */
-        memcpy(dest, block_data, sizeof(double)*nr_doubles_per_update);
+        memcpy(dest, block_data, sizeof(union lightcone_map_buffer_entry)*nr_elements_per_update);
         offset[rank] += 1;
       }
 
@@ -566,7 +566,7 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
   double max_pixrad = healpix_smoothing_get_max_pixrad(smoothing_info);
 
   /* Find the array of updates to apply to the healpix maps */
-  double *update_data  = (double *) map_data;
+  union lightcone_map_buffer_entry *update_data  = (union lightcone_map_buffer_entry *) map_data;
 
   /* Find range of pixel indexes stored locally. Here we assume all maps
      have the same number of pixels and distribution between MPI ranks */
@@ -579,10 +579,10 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 
     /* Find the data for this update */
     size_t index = i*(3+part_type->nr_maps);
-    const double theta  = update_data[index+0];
-    const double phi    = update_data[index+1];
-    const double radius = update_data[index+2];
-    const double *value = &update_data[index+3];
+    const double theta  = int_to_angle(update_data[index+0].i);
+    const double phi    = int_to_angle(update_data[index+1].i);
+    const double radius = update_data[index+2].f;
+    const union lightcone_map_buffer_entry *value = &update_data[index+3];
 
     if(radius < max_pixrad) {
 
@@ -601,7 +601,8 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
         /* Add this particle to all healpix maps */
         for(int j=0; j<part_type->nr_maps; j+=1) {
           const int map_index = part_type->map_index[j];
-          atomic_add_d(&shell->map[map_index].data[local_pix], value[j]);
+          const double value_to_add = value[j].f;
+          atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add);
         }
       }
 
@@ -635,8 +636,9 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
             const double weight = ngb[ngb_nr].weight;
             for(int j=0; j<part_type->nr_smoothed_maps; j+=1) {
               const int map_index = part_type->map_index[j];
-              atomic_add_d(&shell->map[map_index].data[local_pix], value[j]*weight);
-            }          
+              const double value_to_add = value[j].f;
+              atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add*weight);
+            }
           }
         }
         /* Free the array of neighbouring pixels */
@@ -657,7 +659,8 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
           /* Update the un-smoothed healpix maps */
           for(int j=part_type->nr_smoothed_maps; j<part_type->nr_maps; j+=1) {
             const int map_index = part_type->map_index[j];
-            atomic_add_d(&shell->map[map_index].data[local_pix], value[j]);
+            const double value_to_add = value[j].f;
+            atomic_add_d(&shell->map[map_index].data[local_pix], value_to_add);
           }
         }
       } /* if part_type->nr_unsmoothed_maps > 0 */
@@ -774,7 +777,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
     total_nr_send += send_count[i];
 
   /* Allocate the send buffer */
-  double *sendbuf = malloc(part_type[ptype].buffer_element_size*total_nr_send);
+  union lightcone_map_buffer_entry *sendbuf = malloc(part_type[ptype].buffer_element_size*total_nr_send);
   mapper_data.sendbuf = sendbuf;
 
   /* Populate the send buffer */
@@ -802,7 +805,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
     total_nr_recv += recv_count[i];
   
   /* Allocate receive buffer */
-  double *recvbuf = malloc(part_type[ptype].buffer_element_size*total_nr_recv);
+  union lightcone_map_buffer_entry *recvbuf = malloc(part_type[ptype].buffer_element_size*total_nr_recv);
   
   /* Exchange data */
   exchange_structs(send_count, sendbuf, recv_count, recvbuf,
