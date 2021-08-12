@@ -742,53 +742,107 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
     block = block->next;
   }
 
-  /* For each block, count how many elements are to be sent to each MPI rank */
-  threadpool_map(tp, count_elements_to_send_mapper, block_info, nr_blocks,
-                 sizeof(struct buffer_block_info), 1, &mapper_data);
+  /* To minimize memory usage we don't process all of the blocks at once.
+     Determine how many iterations we'll need to do them all if we impose
+     a maximum number of blocks per iteration. */
+  int max_nr_blocks;
+  const int max_blocks_per_iteration = 32;
+  MPI_Allreduce(&nr_blocks, &max_nr_blocks, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  int nr_iterations = max_nr_blocks / max_blocks_per_iteration;
+  if(max_nr_blocks % max_blocks_per_iteration != 0)nr_iterations += 1;
+  if(engine_rank==0)message("will require %d iterations to apply map updates", nr_iterations);
+
+  /* Loop over iterations */
+  int nr_blocks_done = 0;
+  for(int iter=0; iter<nr_iterations; iter+=1) {
+    
+    /* Find number of blocks to do on this iteration (may be zero) */
+    int nr_blocks_iter = nr_blocks - nr_blocks_done;
+    if(nr_blocks_iter > max_blocks_per_iteration)
+      nr_blocks_iter = max_blocks_per_iteration;
+
+    /* Get a pointer to the blocks to do on this iteration */
+    struct buffer_block_info *block_info_iter = block_info + nr_blocks_done;
   
-  /* Find total number of elements to go to each rank */
-  size_t *send_count = malloc(sizeof(size_t)*comm_size);
-  for(int i=0; i<comm_size; i+=1)
-    send_count[i] = 0;
-  for(size_t block_nr=0; block_nr<nr_blocks; block_nr+=1) {
+    /* For each block, count how many elements are to be sent to each MPI rank */
+    threadpool_map(tp, count_elements_to_send_mapper, block_info_iter, nr_blocks_iter,
+                   sizeof(struct buffer_block_info), 1, &mapper_data);
+
+    /* Find total number of elements to go to each rank */
+    size_t *send_count = malloc(sizeof(size_t)*comm_size);
     for(int i=0; i<comm_size; i+=1)
-      send_count[i] += block_info[block_nr].count[i];
-  }
+      send_count[i] = 0;
+    for(size_t block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
+      for(int i=0; i<comm_size; i+=1)
+        send_count[i] += block_info_iter[block_nr].count[i];
+    }
 
-  /* Find offset to the first element to go to each rank if we sort them by destination */
-  size_t *send_offset = malloc(sizeof(size_t)*comm_size);
-  send_offset[0] = 0;
-  for(int i=1; i<comm_size; i+=1) {
-    send_offset[i] = send_offset[i-1] + send_count[i-1];
-  }
-
-  /* For each block, find the location in the send buffer where we need to
-     place the first element to go to each MPI rank */
-  for(size_t block_nr=0; block_nr<nr_blocks; block_nr+=1) {
-    for(int i=0; i<comm_size; i+=1) {
-      if(block_nr==0) {
-        /* This is the first block */
-        block_info[block_nr].offset[i] = send_offset[i];
-      } else {
-        /* Not first, so elements are written after those of the previous block */
-        block_info[block_nr].offset[i] = block_info[block_nr-1].offset[i] +
-          block_info[block_nr-1].count[i];
+    /* Find offset to the first element to go to each rank if we sort them by destination */
+    size_t *send_offset = malloc(sizeof(size_t)*comm_size);
+    send_offset[0] = 0;
+    for(int i=1; i<comm_size; i+=1) {
+      send_offset[i] = send_offset[i-1] + send_count[i-1];
+    }
+    
+    /* For each block, find the location in the send buffer where we need to
+       place the first element to go to each MPI rank */
+    for(size_t block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
+      for(int i=0; i<comm_size; i+=1) {
+        if(block_nr==0) {
+          /* This is the first block */
+          block_info_iter[block_nr].offset[i] = send_offset[i];
+        } else {
+          /* Not first, so elements are written after those of the previous block */
+          block_info_iter[block_nr].offset[i] = block_info_iter[block_nr-1].offset[i] +
+            block_info_iter[block_nr-1].count[i];
+        }
       }
     }
-  }
+
+    /* Find the total number of elements to be sent */
+    size_t total_nr_send = 0;
+    for(int i=0; i<comm_size; i+=1)
+      total_nr_send += send_count[i];
+
+    /* Allocate the send buffer */
+    union lightcone_map_buffer_entry *sendbuf = malloc(part_type[ptype].buffer_element_size*total_nr_send);
+    mapper_data.sendbuf = sendbuf;
+
+    /* Populate the send buffer */
+    threadpool_map(tp, store_elements_to_send_mapper, block_info_iter, nr_blocks_iter,
+                   sizeof(struct buffer_block_info), 1, &mapper_data);
+
+    /* Determine number of elements to receive */
+    size_t *recv_count = malloc(comm_size*sizeof(size_t));
+    MPI_Alltoall(send_count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t),
+                 MPI_BYTE, MPI_COMM_WORLD);
+    size_t total_nr_recv = 0;
+    for(int i=0; i<comm_size; i+=1)
+      total_nr_recv += recv_count[i];
   
-  /* Find the total number of elements to be sent */
-  size_t total_nr_send = 0;
-  for(int i=0; i<comm_size; i+=1)
-    total_nr_send += send_count[i];
+    /* Allocate receive buffer */
+    union lightcone_map_buffer_entry *recvbuf = malloc(part_type[ptype].buffer_element_size*total_nr_recv);
+  
+    /* Exchange data */
+    exchange_structs(send_count, sendbuf, recv_count, recvbuf,
+                     part_type[ptype].buffer_element_size);
 
-  /* Allocate the send buffer */
-  union lightcone_map_buffer_entry *sendbuf = malloc(part_type[ptype].buffer_element_size*total_nr_send);
-  mapper_data.sendbuf = sendbuf;
+    /* Apply received updates to the healpix map */
+    threadpool_map(tp, healpix_smoothing_mapper, recvbuf, total_nr_recv,
+                   part_type[ptype].buffer_element_size, 
+                   threadpool_auto_chunk_size, &mapper_data);
 
-  /* Populate the send buffer */
-  threadpool_map(tp, store_elements_to_send_mapper, block_info, nr_blocks,
-                 sizeof(struct buffer_block_info), 1, &mapper_data);
+    /* Tidy up */
+    free(send_count);
+    free(send_offset);
+    free(sendbuf);
+    free(recv_count);
+    free(recvbuf);
+
+    /* Advance to next set of blocks */
+    nr_blocks_done += nr_blocks_iter;
+  }
+  if(nr_blocks_done != nr_blocks)error("not all map update blocks were processed");
 
   /* We no longer need the array of blocks */
   for(size_t block_nr=0; block_nr<nr_blocks; block_nr+=1) {
@@ -801,33 +855,6 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
 
   /* Empty the particle buffer now that we copied the data from it */
   particle_buffer_empty(buffer);
-
-  /* Determine number of elements to receive */
-  size_t *recv_count = malloc(comm_size*sizeof(size_t));
-  MPI_Alltoall(send_count, sizeof(size_t), MPI_BYTE, recv_count, sizeof(size_t),
-               MPI_BYTE, MPI_COMM_WORLD);
-  size_t total_nr_recv = 0;
-  for(int i=0; i<comm_size; i+=1)
-    total_nr_recv += recv_count[i];
-  
-  /* Allocate receive buffer */
-  union lightcone_map_buffer_entry *recvbuf = malloc(part_type[ptype].buffer_element_size*total_nr_recv);
-  
-  /* Exchange data */
-  exchange_structs(send_count, sendbuf, recv_count, recvbuf,
-                   part_type[ptype].buffer_element_size);
-
-  /* Apply received updates to the healpix map */
-  threadpool_map(tp, healpix_smoothing_mapper, recvbuf, total_nr_recv,
-                 part_type[ptype].buffer_element_size, 
-                 threadpool_auto_chunk_size, &mapper_data);
-
-  /* Tidy up */
-  free(send_count);
-  free(send_offset);
-  free(sendbuf);
-  free(recv_count);
-  free(recvbuf);
 
 #else
   
