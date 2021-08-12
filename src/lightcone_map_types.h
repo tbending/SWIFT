@@ -133,17 +133,82 @@ double lightcone_map_sfr_get_value(const struct engine *e,
                                    const struct gpart *gp, const double a_cross,
                                    const double x_cross[3]);
 
+
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
-  {"TotalMass", lightcone_map_total_mass_get_value, lightcone_map_total_mass_type_contributes, lightcone_map_total_mass_baseline_value, UNIT_CONV_MASS, map_unsmoothed, compression_write_lossless},
-  {"SmoothedGasMass",   lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_smoothed,       compression_write_lossless},
-  {"UnsmoothedGasMass", lightcone_map_gas_mass_get_value,         lightcone_map_gas_mass_type_contributes,         NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
-  {"DarkMatterMass",    lightcone_map_dark_matter_mass_get_value, lightcone_map_dark_matter_mass_type_contributes, NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
-  {"StellarMass",       lightcone_map_stellar_mass_get_value,     lightcone_map_stellar_mass_type_contributes,     NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
-  {"BlackHoleMass",     lightcone_map_black_hole_mass_get_value,  lightcone_map_black_hole_mass_type_contributes,  NULL,       UNIT_CONV_MASS,     map_unsmoothed,     compression_write_lossless},
-  {"StarFormationRate", lightcone_map_sfr_get_value,              lightcone_map_sfr_type_contributes,              NULL,       UNIT_CONV_SFR,      map_unsmoothed,     compression_write_lossless},
-  {"",                  NULL,                                     NULL,                                            NULL,       UNIT_CONV_NO_UNITS, map_unsmoothed,     compression_write_lossless},
-  /* NULL functions indicate end of array */
+  {
+    .name = "TotalMass",
+    .update_map = lightcone_map_total_mass_get_value,
+    .ptype_contributes = lightcone_map_total_mass_type_contributes,
+    .baseline_func = lightcone_map_total_mass_baseline_value,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "SmoothedGasMass",
+    .update_map = lightcone_map_gas_mass_get_value,
+    .ptype_contributes = lightcone_map_gas_mass_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_smoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "UnsmoothedGasMass",
+    .update_map = lightcone_map_gas_mass_get_value,
+    .ptype_contributes = lightcone_map_gas_mass_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "DarkMatterMass",
+    .update_map = lightcone_map_dark_matter_mass_get_value,
+    .ptype_contributes = lightcone_map_dark_matter_mass_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "StellarMass",
+    .update_map = lightcone_map_stellar_mass_get_value,
+    .ptype_contributes = lightcone_map_stellar_mass_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "BlackHoleMass",
+    .update_map = lightcone_map_black_hole_mass_get_value,
+    .ptype_contributes = lightcone_map_black_hole_mass_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_MASS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    .name = "StarFormationRate",
+    .update_map = lightcone_map_sfr_get_value,
+    .ptype_contributes = lightcone_map_sfr_type_contributes,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_SFR,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
+  {
+    /* NULL functions indicate end of array */
+    .name = "",
+    .update_map = NULL,
+    .ptype_contributes = NULL,
+    .baseline_func = NULL,
+    .units = UNIT_CONV_NO_UNITS,
+    .smoothing = map_unsmoothed,
+    .compression = compression_write_lossless,
+  },
 };
 
 #endif
