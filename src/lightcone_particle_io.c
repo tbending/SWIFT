@@ -117,8 +117,8 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
   lightcone_io_field_list_append(list, "MetalMassFractions",           FLOAT, 1, OFFSET(metal_mass_fraction_total), UNIT_CONV_NO_UNITS, 0.0, "FMantissa9");
 #endif
 #ifdef COOLING_COLIBRE
-  lightcone_io_field_list_append(list, "ElectronNumberDensities", DOUBLE, 1, OFFSET(electron_density), UNIT_CONV_NUMBER_DENSITY, 0.0, "FMantissa9");
-  lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0, "FMantissa9");
+  lightcone_io_field_list_append(list, "ElectronNumberDensities", DOUBLE, 1, OFFSET(electron_density), UNIT_CONV_NUMBER_DENSITY, 0.0, "DMantissa9");
+  lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0, "DMantissa9");
 #endif
 #ifdef WITH_FOF
   lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
