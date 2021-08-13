@@ -687,17 +687,23 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
  * We carry out all the updates for one particle type at the same time so that
  * we avoid repeating the healpix neighbour search for every healpix map.
  *
+ * Applying the updates involves copying them to a send buffer then a receive
+ * buffer, so if there are a lot we process them in chunks of up to
+ * max_map_update_send_size_mb megabytes to save memory.
+ *
  * @param shell the #lightcone_shell to update
  * @param tp the #threadpool used to execute the updates
  * @param part_type contains information about each particle type to be updated
  * @param smoothing_info contains parameters relating to smoothing onto the sphere
  * @param ptype index of the particle type to update
+ * @param max_map_update_send_size_mb maximum amount of data each ranks sends
  *
  */
 void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, struct threadpool *tp,
                                                 struct lightcone_particle_type *part_type,
                                                 struct healpix_smoothing_info *smoothing_info,
-                                                int ptype) {
+                                                int ptype, const int max_map_update_send_size_mb,
+                                                int verbose) {
   int comm_rank = 0, comm_size = 1;
 #ifdef WITH_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -743,14 +749,22 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
   }
 
   /* To minimize memory usage we don't process all of the blocks at once.
-     Determine how many iterations we'll need to do them all if we impose
-     a maximum number of blocks per iteration. */
+     Determine the maximum number of blocks on any rank. */
   int max_nr_blocks;
-  const int max_blocks_per_iteration = 32;
   MPI_Allreduce(&nr_blocks, &max_nr_blocks, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+
+  /* Determine the maximum number of blocks to process per iteration */
+  size_t max_bytes = ((size_t) max_map_update_send_size_mb)*((size_t) 1024*1024);
+  int max_blocks_per_iteration = max_bytes / (buffer->element_size*buffer->elements_per_block);
+  if(max_blocks_per_iteration < 1)
+    error("max_map_update_send_size_mb is too small to process even one block");
+
+  /* Determine how many iterations we need */
   int nr_iterations = max_nr_blocks / max_blocks_per_iteration;
   if(max_nr_blocks % max_blocks_per_iteration != 0)nr_iterations += 1;
-  if(engine_rank==0)message("will require %d iterations to apply map updates", nr_iterations);
+  if(engine_rank==0 && nr_iterations > 0 && verbose)
+    message("will require %d iterations with %d blocks per iteration",
+            nr_iterations, max_blocks_per_iteration);
 
   /* Loop over iterations */
   int nr_blocks_done = 0;
@@ -885,13 +899,15 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
  */
 void lightcone_shell_flush_map_updates(struct lightcone_shell *shell, struct threadpool *tp,
                                        struct lightcone_particle_type *part_type,
-                                       struct healpix_smoothing_info *smoothing_info) {
+                                       struct healpix_smoothing_info *smoothing_info,
+                                       const int max_map_update_send_size_mb, int verbose) {
 
   if(shell->state != shell_current)error("Attempt to flush updates for non-current shell!");
   
   for(int ptype=0; ptype<swift_type_count; ptype+=1) {
     if((shell->nr_maps > 0) && (part_type[ptype].nr_maps > 0)) {
-      lightcone_shell_flush_map_updates_for_type(shell, tp, part_type, smoothing_info, ptype);
+      lightcone_shell_flush_map_updates_for_type(shell, tp, part_type, smoothing_info, ptype,
+                                                 max_map_update_send_size_mb, verbose);
     }
   }
 }

@@ -80,6 +80,9 @@ struct lightcone_props {
   /*! Size of chunks in HDF5 output files */
   int hdf5_chunk_size;
 
+  /* Maximum amount of data (in megabytes) to send from any one rank when updating healpix maps */
+  int max_map_update_send_size_mb;
+
   /*! Whether to apply lossy compression */
   int particles_lossy_compression;
 

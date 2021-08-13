@@ -418,11 +418,14 @@ void lightcone_init(struct lightcone_props *props,
   /* Write particles to disk if this many or more are in the buffer */
   props->max_particles_buffered = parser_get_opt_param_int(params, YML_NAME("max_particles_buffered"), 100000);
 
-  /* Chunk size for particles buffered in memory  */
+  /* Chunk size for particles buffered in memory */
   props->buffer_chunk_size = parser_get_opt_param_int(params, YML_NAME("buffer_chunk_size"), 20000);
 
-  /* Chunk size for particles buffered in memory  */
+  /* Chunk size for particles in the HDF5 output files */
   props->hdf5_chunk_size = parser_get_opt_param_int(params, YML_NAME("hdf5_chunk_size"), 16384);
+
+  /* Maximum amount of data (in megabytes) to send from any one rank when updating healpix maps */
+  props->max_map_update_send_size_mb = parser_get_opt_param_int(params, YML_NAME("max_map_update_send_size_mb"), 512);
 
   /* Compression options */
   props->particles_lossy_compression = parser_get_opt_param_int(params, YML_NAME("particles_lossy_compression"), 0);
@@ -738,7 +741,9 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
   for(int shell_nr=0; shell_nr<props->nr_shells; shell_nr+=1) {
     if(props->shell[shell_nr].state == shell_current)
       lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
-                                        props->part_type, props->smoothing_info);
+                                        props->part_type, props->smoothing_info,
+                                        props->max_map_update_send_size_mb,
+                                        props->verbose);
   }
 
   /* Report runtime */
@@ -802,7 +807,9 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
 
         /* Apply any buffered updates for this shell, if we didn't already */
         if(need_flush) lightcone_shell_flush_map_updates(&props->shell[shell_nr], tp,
-                                                         props->part_type, props->smoothing_info);
+                                                         props->part_type, props->smoothing_info,
+                                                         props->max_map_update_send_size_mb,
+                                                         props->verbose);
 
         /* Set the baseline value for the maps */
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
