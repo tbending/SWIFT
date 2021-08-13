@@ -96,6 +96,7 @@ void lightcone_array_init(struct lightcone_array_props *props,
     }
   }
 
+  props->verbose = verbose;
 }
 
 void lightcone_array_clean(struct lightcone_array_props *props) {
@@ -170,6 +171,8 @@ void lightcone_array_flush(struct lightcone_array_props *props,
                            const struct unit_system *snapshot_units,
                            int flush_map_updates, int flush_particles,
                            int end_file, int dump_all_shells) {
+
+  if(props->verbose)lightcone_array_report_memory_use(props);
 
   /* Loop over lightcones */
   const int nr_lightcones = props->nr_lightcones;
@@ -265,6 +268,54 @@ void lightcone_array_write_index(struct lightcone_array_props *props) {
   /* Loop over lightcones and clean replication lists */
   for(int lightcone_nr=0; lightcone_nr<nr_lightcones; lightcone_nr+=1) {
     lightcone_write_index(props->lightcone+lightcone_nr);
+  }
+
+}
+
+
+void lightcone_array_report_memory_use(struct lightcone_array_props *props) {
+
+  long long memuse_local[4] = {0LL, 0LL, 0LL, 0LL};
+  
+  /* Get number of lightcones */
+  const int nr_lightcones = props->nr_lightcones;
+
+  /* Loop over lightcones and clean replication lists */
+  for(int lightcone_nr=0; lightcone_nr<nr_lightcones; lightcone_nr+=1) {
+    
+    /* Accumulate mmeory use of this lightcone */
+    size_t particle_buffer_bytes;
+    size_t map_buffer_bytes;
+    size_t pixel_data_bytes;
+    lightcone_memory_use(&props->lightcone[lightcone_nr],
+                         &particle_buffer_bytes, &map_buffer_bytes,
+                         &pixel_data_bytes);
+    memuse_local[0] += particle_buffer_bytes;
+    memuse_local[1] += map_buffer_bytes;
+    memuse_local[2] += pixel_data_bytes;
+  }
+  memuse_local[3] = memuse_local[0] + memuse_local[1] + memuse_local[2];
+
+  /* Find min and max memory over MPI ranks */
+  long long memuse_min[4];
+  long long memuse_max[4];
+#ifdef WITH_MPI
+  MPI_Reduce(memuse_local, memuse_min, 4, MPI_LONG_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(memuse_local, memuse_max, 4, MPI_LONG_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
+#else
+  for(int i=0; i<4; i+=1) {
+    memuse_min[i] = memuse_local[i];
+    memuse_max[i] = memuse_local[i];
+  } 
+#endif
+
+  /* Report memory use, if non-zero */
+  if(engine_rank==0 && memuse_max[3] > 0) {
+    const long long MB = 1024*1024;
+    message("particle buffer Mbytes: min=%lldMB, max=%lldMB", memuse_min[0]/MB, memuse_max[0]/MB);
+    message("map update buffer Mbytes: min=%lldMB, max=%lldMB", memuse_min[1]/MB, memuse_max[1]/MB);
+    message("map pixel data Mbytes: min=%lldMB, max=%lldMB", memuse_min[2]/MB, memuse_max[2]/MB);
+    message("total lightcone data Mbytes: min=%lldMB, max=%lldMB", memuse_min[3]/MB, memuse_max[3]/MB);
   }
 
 }

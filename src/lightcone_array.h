@@ -50,6 +50,9 @@ struct lightcone_array_props {
   /*! Lightcone properties */
   struct lightcone_props *lightcone;
 
+  /*! Whether to generate memory usage reports */
+  int verbose;
+
 };
 
 
@@ -87,5 +90,7 @@ void lightcone_array_free_replications(struct lightcone_array_props *props,
                                        struct replication_list *lists);
 
 void lightcone_array_write_index(struct lightcone_array_props *props);
+
+void lightcone_array_report_memory_use(struct lightcone_array_props *props);
 
 #endif /* SWIFT_LIGHTCONE_ARRAY_H */

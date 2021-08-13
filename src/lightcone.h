@@ -212,7 +212,10 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
 
 int lightcone_trigger_map_update(struct lightcone_props *props);
 
-void lightcone_report_memory_use(struct lightcone_props *props);
+void lightcone_memory_use(struct lightcone_props *props,
+                          size_t *particle_buffer_bytes,
+                          size_t *map_buffer_bytes,
+                          size_t *pixel_data_bytes);
 
 void lightcone_write_index(struct lightcone_props *props);
 

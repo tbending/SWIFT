@@ -734,9 +734,6 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
 
   ticks tic = getticks();
 
-  /* Report how much memory we're using before flushing buffers */
-  if(props->verbose)lightcone_report_memory_use(props);
-
   /* Apply updates to all current shells */
   for(int shell_nr=0; shell_nr<props->nr_shells; shell_nr+=1) {
     if(props->shell[shell_nr].state == shell_current)
@@ -797,11 +794,6 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         if(props->verbose && engine_rank==0)
           message("lightcone %d: writing out completed shell %d at a=%f",
                   props->index, shell_nr, c->a);
-
-        if(num_shells_written==0) {
-          /* Report how much memory we're using before flushing buffers */
-          lightcone_report_memory_use(props);
-        }
 
         num_shells_written += 1;
 
@@ -1311,16 +1303,19 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
  * @param props The #lightcone_props structure
  *
  */
-void lightcone_report_memory_use(struct lightcone_props *props) {
-  
-  long long memuse_local[3];
-  for(int i=0; i<3; i+=1)
-    memuse_local[i] = 0;
+void lightcone_memory_use(struct lightcone_props *props,
+                          size_t *particle_buffer_bytes,
+                          size_t *map_buffer_bytes,
+                          size_t *pixel_data_bytes) {
+
+  *particle_buffer_bytes = 0;
+  *map_buffer_bytes = 0;
+  *pixel_data_bytes = 0;
 
   /* Accumulate memory used by particle buffers - one buffer per particle type */
   for(int i=0; i<swift_type_count; i+=1) {
     if(props->use_type[i])
-      memuse_local[0] += particle_buffer_memory_use(props->buffer+i);
+      *particle_buffer_bytes += particle_buffer_memory_use(props->buffer+i);
   }
 
   /* Accumulate memory used by map update buffers and pixel data */
@@ -1330,33 +1325,15 @@ void lightcone_report_memory_use(struct lightcone_props *props) {
 
     /* Healpix map updates - one buffer per particle type per shell */
     for(int ptype=0; ptype<swift_type_count; ptype+=1) {
-      memuse_local[1] += particle_buffer_memory_use(&(props->shell[shell_nr].buffer[ptype]));
+      *map_buffer_bytes += particle_buffer_memory_use(&(props->shell[shell_nr].buffer[ptype]));
     }
 
     /* Pixel data - one buffer per map per shell */
     for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
       struct lightcone_map *map = &(props->shell[shell_nr].map[map_nr]);
-      if(map->data)memuse_local[2] += map->local_nr_pix*sizeof(double);
+      if(map->data)*pixel_data_bytes += map->local_nr_pix*sizeof(double);
     }
   }
-
-  /* Find min and max memory use over all nodes */
-#ifdef WITH_MPI
-  long long memuse_min[3];
-  MPI_Reduce(memuse_local, memuse_min, 3, MPI_LONG_LONG, MPI_MIN, 0, MPI_COMM_WORLD);
-  long long memuse_max[3];
-  MPI_Reduce(memuse_local, memuse_max, 3, MPI_LONG_LONG, MPI_MAX, 0, MPI_COMM_WORLD);
-  if(engine_rank==0) {
-    message("lightcone %d: particle buffer bytes:   min=%lld, max=%lld", props->index, memuse_min[0], memuse_max[0]);
-    message("lightcone %d: map update buffer bytes: min=%lld, max=%lld", props->index, memuse_min[1], memuse_max[1]);
-    message("lightcone %d: map pixel data bytes:    min=%lld, max=%lld", props->index, memuse_min[2], memuse_max[2]);
-  }
-#else
-    message("lightcone %d: particle buffer bytes:   %lld", props->index, memuse_local[0]);
-    message("lightcone %d: map update buffer bytes: %lld", props->index, memuse_local[1]);
-    message("lightcone %d: map pixel data bytes:    %lld", props->index, memuse_local[2]);
-#endif    
-
 }
 
 
