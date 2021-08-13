@@ -183,6 +183,6 @@ struct lightcone_shell *lightcone_shell_array_restore(FILE *stream, int nr_shell
 void lightcone_shell_flush_map_updates(struct lightcone_shell *shell, struct threadpool *tp,
                                        struct lightcone_particle_type *part_type,
                                        struct healpix_smoothing_info *smoothing_info,
-                                       const int max_map_update_send_size_mb, int verbose);
+                                       const double max_map_update_send_size_mb, int verbose);
 
 #endif /* SWIFT_LIGHTCONE_SHELL_H */

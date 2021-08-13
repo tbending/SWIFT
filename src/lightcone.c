@@ -425,7 +425,7 @@ void lightcone_init(struct lightcone_props *props,
   props->hdf5_chunk_size = parser_get_opt_param_int(params, YML_NAME("hdf5_chunk_size"), 16384);
 
   /* Maximum amount of data (in megabytes) to send from any one rank when updating healpix maps */
-  props->max_map_update_send_size_mb = parser_get_opt_param_int(params, YML_NAME("max_map_update_send_size_mb"), 512);
+  props->max_map_update_send_size_mb = parser_get_opt_param_double(params, YML_NAME("max_map_update_send_size_mb"), 512.0);
 
   /* Compression options */
   props->particles_lossy_compression = parser_get_opt_param_int(params, YML_NAME("particles_lossy_compression"), 0);

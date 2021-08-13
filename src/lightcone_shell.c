@@ -702,7 +702,7 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, struct threadpool *tp,
                                                 struct lightcone_particle_type *part_type,
                                                 struct healpix_smoothing_info *smoothing_info,
-                                                int ptype, const int max_map_update_send_size_mb,
+                                                int ptype, const double max_map_update_send_size_mb,
                                                 int verbose) {
   int comm_rank = 0, comm_size = 1;
 #ifdef WITH_MPI
@@ -754,7 +754,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
   MPI_Allreduce(&nr_blocks, &max_nr_blocks, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   /* Determine the maximum number of blocks to process per iteration */
-  size_t max_bytes = ((size_t) max_map_update_send_size_mb)*((size_t) 1024*1024);
+  size_t max_bytes = max_map_update_send_size_mb*1024.0*1024.0;
   int max_blocks_per_iteration = max_bytes / (buffer->element_size*buffer->elements_per_block);
   if(max_blocks_per_iteration < 1)
     error("max_map_update_send_size_mb is too small to process even one block");
@@ -900,7 +900,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
 void lightcone_shell_flush_map_updates(struct lightcone_shell *shell, struct threadpool *tp,
                                        struct lightcone_particle_type *part_type,
                                        struct healpix_smoothing_info *smoothing_info,
-                                       const int max_map_update_send_size_mb, int verbose) {
+                                       const double max_map_update_send_size_mb, int verbose) {
 
   if(shell->state != shell_current)error("Attempt to flush updates for non-current shell!");
   
