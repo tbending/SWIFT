@@ -193,6 +193,22 @@ struct lightcone_black_hole_data {
   float vel[3];
   float mass;
   float a;
+#ifdef BLACK_HOLES_EAGLE
+  float subgrid_mass;
+  float formation_scale_factor;
+  float accretion_rate;
+  float total_accreted_mass;
+  float last_minor_merger_scale_factor;
+  float last_major_merger_scale_factor;
+  int number_of_mergers;
+  float last_AGN_event_scale_factor;
+  int AGN_number_of_AGN_events;
+  int AGN_number_of_energy_injections;
+  float last_high_Eddington_fraction_scale_factor;
+#ifdef WITH_FOF
+  long long group_id;
+#endif
+#endif
 };
 
 int lightcone_store_black_hole(const struct engine *e,

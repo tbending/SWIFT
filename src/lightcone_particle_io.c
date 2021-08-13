@@ -36,6 +36,7 @@
 #include "lightcone.h"
 #include "particle_buffer.h"
 #include "stars.h"
+#include "black_holes.h"
 #include "engine.h"
 
 
@@ -203,8 +204,24 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
   lightcone_io_field_list_append(list, "ParticleIDs",     LONGLONG, 1, OFFSET(id),   UNIT_CONV_NO_UNITS, 0.0, "Nbit40");
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
-  lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
+  lightcone_io_field_list_append(list, "DynamicalMasses", FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
   lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+#ifdef BLACK_HOLES_EAGLE
+  lightcone_io_field_list_append(list, "SubgridMasses",         FLOAT, 1, OFFSET(subgrid_mass), UNIT_CONV_MASS, 0.0, "on");
+  lightcone_io_field_list_append(list, "FormationScaleFactors", FLOAT, 1, OFFSET(formation_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "AccretionRates",        FLOAT, 1, OFFSET(accretion_rate), UNIT_CONV_MASS_PER_UNIT_TIME, 0.0, "on");
+  lightcone_io_field_list_append(list, "TotalAccretedMasses",   FLOAT, 1, OFFSET(total_accreted_mass), UNIT_CONV_MASS, 0.0, "on");
+  lightcone_io_field_list_append(list, "LastMinorMergerScaleFactors", FLOAT, 1, OFFSET(last_minor_merger_scale_factor),  UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "LastMajorMergerScaleFactors", FLOAT, 1, OFFSET(last_major_merger_scale_factor),  UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "NumberOfMergers",             INT,   1, OFFSET(number_of_mergers),               UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_event_scale_factor),     UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "NumberOfAGNEvents",           INT,   1, OFFSET(AGN_number_of_AGN_events),        UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "NumberOfHeatingEvents",       INT,   1, OFFSET(AGN_number_of_energy_injections), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "LastHighEddingtonFractionScaleFactors", FLOAT, 1, OFFSET(last_high_Eddington_fraction_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "on");
+#ifdef WITH_FOF
+  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
+#endif
+#endif
 #undef OFFSET
 }
 
@@ -416,7 +433,22 @@ int lightcone_store_black_hole(const struct engine *e,
   data->vel[2] = bp->v[2] / a_cross;
   data->mass = bp->mass;
   data->a = a_cross;
-
+#ifdef BLACK_HOLES_EAGLE
+  data->subgrid_mass = bp->subgrid_mass;
+  data->formation_scale_factor = bp->formation_scale_factor;
+  data->accretion_rate = bp->accretion_rate;
+  data->total_accreted_mass = bp->total_accreted_mass;
+  data->last_minor_merger_scale_factor = bp->last_minor_merger_scale_factor;
+  data->last_major_merger_scale_factor = bp->last_major_merger_scale_factor;
+  data->number_of_mergers = bp->number_of_mergers;
+  data->last_AGN_event_scale_factor = bp->last_AGN_event_scale_factor;
+  data->AGN_number_of_AGN_events = bp->AGN_number_of_AGN_events;
+  data->AGN_number_of_energy_injections = bp->AGN_number_of_energy_injections;
+  data->last_high_Eddington_fraction_scale_factor = bp->last_high_Eddington_fraction_scale_factor;
+#ifdef WITH_FOF
+  data->group_id = (long long) gp->fof_data.group_id;
+#endif
+#endif
   return 1;
 }
 
