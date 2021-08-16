@@ -42,6 +42,7 @@
 #include "restart.h"
 #include "space.h"
 #include "timeline.h"
+#include "tools.h"
 
 
 /**
@@ -58,7 +59,7 @@ void lightcone_array_init(struct lightcone_array_props *props,
   props->nr_lightcones = 0;
   for(int lightcone_nr=0; lightcone_nr<=MAX_LIGHTCONES; lightcone_nr+=1) {
     char name[PARSER_MAX_LINE_SIZE];
-    snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d:enabled", props->nr_lightcones);
+    check_snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d:enabled", props->nr_lightcones);
     if(parser_get_opt_param_int(params, name, 0)) {      
       props->nr_lightcones += 1;
     }
@@ -75,9 +76,9 @@ void lightcone_array_init(struct lightcone_array_props *props,
   props->nr_lightcones = 0;
   for(int lightcone_nr=0; lightcone_nr<=MAX_LIGHTCONES; lightcone_nr+=1) {
     char name[PARSER_MAX_LINE_SIZE];
-    snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d:enabled", props->nr_lightcones);
+    check_snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d:enabled", props->nr_lightcones);
     if(parser_get_opt_param_int(params, name, 0)) {      
-      snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d", props->nr_lightcones);
+      check_snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d", props->nr_lightcones);
       lightcone_init(props->lightcone+lightcone_nr,
                      lightcone_nr, s, cosmo, params, verbose);
       props->nr_lightcones += 1;

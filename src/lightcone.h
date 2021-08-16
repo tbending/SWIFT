@@ -56,6 +56,12 @@ struct lightcone_props {
   /*! Which particle types we're doing */
   int use_type[swift_type_count];
 
+  /*! Minimum redshift for each type */
+  double z_min_for_type[swift_type_count];
+
+  /*! Maximum redshift for each type */
+  double z_max_for_type[swift_type_count];
+
   /*! Output base name */
   char basename[PARSER_MAX_LINE_SIZE];
 
@@ -65,11 +71,8 @@ struct lightcone_props {
   /*! Position of the observer in the simulation box */
   double observer_position[3];
 
-  /*! Redshift range in which we will output particles */
-  double z_min_for_particles, z_max_for_particles;
-
-  /*! Range in distance squared in which we output particles */
-  double r2_min_for_particles, r2_max_for_particles;
+  /*! Range in distance squared in which we output particles of each type */
+  double r2_min_for_type[swift_type_count], r2_max_for_type[swift_type_count];
 
   /*! Range in expansion factor covered by particle outputs and healpix maps */
   double a_min, a_max;

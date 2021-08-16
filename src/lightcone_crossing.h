@@ -218,8 +218,8 @@ __attribute__((always_inline)) INLINE static void lightcone_check_particle_cross
       const double a_cross = cosmology_scale_factor_at_comoving_distance(c, sqrt(r2_cross));
       
       /* Add this particle to the particle output buffer if it's in the redshift range */
-      if(r2_cross >= props->r2_min_for_particles &&
-         r2_cross <= props->r2_max_for_particles &&
+      if(r2_cross >= props->r2_min_for_type[gp->type] &&
+         r2_cross <= props->r2_max_for_type[gp->type] &&
          props->use_type[gp->type])
         lightcone_buffer_particle(props, e, gp, a_cross, x_cross);
 

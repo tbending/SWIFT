@@ -333,31 +333,18 @@ static char *find_parameter(struct swift_params *params,
                             char *outbuf) {
   
   char full_name[PARSER_MAX_LINE_SIZE];
-  int len;
 
   /* Check section specific to this lightcone */
-  len = snprintf(full_name, PARSER_MAX_LINE_SIZE, "Lightcone%d:%s", index, name);
-  if((len < 0) || (len >= PARSER_MAX_LINE_SIZE))
-    error("Failed to generate parameter name");
+  check_snprintf(full_name, PARSER_MAX_LINE_SIZE, "Lightcone%d:%s", index, name);
   if(parser_does_param_exist(params, full_name)) {
     strcpy(outbuf, full_name);
     return outbuf;
   }
 
-  /* Check LightconeCommon section if parameter was not found */
-  len = snprintf(full_name, PARSER_MAX_LINE_SIZE, "LightconeCommon:%s", name);
-  if((len < 0) || (len >= PARSER_MAX_LINE_SIZE))
-    error("Failed to generate parameter name");
-  if(parser_does_param_exist(params, full_name)) {
-    strcpy(outbuf, full_name);
-    return outbuf;
-  }
-  
-  /* If we can't find the parameter, complain! */
-  error("Unable to find parameter %s in Lightcone%d or LightconeCommon groups",
-        name, index);
-
-  return NULL;
+  /* Will look in LightconeCommon section if parameter was not found */
+  check_snprintf(full_name, PARSER_MAX_LINE_SIZE, "LightconeCommon:%s", name);
+  strcpy(outbuf, full_name);
+  return outbuf;  
 }
 
 
@@ -389,31 +376,46 @@ void lightcone_init(struct lightcone_props *props,
   /* Define output quantities */
   lightcone_define_output_fields(props);
 
-  /* Which particle types we should write out particle data for */
-  for(int i=0; i<swift_type_count; i+=1)
-    props->use_type[i] = 0;
-  props->use_type[swift_type_gas] = parser_get_param_int(params, YML_NAME("use_gas"));
-  props->use_type[swift_type_dark_matter] = parser_get_param_int(params, YML_NAME("use_dm"));
-  props->use_type[swift_type_dark_matter_background] = parser_get_param_int(params, YML_NAME("use_dm_background"));
-  props->use_type[swift_type_stars] = parser_get_param_int(params, YML_NAME("use_stars"));
-  props->use_type[swift_type_black_hole] = parser_get_param_int(params, YML_NAME("use_black_hole"));
-  props->use_type[swift_type_neutrino] = parser_get_param_int(params, YML_NAME("use_neutrino"));
+  /* For each particle type, get redshift range for lightcone particle output */
+  for(int i=0; i<swift_type_count; i+=1) {
+    const int len = PARSER_MAX_LINE_SIZE;
+    char param_name[len];
+    double zrange[2] = {0.0, -1.0}; /* default max < min means do not output */
+    check_snprintf(param_name, len, "z_range_for_%s", part_type_names[i]);
+    parser_get_opt_param_double_array(params, YML_NAME(param_name), 2, zrange);
+    props->z_min_for_type[i] = zrange[0];
+    props->z_max_for_type[i] = zrange[1];
+    /* Will only output types with z_max > z_min */
+    props->use_type[i] = props->z_max_for_type[i] > props->z_min_for_type[i];
+    if(engine_rank == 0 && verbose) {
+      if(props->use_type[i]) {
+        message("lightcone %d: %s particles will be output from z=%f to z=%f",
+                props->index, part_type_names[i], zrange[0], zrange[1]);
+      } else {
+        message("lightcone %d: %s particle output is disabled", props->index,
+                part_type_names[i]);
+      }
+    }
+  }
+  
+  /* For each type, find range in comoving distance squared in which we output particles */
+  for(int i=0; i<swift_type_count; i+=1) {
+    if(props->use_type[i]) {
+      const double a_min = 1.0/(1.0+props->z_max_for_type[i]);
+      props->r2_max_for_type[i] = pow(cosmology_get_comoving_distance(cosmo, a_min), 2.0);
+      const double a_max = 1.0/(1.0+props->z_min_for_type[i]);
+      props->r2_min_for_type[i] = pow(cosmology_get_comoving_distance(cosmo, a_max), 2.0);
+    } else {
+      props->r2_min_for_type[i] = 0.0;
+      props->r2_max_for_type[i] = 0.0;
+    }
+  }
 
   /* Directory in which to write this lightcone */
   parser_get_opt_param_string(params, YML_NAME("subdir"), props->subdir, ".");
 
   /* Base name for output files */
   parser_get_param_string(params, YML_NAME("basename"), props->basename);
-
-  /* Redshift range for particle output */
-  props->z_min_for_particles = parser_get_param_double(params, YML_NAME("z_min_for_particles"));
-  props->z_max_for_particles = parser_get_param_double(params, YML_NAME("z_max_for_particles"));
-
-  /* Corresponding range in comoving distance squared */
-  const double a_min_for_particles = 1.0/(1.0+props->z_max_for_particles);
-  props->r2_max_for_particles = pow(cosmology_get_comoving_distance(cosmo, a_min_for_particles), 2.0);
-  const double a_max_for_particles = 1.0/(1.0+props->z_min_for_particles);
-  props->r2_min_for_particles = pow(cosmology_get_comoving_distance(cosmo, a_max_for_particles), 2.0);
 
   /* Coordinates of the observer in the simulation box */
   parser_get_param_double_array(params, YML_NAME("observer_position"), 3,
@@ -554,10 +556,18 @@ void lightcone_init(struct lightcone_props *props,
   if(engine_rank==0)message("lightcone %d: there are %d lightcone shells and %d maps per shell",
                             index, nr_shells, nr_maps);
 
-  /* Determine full redshift range to search for lightcone crossings.
-     Find range in expansion factor for particle output. */
-  double a_min = 1.0/(1.0+props->z_max_for_particles);
-  double a_max = 1.0/(1.0+props->z_min_for_particles);
+  /* Determine the full redshift range to search for lightcone crossings */
+  double a_min = DBL_MAX;
+  double a_max = 0.0;
+  /* First check redshift range for each particle type */
+  for(int i=0; i<swift_type_count; i+=1) {
+    if(props->use_type[i]) {
+      const double a_min_for_type = 1.0/(1.0+props->z_max_for_type[i]);
+      const double a_max_for_type = 1.0/(1.0+props->z_min_for_type[i]);
+      if(a_min_for_type < a_min)a_min = a_min_for_type;
+      if(a_max_for_type > a_max)a_max = a_max_for_type;
+    }
+  }
   /* Then extend the range to include all healpix map shells */
   for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
     const double shell_a_min = props->shell[shell_nr].amin;
@@ -577,41 +587,16 @@ void lightcone_init(struct lightcone_props *props,
   /* Allocate lightcone output buffers */
   lightcone_allocate_buffers(props);
 
-  /* Estimate number of particles which will be output.
-     
-     Assumptions:
-     - flat cosmology (haven't implemented comoving volume calculation for non-flat)
-     - uniform box
-  */
-  const long long nr_gparts = s->nr_gparts;
-  long long total_nr_gparts;
-#ifdef WITH_MPI
-  MPI_Reduce(&nr_gparts, &total_nr_gparts, 1, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-#else
-  total_nr_gparts = nr_gparts;
-#endif
-  if(engine_rank==0) {
-    const double lightcone_rmax = cosmology_get_comoving_distance(cosmo, a_min_for_particles);
-    const double lightcone_rmin = cosmology_get_comoving_distance(cosmo, a_max_for_particles);
-    const double volume = 4./3.*M_PI*(pow(lightcone_rmax, 3.)-pow(lightcone_rmin, 3.));
-    const long long est_nr_output = total_nr_gparts / pow(props->boxsize, 3.0) * volume;
-    message("lightcone %d: comoving distance to max. particle redshift: %e", index, lightcone_rmax);
-    message("lightcone %d: gparts in lightcone (if uniform box+flat cosmology): %lld", index, est_nr_output);
-  }
-
   /* Ensure that the output directories exist */
   if(engine_rank==0) {
     const int len = FILENAME_BUFFER_SIZE;
     char dirname[len];
-    int ret;
     safe_checkdir(props->subdir, 1);
     /* Directory for particle outputs */
-    ret = snprintf(dirname, len, "%s/%s_particles", props->subdir, props->basename);
-    if((ret < 0) || (ret >= len))error("Lightcone particle directory name truncation or output error");
+    check_snprintf(dirname, len, "%s/%s_particles", props->subdir, props->basename);
     safe_checkdir(dirname, 1);
     /* Directory for shell outputs */
-    ret = snprintf(dirname, len, "%s/%s_shells", props->subdir, props->basename);
-    if((ret < 0) || (ret >= len))error("Lightcone shell directory name truncation or output error");
+    check_snprintf(dirname, len, "%s/%s_shells", props->subdir, props->basename);
     safe_checkdir(dirname, 1);
   }
 #ifdef WITH_MPI
@@ -624,8 +609,7 @@ void lightcone_init(struct lightcone_props *props,
 static void particle_file_name(char *buf, int len, char *subdir, char *basename,
                                int current_file, int comm_rank) {
   
-  int ret = snprintf(buf, len, "%s/%s_particles/%s_%04d.%d.hdf5", subdir, basename, basename, current_file, comm_rank);
-  if((ret < 0) || (ret >= len))error("Lightcone particle file name truncation or output error");
+  check_snprintf(buf, len, "%s/%s_particles/%s_%04d.%d.hdf5", subdir, basename, basename, current_file, comm_rank);
 }
 
 
@@ -678,7 +662,7 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
       for(int ptype=0; ptype<swift_type_count; ptype+=1)
         props->num_particles_written_to_file[ptype] = 0;    
 
-      /* Write the system of Units used in the spashot */
+      /* Write the system of Units used in the snapshot */
       io_write_unit_system(file_id, snapshot_units, "Units");
 
       /* Write the system of Units used internally */
@@ -689,8 +673,14 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
                                   H5P_DEFAULT, H5P_DEFAULT);
       io_write_attribute(group_id, "observer_position", DOUBLE,
                          props->observer_position, 3);
-      io_write_attribute_d(group_id, "minimum_redshift", props->z_min_for_particles);
-      io_write_attribute_d(group_id, "maximum_redshift", props->z_max_for_particles);
+
+      for(int ptype=0; ptype<swift_type_count; ptype +=1) {
+        char name[PARSER_MAX_LINE_SIZE];
+        check_snprintf(name, PARSER_MAX_LINE_SIZE, "minimum_redshift_%s", part_type_names[ptype]);
+        io_write_attribute_d(group_id, name, props->z_min_for_type[ptype]);
+        check_snprintf(name, PARSER_MAX_LINE_SIZE, "maximum_redshift_%s", part_type_names[ptype]);
+        io_write_attribute_d(group_id, name, props->z_max_for_type[ptype]);
+      }
 
       /* Record number of MPI ranks so we know how many files there are */
       int comm_rank = 0;
@@ -832,10 +822,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
 
         /* Ensure output directory exists */
         char fname[FILENAME_BUFFER_SIZE];
-        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d",
-                           props->subdir, props->basename, shell_nr);
-        if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
-          error("Lightcone map output directory name truncation or output error");
+        check_snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d",
+                       props->subdir, props->basename, shell_nr);
         if(engine_rank==0)safe_checkdir(fname, 1);
 #ifdef WITH_MPI
         MPI_Barrier(MPI_COMM_WORLD);
@@ -845,10 +833,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
            In collective mode all ranks get the same file name.
            In distributed mode we include engine_rank in the file name. */
         int file_num = props->distributed_maps ? engine_rank : 0;
-        len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d/%s.shell_%d.%d.hdf5",
+        check_snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d/%s.shell_%d.%d.hdf5",
                        props->subdir, props->basename, shell_nr, props->basename, shell_nr, file_num);
-        if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
-          error("Lightcone map output filename truncation or output error");
         
         /* Create the output file for this shell */
         hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
@@ -871,7 +857,7 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
         if(file_id < 0)error("Unable to create file %s", fname);
 
-        /* Write the system of Units used in the spashot */
+        /* Write the system of Units used in the snapshot */
         io_write_unit_system(file_id, snapshot_units, "Units");
 
         /* Write the system of Units used internally */
@@ -1396,8 +1382,7 @@ void lightcone_write_index(struct lightcone_props *props) {
 
     /* Get the name of the index file */
     char fname[FILENAME_BUFFER_SIZE];
-    int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_index.hdf5", props->subdir, props->basename);
-    if((len < 0) || (len >= FILENAME_BUFFER_SIZE))error("Failed to generate lightcone index filename");
+    check_snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_index.hdf5", props->subdir, props->basename);
 
     /* Create the file */
     hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -1416,8 +1401,13 @@ void lightcone_write_index(struct lightcone_props *props) {
     /* Write observer position and redshift limits */
     io_write_attribute(group_id, "observer_position", DOUBLE,
                        props->observer_position, 3);
-    io_write_attribute_d(group_id, "minimum_redshift", props->z_min_for_particles);
-    io_write_attribute_d(group_id, "maximum_redshift", props->z_max_for_particles);
+    for(int ptype=0; ptype<swift_type_count; ptype +=1) {
+      char name[PARSER_MAX_LINE_SIZE];
+      check_snprintf(name, PARSER_MAX_LINE_SIZE, "minimum_redshift_%s", part_type_names[ptype]);
+      io_write_attribute_d(group_id, name, props->z_min_for_type[ptype]);
+      check_snprintf(name, PARSER_MAX_LINE_SIZE, "maximum_redshift_%s", part_type_names[ptype]);
+      io_write_attribute_d(group_id, name, props->z_max_for_type[ptype]);
+    }
 
     /* Write the number of shells and their radii */
     const int nr_shells = props->nr_shells;
