@@ -49,6 +49,7 @@
 #include "restart.h"
 #include "space.h"
 #include "timeline.h"
+#include "tools.h"
 
 /* Whether to dump the replication list */
 //#define DUMP_REPLICATIONS
@@ -398,6 +399,9 @@ void lightcone_init(struct lightcone_props *props,
   props->use_type[swift_type_black_hole] = parser_get_param_int(params, YML_NAME("use_black_hole"));
   props->use_type[swift_type_neutrino] = parser_get_param_int(params, YML_NAME("use_neutrino"));
 
+  /* Directory in which to write this lightcone */
+  parser_get_opt_param_string(params, YML_NAME("subdir"), props->subdir, ".");
+
   /* Base name for output files */
   parser_get_param_string(params, YML_NAME("basename"), props->basename);
 
@@ -595,13 +599,32 @@ void lightcone_init(struct lightcone_props *props,
     message("lightcone %d: gparts in lightcone (if uniform box+flat cosmology): %lld", index, est_nr_output);
   }
 
+  /* Ensure that the output directories exist */
+  if(engine_rank==0) {
+    const int len = FILENAME_BUFFER_SIZE;
+    char dirname[len];
+    int ret;
+    safe_checkdir(props->subdir, 1);
+    /* Directory for particle outputs */
+    ret = snprintf(dirname, len, "%s/%s_particles", props->subdir, props->basename);
+    if((ret < 0) || (ret >= len))error("Lightcone particle directory name truncation or output error");
+    safe_checkdir(dirname, 1);
+    /* Directory for shell outputs */
+    ret = snprintf(dirname, len, "%s/%s_shells", props->subdir, props->basename);
+    if((ret < 0) || (ret >= len))error("Lightcone shell directory name truncation or output error");
+    safe_checkdir(dirname, 1);
+  }
+#ifdef WITH_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
 }
 
 
-static void particle_file_name(char *buf, int len, char *basename,
+static void particle_file_name(char *buf, int len, char *subdir, char *basename,
                                int current_file, int comm_rank) {
   
-  int ret = snprintf(buf, len, "%s_%04d.%d.hdf5", basename, current_file, comm_rank);
+  int ret = snprintf(buf, len, "%s/%s_particles/%s_%04d.%d.hdf5", subdir, basename, basename, current_file, comm_rank);
   if((ret < 0) || (ret >= len))error("Lightcone particle file name truncation or output error");
 }
 
@@ -644,8 +667,8 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
 
       /* Get the name of the next file */
       props->current_file += 1;
-      particle_file_name(fname, FILENAME_BUFFER_SIZE, props->basename,
-                         props->current_file, engine_rank);
+      particle_file_name(fname, FILENAME_BUFFER_SIZE, props->subdir,
+                         props->basename, props->current_file, engine_rank);
 
       /* Create the file */
       file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -688,8 +711,8 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
     } else {
 
       /* Re-open an existing file */
-      particle_file_name(fname, FILENAME_BUFFER_SIZE, props->basename,
-                         props->current_file, engine_rank);
+      particle_file_name(fname, FILENAME_BUFFER_SIZE, props->subdir,
+                         props->basename, props->current_file, engine_rank);
       file_id = H5Fopen(fname, H5F_ACC_RDWR, H5P_DEFAULT);
       if(file_id < 0)error("Unable to open current lightcone file: %s", fname);
 
@@ -812,8 +835,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
            In distributed mode we include engine_rank in the file name. */
         char fname[FILENAME_BUFFER_SIZE];
         int file_num = props->distributed_maps ? engine_rank : 0;
-        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s.shell_%d.%d.hdf5",
-                           props->basename, shell_nr, file_num);
+        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/%s.shell_%d.%d.hdf5",
+                           props->subdir, props->basename, props->basename, shell_nr, file_num);
         if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
           error("Lightcone map output filename truncation or output error");
         
@@ -1363,7 +1386,7 @@ void lightcone_write_index(struct lightcone_props *props) {
 
     /* Get the name of the index file */
     char fname[FILENAME_BUFFER_SIZE];
-    int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s_index.hdf5", props->basename);
+    int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_index.hdf5", props->subdir, props->basename);
     if((len < 0) || (len >= FILENAME_BUFFER_SIZE))error("Failed to generate lightcone index filename");
 
     /* Create the file */

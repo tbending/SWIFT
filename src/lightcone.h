@@ -59,6 +59,9 @@ struct lightcone_props {
   /*! Output base name */
   char basename[PARSER_MAX_LINE_SIZE];
 
+  /*! Output directory */
+  char subdir[PARSER_MAX_LINE_SIZE];
+
   /*! Position of the observer in the simulation box */
   double observer_position[3];
 
