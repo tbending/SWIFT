@@ -830,13 +830,23 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         for(int map_nr=0; map_nr<nr_maps; map_nr+=1)
           lightcone_map_set_baseline(c, props, &(props->shell[shell_nr].map[map_nr]));
 
+        /* Ensure output directory exists */
+        char fname[FILENAME_BUFFER_SIZE];
+        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d",
+                           props->subdir, props->basename, shell_nr);
+        if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
+          error("Lightcone map output directory name truncation or output error");
+        if(engine_rank==0)safe_checkdir(fname, 1);
+#ifdef WITH_MPI
+        MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
         /* Get the name of the file to write:
            In collective mode all ranks get the same file name.
            In distributed mode we include engine_rank in the file name. */
-        char fname[FILENAME_BUFFER_SIZE];
         int file_num = props->distributed_maps ? engine_rank : 0;
-        int len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/%s.shell_%d.%d.hdf5",
-                           props->subdir, props->basename, props->basename, shell_nr, file_num);
+        len = snprintf(fname, FILENAME_BUFFER_SIZE, "%s/%s_shells/shell_%d/%s.shell_%d.%d.hdf5",
+                       props->subdir, props->basename, shell_nr, props->basename, shell_nr, file_num);
         if((len < 0) || (len >= FILENAME_BUFFER_SIZE))
           error("Lightcone map output filename truncation or output error");
         
