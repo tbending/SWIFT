@@ -41,6 +41,7 @@ SPH:
 
 # Parameters governing the snapshots
 Snapshots:
+  subdir:              snapshots
   basename:            snap
   delta_time:          1.02
   scale_factor_first:  0.02
@@ -146,3 +147,45 @@ GEARFeedback:
   supernovae_energy_erg: 0.1e51                            # Energy released by a single supernovae.
   yields_table: chemistry-AGB+OMgSFeZnSrYBaEu-16072013.h5  # Table containing the yields.
   discrete_yields: 0                                       # Should we use discrete yields or the IMF integrated one?
+
+
+LightconeCommon:
+
+  subdir:            lightcones
+  buffer_chunk_size: 1000
+
+  # Particle output parameters
+  z_range_for_DM:  [0.0, 0.05]
+  z_range_for_Gas: [0.0, 0.05]
+  max_particles_buffered: 10000
+  hdf5_chunk_size:        10000
+
+  # Healpix map parameters
+  nside:                512
+  radius_file:          ./shell_redshifts.txt
+  max_map_update_send_size_mb: 1.0
+  max_updates_buffered: 100000
+  map_names_file:       ./map_types.txt
+
+  # Whether each rank should write a separate file for the healpix maps
+  distributed_maps:   1
+
+  # Compression options
+  particles_lossy_compression: 0
+  particles_gzip_level:        6
+  maps_gzip_level:             6
+
+Lightcone0:
+  enabled: 1
+  basename: lightcone0
+  observer_position: [35.561875, 35.561875, 35.561875]
+
+Lightcone1:
+  enabled: 1
+  basename: lightcone1
+  observer_position: [35.561875, 35.561875, 35.561875]
+  gas_filtering_enabled:      1
+  min_z_for_gas_filtering:    0.025  # Filter gas particles above this redshift, output all below
+  min_temp_for_filtered_gas:  1.0e5  # Above min_z_for_high_z_gas only output gas with temperature above this
+  min_nh_for_filtered_gas:    1.0e-6 # Above min_z_for_high_z_gas only output gas with nh/(1+z)^4 above this
+
