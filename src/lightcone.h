@@ -62,6 +62,21 @@ struct lightcone_props {
   /*! Maximum redshift for each type */
   double z_max_for_type[swift_type_count];
 
+  /*! Enable selective output of high redshift gas */
+  int gas_filtering_enabled;
+
+  /*! Will output all gas below this redshift */
+  double min_z_for_gas_filtering;
+
+  /*! Will output all gas after this scale factor */
+  double max_a_for_gas_filtering;
+
+  /*! At z>min_z_for_gas_filtering require gas T>min_temp_for_high_z_gas */
+  double min_temp_for_filtered_gas;
+  
+  /*! At z>min_z_for_gas_filtering require gas nh>min_nh_for_filtered_gas*(1+z)^4 */
+  double min_nh_for_filtered_gas;
+
   /*! Output base name */
   char basename[PARSER_MAX_LINE_SIZE];
 

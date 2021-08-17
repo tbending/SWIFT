@@ -267,9 +267,33 @@ void lightcone_io_append_neutrino_output_fields(struct lightcone_io_field_list *
  * @param the #lightcone_gas_data struct to update
  */
 int lightcone_store_gas(const struct engine *e,
+                        struct lightcone_props *props,
                         const struct gpart *gp, const struct part *p,
                         const struct xpart *xp, const double a_cross,
                         const double x_cross[3], struct lightcone_gas_data *data) {
+
+  /*! Check if we're filtering gas particles */
+  if(props->gas_filtering_enabled) {
+    if(a_cross < props->max_a_for_gas_filtering) {
+
+      /* Check hydrogen number density of this particle */
+#ifdef CHEMISTRY_EAGLE
+      const double density = p->rho;
+      const double proton_mass = e->physical_constants->const_proton_mass;
+      const double hydrogen_fraction = p->chemistry_data.metal_mass_fraction[chemistry_element_H];
+      const double nh = density*hydrogen_fraction/proton_mass;
+      if(nh < props->min_nh_for_filtered_gas*pow(a_cross, -4.0))return 0;
+#else
+      error("Lightcone gas particle filtering is only implemented for EAGLE chemistry");
+#endif
+      /* Check temperature of this particle */
+      const double T = cooling_get_temperature(e->physical_constants, e->hydro_properties,
+                                               e->internal_units, e->cosmology,
+                                               e->cooling_func, p, xp);
+      if(T < props->min_temp_for_filtered_gas)return 0;
+    }
+  }
+
   data->id = p->id;
   data->x[0] = x_cross[0];
   data->x[1] = x_cross[1];
@@ -284,7 +308,6 @@ int lightcone_store_gas(const struct engine *e,
   data->temperature = cooling_get_temperature(e->physical_constants, e->hydro_properties,
                                               e->internal_units, e->cosmology,
                                               e->cooling_func, p, xp);
-
 #ifdef WITH_FOF
   data->group_id = (long long) gp->fof_data.group_id;
 #endif
@@ -333,6 +356,7 @@ int lightcone_store_gas(const struct engine *e,
  * @param the #lightcone_dark_matter_data struct to update
  */
 int lightcone_store_dark_matter(const struct engine *e,
+                                struct lightcone_props *props,
                                 const struct gpart *gp, const double a_cross, 
                                 const double x_cross[3],
                                 struct lightcone_dark_matter_data *data) {
@@ -365,6 +389,7 @@ int lightcone_store_dark_matter(const struct engine *e,
  * @param the #lightcone_stars_data struct to update
  */
 int lightcone_store_stars(const struct engine *e,
+                          struct lightcone_props *props,
                           const struct gpart *gp, const struct spart *sp,
                           const double a_cross, const double x_cross[3],
                           struct lightcone_stars_data *data) {
@@ -421,6 +446,7 @@ int lightcone_store_stars(const struct engine *e,
  * @param the #lightcone_black_hole_data struct to update
  */
 int lightcone_store_black_hole(const struct engine *e,
+                               struct lightcone_props *props,
                                const struct gpart *gp, const struct bpart *bp,
                                const double a_cross, const double x_cross[3],
                                struct lightcone_black_hole_data *data) {
@@ -467,6 +493,7 @@ int lightcone_store_black_hole(const struct engine *e,
  * @param the #lightcone_neutrino_data struct to update
  */
 int lightcone_store_neutrino(const struct engine *e,
+                             struct lightcone_props *props,                            
                              const struct gpart *gp, const double a_cross,
                              const double x_cross[3], struct lightcone_neutrino_data *data) {
   data->id = gp->id_or_neg_offset;

@@ -411,6 +411,19 @@ void lightcone_init(struct lightcone_props *props,
     }
   }
 
+  /*
+    Allow selective output of gas particles at high redshift.
+    Will output gas particles if redshift < min_z_for_gas_filtering OR
+    (temperature > min_temp_for_filtered_gas AND nh > min_nh_for_filtered_gas*(1+z)^4)
+  */
+  props->gas_filtering_enabled = parser_get_opt_param_int(params, YML_NAME("gas_filtering_enabled"), 0);
+  if(props->gas_filtering_enabled) {
+    props->min_z_for_gas_filtering = parser_get_param_double(params, YML_NAME("min_z_for_gas_filtering"));
+    props->min_temp_for_filtered_gas = parser_get_param_double(params, YML_NAME("min_temp_for_filtered_gas"));
+    props->min_nh_for_filtered_gas = parser_get_param_double(params, YML_NAME("min_nh_for_filtered_gas"));
+    props->max_a_for_gas_filtering = 1.0/(1.0+props->min_z_for_gas_filtering);
+  }
+
   /* Directory in which to write this lightcone */
   parser_get_opt_param_string(params, YML_NAME("subdir"), props->subdir, ".");
 
@@ -1169,7 +1182,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
     struct lightcone_gas_data data;
-    if(lightcone_store_gas(e, gp, p, xp, a_cross, x_cross, &data))
+    if(lightcone_store_gas(e, props, gp, p, xp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_gas, &data);
  
   } break;
@@ -1178,7 +1191,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
     
     const struct spart *sp = &sparts[-gp->id_or_neg_offset];
     struct lightcone_stars_data data;
-    if(lightcone_store_stars(e, gp, sp, a_cross, x_cross, &data))
+    if(lightcone_store_stars(e, props, gp, sp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_stars, &data);
 
   } break;
@@ -1187,7 +1200,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
       
     const struct bpart *bp = &bparts[-gp->id_or_neg_offset];
     struct lightcone_black_hole_data data;
-    if(lightcone_store_black_hole(e, gp, bp, a_cross, x_cross, &data))
+    if(lightcone_store_black_hole(e, props, gp, bp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_black_hole, &data);
 
   } break;
@@ -1195,7 +1208,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
   case swift_type_dark_matter: {
 
     struct lightcone_dark_matter_data data;
-    if(lightcone_store_dark_matter(e, gp, a_cross, x_cross, &data))
+    if(lightcone_store_dark_matter(e, props, gp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_dark_matter, &data);
     
   } break;
@@ -1204,7 +1217,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
 
     /* Assumed to have same properties as DM particles */
     struct lightcone_dark_matter_data data;
-    if(lightcone_store_dark_matter(e, gp, a_cross, x_cross, &data))
+    if(lightcone_store_dark_matter(e, props, gp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_dark_matter_background, &data);
     
   } break;
@@ -1212,7 +1225,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
   case swift_type_neutrino: {
 
     struct lightcone_neutrino_data data;
-    if(lightcone_store_neutrino(e, gp, a_cross, x_cross, &data))
+    if(lightcone_store_neutrino(e, props, gp, a_cross, x_cross, &data))
       particle_buffer_append(props->buffer+swift_type_neutrino, &data);
 
   } break;
