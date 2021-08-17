@@ -1303,7 +1303,7 @@ int main(int argc, char *argv[]) {
     bzero(&lightcone_array_properties, sizeof(struct lightcone_array_props));
 #ifdef WITH_LIGHTCONE
     if (with_lightcone)
-      lightcone_array_init(&lightcone_array_properties, &s, &cosmo, params, verbose);
+      lightcone_array_init(&lightcone_array_properties, &s, &cosmo, params, &us, verbose);
     else
       lightcone_array_properties.nr_lightcones = 0;
 #endif

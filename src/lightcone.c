@@ -50,6 +50,7 @@
 #include "space.h"
 #include "timeline.h"
 #include "tools.h"
+#include "units.h"
 
 /* Whether to dump the replication list */
 //#define DUMP_REPLICATIONS
@@ -361,6 +362,7 @@ void lightcone_init(struct lightcone_props *props,
                     const int index, const struct space *s,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
+                    const struct unit_system *internal_units,
                     const int verbose) {
   
   /* Macro to generate parameter names given section name */
@@ -422,6 +424,9 @@ void lightcone_init(struct lightcone_props *props,
     props->min_temp_for_filtered_gas = parser_get_param_double(params, YML_NAME("min_temp_for_filtered_gas"));
     props->min_nh_for_filtered_gas = parser_get_param_double(params, YML_NAME("min_nh_for_filtered_gas"));
     props->max_a_for_gas_filtering = 1.0/(1.0+props->min_z_for_gas_filtering);
+    /* Convert temperature and density thresholds to internal units, assuming they're input in CGS */
+    props->min_temp_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_TEMPERATURE);
+    props->min_nh_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_NUMBER_DENSITY);
   }
 
   /* Directory in which to write this lightcone */
