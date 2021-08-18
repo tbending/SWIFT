@@ -77,6 +77,9 @@ struct lightcone_props {
   /*! At z>min_z_for_gas_filtering require gas nh>min_nh_for_filtered_gas*(1+z)^4 */
   double min_nh_for_filtered_gas;
 
+  /*! Exclude recently heated gas from xray and sz maps */
+  double xray_maps_recent_AGN_injection_exclusion_time;
+
   /*! Output base name */
   char basename[PARSER_MAX_LINE_SIZE];
 
@@ -196,6 +199,7 @@ void lightcone_init(struct lightcone_props *props,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
                     const struct unit_system *internal_units,
+                    const struct phys_const *physical_constants,
                     const int verbose);
 
 void lightcone_clean(struct lightcone_props *props);

@@ -363,6 +363,7 @@ void lightcone_init(struct lightcone_props *props,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
                     const struct unit_system *internal_units,
+                    const struct phys_const *physical_constants,
                     const int verbose) {
   
   /* Macro to generate parameter names given section name */
@@ -428,6 +429,12 @@ void lightcone_init(struct lightcone_props *props,
     props->min_temp_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_TEMPERATURE);
     props->min_nh_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_NUMBER_DENSITY);
   }
+
+  /* Exclude particles from xray and sz maps if they have been recently AGN heated */
+  props->xray_maps_recent_AGN_injection_exclusion_time =
+    parser_get_opt_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_exclusion_time_myr"), -1.0);
+  /* Assume supplied value is in megayears and physical constants are in internal units */
+  props->xray_maps_recent_AGN_injection_exclusion_time *= 1.0e6*physical_constants->const_year;
 
   /* Directory in which to write this lightcone */
   parser_get_opt_param_string(params, YML_NAME("subdir"), props->subdir, ".");
