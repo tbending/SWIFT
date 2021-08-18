@@ -57,9 +57,8 @@ INLINE static double get_time_since_AGN_injection(const struct xpart *xp, const 
   const double last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
   if(last_AGN_injection_scale_factor < 0.0)return -1.0;
 
-  /* Check for heating after lightcone crossing - can this happen if heated on current time step? */
-  if(last_AGN_injection_scale_factor > a_cross)
-    error("AGN heating after lightcone crossing?");
+  /* Check for heating after lightcone crossing - possible if heated on current time step? */
+  if(last_AGN_injection_scale_factor > a_cross)return 0.0;
 
   /* Find time since the last injection in internal units */
   const double last_AGN_injection_time = cosmology_get_time_since_big_bang(c, last_AGN_injection_scale_factor);
@@ -80,7 +79,7 @@ INLINE static int exclude_particle(const struct lightcone_props *lightcone_props
   /* Check if we need to exclude this particle due to recent AGN heating */
   if(lightcone_props->xray_maps_recent_AGN_injection_exclusion_time > 0) {
     const double t = get_time_since_AGN_injection(xp, e->cosmology, a_cross);
-    if(t > 0 && t < lightcone_props->xray_maps_recent_AGN_injection_exclusion_time){
+    if(t >= 0 && t < lightcone_props->xray_maps_recent_AGN_injection_exclusion_time){
 
       /* Check if it is within the exclusion temperature range */
       const double temp_min = AGN_delta_T * lightcone_props->xray_maps_recent_AGN_min_temp_factor;
