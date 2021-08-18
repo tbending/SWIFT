@@ -292,6 +292,7 @@ Simulations using periodic boundary conditions use additional parameters for the
 Particle-Mesh part of the calculation. The last five are optional:
 
 * The number cells along each axis of the mesh :math:`N`: ``mesh_side_length``,
+* Whether or not to use a distributed mesh when running over MPI: ``distributed_mesh`` (default: ``0``),
 * The mesh smoothing scale in units of the mesh cell-size :math:`a_{\rm
   smooth}`: ``a_smooth`` (default: ``1.25``),
 * The scale above which the short-range forces are assumed to be 0 (in units of
@@ -305,6 +306,18 @@ For most runs, the default values can be used. Only the number of cells along
 each axis needs to be specified. The remaining three values are best described
 in the context of the full set of equations in the theory documents.
 
+By default, SWIFT will replicate the mesh on each MPI rank. This means that a
+single MPI reduction is used to ensure all ranks have a full copy of the density
+field. Each node then solves for the potential in Fourier space independently of
+the others. This is a fast option for small meshes. This technique is limited to
+mesh with sizes :math:`N<1291` due to the limitations of MPI. Larger meshes need
+to use the distributed version of the algorithm. The code then also needs to be
+compiled with ``--enable-mpi-mesh-gravity``. That algorithm is slower for small
+meshes but has no limits on the size of the mesh and truly huge Fourier
+transforms can be performed without any problems. The only limitation is the
+amount of memory on each node. The algorithm will use ``N^3 * 8 * 2 / M`` bytes
+on each of the ``M`` MPI ranks.
+
 As a summary, here are the values used for the EAGLE :math:`100^3~{\rm Mpc}^3`
 simulation:
 
@@ -316,7 +329,8 @@ simulation:
      MAC:                    adaptive
      theta_cr:               0.6
      epsilon_fmm:            0.001
-     mesh_side_length:       512
+     mesh_side_length:       2048
+     distributed_mesh:       0
      comoving_DM_softening:         0.0026994  # 0.7 proper kpc at z=2.8.
      max_physical_DM_softening:     0.0007     # 0.7 proper kpc
      comoving_baryon_softening:     0.0026994  # 0.7 proper kpc at z=2.8.
@@ -824,6 +838,18 @@ time spent deflating and inflating the data.  When compression is switched on
 the SHUFFLE filter is also applied to get higher compression rates. Note that up
 until HDF5 1.10.x this option is not available when using the MPI-parallel
 version of the i/o routines.
+
+When applying lossy compression (see :ref:`Compression_filters`), particles may
+be be getting positions that are marginally beyond the edge of the simulation
+volume. A small vector perpendicular to the edge can be added to the particles
+to alleviate this issue. This can be switched on by setting the parameter
+``use_delta_from_edge`` (default: ``0``) to ``1`` and the buffer size from the
+edge ``delta_from_edge`` (default: ``0.``). An example would be when using
+Mega-parsec as the base unit and using a filter rounding to the nearest 10
+parsec (``DScale5``). Adopting a buffer of 10pc (``delta_from_edge:1e-5``) would
+alleviate any possible issue of seeing particles beyond the simulation volume in
+the snapshots. In all practical applications the shift would be << than the
+softening.
 
 Users can run a program after a snapshot is dumped to disk using the following
 parameters:
