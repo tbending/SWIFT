@@ -70,15 +70,28 @@ INLINE static double get_time_since_AGN_injection(const struct xpart *xp, const 
 }
 
 
-INLINE static int exclude_particle(const struct lightcone_props *lightcone_props,
+INLINE static int exclude_particle(const struct lightcone_props *lightcone_props, const struct part *p,
                                    const struct xpart *xp, const struct cosmology *c,
                                    double a_cross) {
 
   /* Check if we need to exclude this particle due to recent AGN heating */
   if(lightcone_props->xray_maps_recent_AGN_injection_exclusion_time > 0) {
     const double t = get_time_since_AGN_injection(xp, c, a_cross);
-    if(t > 0 && t < lightcone_props->xray_maps_recent_AGN_injection_exclusion_time)
-      return 1;
+    if(t > 0 && t < lightcone_props->xray_maps_recent_AGN_injection_exclusion_time){
+      /* Check if it is within the exclusion temperature range */
+      const double agn_temp = e->black_holes_properties->AGN_delta_T_desired;
+      const double log_agn_temp = log10(agn_temp);
+      const double temp_min = log_agn_temp - lightcone_props->xray_maps_recent_AGN_logdT_min;
+      const double temp_max = log_agn_temp + lightcone_props->xray_maps_recent_AGN_logdT_max;
+
+      const double part_temp = cooling_get_temperature(
+      e->physical_constants, e->hydro_properties, e->internal_units,
+      e->cosmology, e->cooling_func, p, xp);
+      const double log_part_temp = log10(part_temp);
+
+      if (log_part_temp > temp_min && log_part_temp < temp_max)
+        return 1;
+    }
   }
 
   /* Not excluding this particle */
