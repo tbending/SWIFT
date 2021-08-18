@@ -436,6 +436,17 @@ void engine_drift_all(struct engine *e, const int drift_mpoles) {
   if (e->verbose)
     message("took %.3f %s.", clocks_from_ticks(getticks() - tic),
             clocks_getunit());
+
+#ifdef WITH_LIGHTCONE
+  /* Drifting all of the particles can cause many particles to cross
+     the lightcone, so flush buffers now to reduce peak memory use . */
+  lightcone_array_flush(e->lightcone_array_properties,
+                        &e->threadpool, e->cosmology,
+                        e->internal_units, e->snapshot_units,
+                        /*flush_map_updates=*/ 1, /*flush_particles=*/ 1,
+                        /*end_file=*/ 0, /*dump_all_shells=*/ 0);
+#endif
+
 }
 
 /**
