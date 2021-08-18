@@ -25,6 +25,7 @@
 #include "cooling.h"
 #include "cosmology.h"
 #include "engine.h"
+#include "error.h"
 #include "gravity.h"
 #include "hydro.h"
 #include "lightcone_map.h"
@@ -55,6 +56,10 @@ INLINE static double get_time_since_AGN_injection(const struct xpart *xp, const 
   /* Check for the case where there has been no AGN injection yet */
   const double last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
   if(last_AGN_injection_scale_factor < 0.0)return -1.0;
+
+  /* Check for heating after lightcone crossing - can this happen if heated on current time step? */
+  if(last_AGN_injection_scale_factor > a_cross)
+    error("AGN heating after lightcone crossing?");
 
   /* Find time since the last injection in internal units */
   const double last_AGN_injection_time = cosmology_get_time_since_big_bang(c, last_AGN_injection_scale_factor);
