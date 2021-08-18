@@ -439,15 +439,20 @@ void lightcone_init(struct lightcone_props *props,
   /*
     Temperature limits for recently AGN heated gas to be excluded from xray and sz maps.
 
-    Gas is excluded if it has log(temperature) between log(AGN_Delta_T)-xray_maps_recent_AGN_logdT_min
-    and log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_max. Only takes effect if
-    xray_maps_recent_AGN_injection_exclusion_time_myr is set.
+    Gas is excluded if it has log(temperature) which is greater than 
+    log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_min and less than 
+    log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_max.
+    
+    Only takes effect if xray_maps_recent_AGN_injection_exclusion_time_myr is set.
   */
   if(props->xray_maps_recent_AGN_injection_exclusion_time > 0.0) {
-    double xray_maps_recent_AGN_logdT_min = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_min"));
-    props->xray_maps_recent_AGN_min_temp_factor = pow(10.0, -xray_maps_recent_AGN_logdT_min);
-    double xray_maps_recent_AGN_logdT_max = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_max"));
-    props->xray_maps_recent_AGN_max_temp_factor = pow(10.0, xray_maps_recent_AGN_logdT_max);
+    double delta_logt_min = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_delta_logT_min"));
+    if(delta_logt_min > 0.0)error("xray_maps_recent_AGN_injection_delta_logT_min should be negative");
+    props->xray_maps_recent_AGN_min_temp_factor = pow(10.0, delta_logt_min);
+    double delta_logt_max = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_delta_logT_max"));
+    if(delta_logt_max < 0.0)error("xray_maps_recent_AGN_injection_delta_logT_max should be positive");
+    props->xray_maps_recent_AGN_max_temp_factor = pow(10.0, delta_logt_max);
+    if(delta_logt_max < delta_logt_min)error("xray_maps_recent_AGN_injection_delta_logT_max should be greater than _min!");
   }
 
   /* Directory in which to write this lightcone */
