@@ -79,8 +79,12 @@ struct lightcone_props {
 
   /*! Exclude recently heated gas from xray and sz maps */
   double xray_maps_recent_AGN_injection_exclusion_time;
-  double xray_maps_recent_AGN_logdT_min
-  double xray_maps_recent_AGN_logdT_max;
+
+  /*! Don't exclude gas with temperature less than this factor times AGN_delta_T */
+  double xray_maps_recent_AGN_min_temp_factor;
+
+  /*! Don't exclude gas with temperature more than this factor times AGN_delta_T */
+  double xray_maps_recent_AGN_max_temp_factor;
 
   /*! Output base name */
   char basename[PARSER_MAX_LINE_SIZE];

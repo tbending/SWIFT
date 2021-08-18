@@ -436,11 +436,19 @@ void lightcone_init(struct lightcone_props *props,
   /* Assume supplied value is in megayears and physical constants are in internal units */
   props->xray_maps_recent_AGN_injection_exclusion_time *= 1.0e6*physical_constants->const_year;
 
-  /* Temperature limits for recently AGN heated gas */
-  props->xray_maps_recent_AGN_logdT_min =
-    parser_get_opt_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_min"), -1.0);
-  props->xray_maps_recent_AGN_logdT_max =
-    parser_get_opt_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_max"), -1.0);   
+  /*
+    Temperature limits for recently AGN heated gas to be excluded from xray and sz maps.
+
+    Gas is excluded if it has log(temperature) between log(AGN_Delta_T)-xray_maps_recent_AGN_logdT_min
+    and log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_max. Only takes effect if
+    xray_maps_recent_AGN_injection_exclusion_time_myr is set.
+  */
+  if(props->xray_maps_recent_AGN_injection_exclusion_time > 0.0) {
+    double xray_maps_recent_AGN_logdT_min = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_min"));
+    props->xray_maps_recent_AGN_min_temp_factor = pow(10.0, -xray_maps_recent_AGN_logdT_min);
+    double xray_maps_recent_AGN_logdT_max = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_logdT_max"));
+    props->xray_maps_recent_AGN_max_temp_factor = pow(10.0, xray_maps_recent_AGN_logdT_max);
+  }
 
   /* Directory in which to write this lightcone */
   parser_get_opt_param_string(params, YML_NAME("subdir"), props->subdir, ".");
