@@ -10,7 +10,8 @@ temperature to the expected gas temperature at this redshift.
 This example is intended to be run with the EAGLE-XL model in order to
 produce lightcone outputs including gas, stars and black holes. Note 
 that the resulting output will not be at all realistic due to the extremely
-poor mass resolution.
+poor mass resolution and the minimum overdensity for star formation has
+to be be reduced to allow any star formation.
 
 To configure the code appropriately, the following flags should be included:
 
