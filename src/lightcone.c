@@ -72,7 +72,7 @@ static void read_map_types_file(const char *map_types_file, int *nr_map_types,
   if(engine_rank == 0) {
 
     FILE *fd = fopen(map_types_file, "r");
-    if(!fd)error("Failed to open lightcone radius file %s", map_types_file);
+    if(!fd)error("Failed to open lightcone map types file %s", map_types_file);
 
     /* Count number of non-zero length lines */
     size_t len = 0;
