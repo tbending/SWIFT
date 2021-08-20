@@ -722,7 +722,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
 #ifdef WITH_MPI
 
   /* Count data blocks and ensure number of elements is in range */
-  size_t nr_blocks = 0;
+  int nr_blocks = 0;
   struct particle_buffer *buffer = &shell->buffer[ptype];
   struct particle_buffer_block *block = buffer->first_block;
   while(block) {
@@ -786,7 +786,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
     size_t *send_count = malloc(sizeof(size_t)*comm_size);
     for(int i=0; i<comm_size; i+=1)
       send_count[i] = 0;
-    for(size_t block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
+    for(int block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
       for(int i=0; i<comm_size; i+=1)
         send_count[i] += block_info_iter[block_nr].count[i];
     }
@@ -800,7 +800,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
     
     /* For each block, find the location in the send buffer where we need to
        place the first element to go to each MPI rank */
-    for(size_t block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
+    for(int block_nr=0; block_nr<nr_blocks_iter; block_nr+=1) {
       for(int i=0; i<comm_size; i+=1) {
         if(block_nr==0) {
           /* This is the first block */
@@ -859,7 +859,7 @@ void lightcone_shell_flush_map_updates_for_type(struct lightcone_shell *shell, s
   if(nr_blocks_done != nr_blocks)error("not all map update blocks were processed");
 
   /* We no longer need the array of blocks */
-  for(size_t block_nr=0; block_nr<nr_blocks; block_nr+=1) {
+  for(int block_nr=0; block_nr<nr_blocks; block_nr+=1) {
     free(block_info[block_nr].count);
     free(block_info[block_nr].offset);
     free(block_info[block_nr].first_dest);
