@@ -486,7 +486,7 @@ void lightcone_init(struct lightcone_props *props,
   */
 
   /* Healpix nside parameter */
-  props->nside = parser_get_param_double(params, YML_NAME("nside"));
+  props->nside = parser_get_param_int(params, YML_NAME("nside"));
 
   /* Initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
