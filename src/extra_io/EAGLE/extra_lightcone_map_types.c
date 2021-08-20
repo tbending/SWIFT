@@ -320,8 +320,10 @@ double lightcone_map_compton_y_get_value(const struct engine *e,
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
-      double pixel_size_2 = lightcone_props->pixel_area_steradians;
+      /* This angular diameter distance is only correct for flat cosmologies */
+      if(e->cosmology->Omega_k != 0.0)error("only implemented for flat cosmology");
 
+      double pixel_size_2 = lightcone_props->pixel_area_steradians;
       double y_for_map = y_compton / (pixel_size_2 * angular_diameter_distance_2);
 
       return y_for_map;
@@ -379,8 +381,10 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
       double y_squared = x_cross[1] * x_cross[1] * a_cross * a_cross;
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
-
       double angular_diameter_distance = sqrt(angular_diameter_distance_2);
+
+      /* This angular diameter distance is only correct for flat cosmologies */
+      if(e->cosmology->Omega_k != 0.0)error("only implemented for flat cosmology");
 
       double radial_velocity =
           (p->v[0] * x_cross[0] * a_cross + p->v[1] * x_cross[1] * a_cross +
@@ -444,8 +448,10 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
       double z_squared = x_cross[2] * x_cross[2] * a_cross * a_cross;
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
-      double pixel_size_2 = lightcone_props->pixel_area_steradians;
+      /* This angular diameter distance is only correct for flat cosmologies */
+      if(e->cosmology->Omega_k != 0.0)error("only implemented for flat cosmology");
 
+      double pixel_size_2 = lightcone_props->pixel_area_steradians;
       double dm_for_map = n_e * m /
                   (pixel_size_2 * angular_diameter_distance_2 * rho);
 
