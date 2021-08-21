@@ -310,6 +310,13 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
 
   /* Restore pointers to functions for updating healpix maps */
   lightcone_identify_map_types(props);
+  
+  /* Update function pointers for each map */
+  for(int shell_nr=0; shell_nr<props->nr_shells; shell_nr+=1) {
+    for(int map_nr=0; map_nr<props->nr_maps; map_nr+=1) {
+      props->shell[shell_nr].map[map_nr].type = props->map_type[map_nr];
+    }
+  }
 
   /* Re-initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
