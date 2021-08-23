@@ -584,9 +584,11 @@ void lightcone_init(struct lightcone_props *props,
   /* Determine the full redshift range to search for lightcone crossings */
   double a_min = DBL_MAX;
   double a_max = 0.0;
+  int have_particle_output = 0;
   /* First check redshift range for each particle type */
   for(int i=0; i<swift_type_count; i+=1) {
     if(props->use_type[i]) {
+      have_particle_output = 1;
       const double a_min_for_type = 1.0/(1.0+props->z_max_for_type[i]);
       const double a_max_for_type = 1.0/(1.0+props->z_min_for_type[i]);
       if(a_min_for_type < a_min)a_min = a_min_for_type;
@@ -600,6 +602,10 @@ void lightcone_init(struct lightcone_props *props,
     if(shell_a_min < a_min)a_min = shell_a_min;
     if(shell_a_max > a_max)a_max = shell_a_max;
   }
+
+  /* Check we have a valid range in expansion factor for the lightcone */
+  if(a_min > a_max)
+    error("Code was run with --lightcone but no particle outputs or healpix maps are enabled");
   props->a_min = a_min;
   props->a_max = a_max;
   if(engine_rank==0)message("lightcone %d: range in expansion factor to search lightcone: %e to %e",
@@ -618,11 +624,15 @@ void lightcone_init(struct lightcone_props *props,
     char dirname[len];
     safe_checkdir(props->subdir, 1);
     /* Directory for particle outputs */
-    check_snprintf(dirname, len, "%s/%s_particles", props->subdir, props->basename);
-    safe_checkdir(dirname, 1);
+    if(have_particle_output) {
+      check_snprintf(dirname, len, "%s/%s_particles", props->subdir, props->basename);
+      safe_checkdir(dirname, 1);
+    }
     /* Directory for shell outputs */
-    check_snprintf(dirname, len, "%s/%s_shells", props->subdir, props->basename);
-    safe_checkdir(dirname, 1);
+    if((props->nr_shells > 0) && (props->nr_maps > 0)) {
+      check_snprintf(dirname, len, "%s/%s_shells", props->subdir, props->basename);
+      safe_checkdir(dirname, 1);
+    }
   }
 #ifdef WITH_MPI
   MPI_Barrier(MPI_COMM_WORLD);
