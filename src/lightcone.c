@@ -818,6 +818,11 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
 
   ticks tic = getticks();
 
+  int comm_size = 1;
+#ifdef WITH_MPI
+  MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
+#endif
+
   /* Get number of shells and maps per shell */
   const int nr_shells = props->nr_shells;
   const int nr_maps = props->nr_maps;
@@ -888,9 +893,19 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
           error("Writing lightcone maps in MPI collective mode requires parallel HDF5");
 #endif
 #endif
+        /* Number of files to write */
+        int nr_files_per_shell = collective ? 1 : comm_size;
+
         /* Create the output file(s) */
         hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
         if(file_id < 0)error("Unable to create file %s", fname);
+
+        /* Write header with metadata */
+        hid_t header = H5Gcreate(file_id, "Shell", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        io_write_attribute_i(header, "nr_files_per_shell", nr_files_per_shell);
+        io_write_attribute_d(header, "comoving_inner_radius", props->shell[shell_nr].rmin);
+        io_write_attribute_d(header, "comoving_outer_radius", props->shell[shell_nr].rmax);
+        H5Gclose(header);
 
         /* Write the system of Units used in the snapshot */
         io_write_unit_system(file_id, snapshot_units, "Units");
