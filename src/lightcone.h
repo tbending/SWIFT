@@ -239,7 +239,9 @@ void lightcone_memory_use(struct lightcone_props *props,
                           size_t *map_buffer_bytes,
                           size_t *pixel_data_bytes);
 
-void lightcone_write_index(struct lightcone_props *props);
+void lightcone_write_index(struct lightcone_props *props,
+                           const struct unit_system *internal_units,
+                           const struct unit_system *snapshot_units);
 
 void lightcone_map_set_baseline(const struct cosmology *c,
                                 struct lightcone_props *props,

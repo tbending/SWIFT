@@ -175,14 +175,18 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
 #endif
 
   /* Find unit conversion factor for this quantity */
-  const double conversion_factor =
+  const double map_conversion_factor =
     units_conversion_factor(internal_units, snapshot_units, map->type.units);
   
-  /* Convert units if necessary */
-  if(conversion_factor != 1.0) {
+  /* Convert units of pixel data if necessary */
+  if(map_conversion_factor != 1.0) {
     for(size_t i=0; i<map->local_nr_pix; i+=1)
-      map->data[i] *= conversion_factor;
+      map->data[i] *= map_conversion_factor;
   }
+
+  /* Get conversion factor for shell radii */
+  const double length_conversion_factor =
+    units_conversion_factor(internal_units, snapshot_units, UNIT_CONV_LENGTH);
 
   /* Create dataspace in memory corresponding to local pixels */
   const hsize_t mem_dims[1] = {(hsize_t) map->local_nr_pix};
@@ -254,8 +258,8 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
   io_write_attribute_i(dset_id, "nside", map->nside);
   io_write_attribute_l(dset_id, "number_of_pixels", map->total_nr_pix);
   io_write_attribute_s(dset_id, "pixel_ordering_scheme", "ring");
-  io_write_attribute_d(dset_id, "comoving_inner_radius", map->r_min);
-  io_write_attribute_d(dset_id, "comoving_outer_radius", map->r_max);
+  io_write_attribute_d(dset_id, "comoving_inner_radius", map->r_min*length_conversion_factor);
+  io_write_attribute_d(dset_id, "comoving_outer_radius", map->r_max*length_conversion_factor);
 
   /* Write unit conversion factors for this data set */
   char buffer[FIELD_BUFFER_SIZE] = {0};
@@ -283,7 +287,7 @@ void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const ch
 #ifdef WITH_MPI
   MPI_Allreduce(&map->total, &total, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 #endif
-  total *= conversion_factor;
+  total *= map_conversion_factor;
   io_write_attribute_d(dset_id, "expected_sum", total);
 #endif
 

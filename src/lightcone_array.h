@@ -90,7 +90,9 @@ struct replication_list *lightcone_array_refine_replications(struct lightcone_ar
 void lightcone_array_free_replications(struct lightcone_array_props *props,
                                        struct replication_list *lists);
 
-void lightcone_array_write_index(struct lightcone_array_props *props);
+void lightcone_array_write_index(struct lightcone_array_props *props,
+                                 const struct unit_system *internal_units,
+                                 const struct unit_system *snapshot_units); 
 
 void lightcone_array_report_memory_use(struct lightcone_array_props *props);
 

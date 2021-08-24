@@ -827,6 +827,10 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
   const int nr_shells = props->nr_shells;
   const int nr_maps = props->nr_maps;
 
+  /* Get conversion factor for shell radii */
+  const double length_conversion_factor =
+    units_conversion_factor(internal_units, snapshot_units, UNIT_CONV_LENGTH);
+
   /* Compute expansion factor corresponding to time props->ti_old,
      which is the earliest time any particle might have been drifted
      from on this step. Here we assume that no particle remains to
@@ -903,8 +907,8 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         /* Write header with metadata */
         hid_t header = H5Gcreate(file_id, "Shell", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         io_write_attribute_i(header, "nr_files_per_shell", nr_files_per_shell);
-        io_write_attribute_d(header, "comoving_inner_radius", props->shell[shell_nr].rmin);
-        io_write_attribute_d(header, "comoving_outer_radius", props->shell[shell_nr].rmax);
+        io_write_attribute_d(header, "comoving_inner_radius", props->shell[shell_nr].rmin*length_conversion_factor);
+        io_write_attribute_d(header, "comoving_outer_radius", props->shell[shell_nr].rmax*length_conversion_factor);
         H5Gclose(header);
 
         /* Write the system of Units used in the snapshot */
@@ -1412,8 +1416,9 @@ void lightcone_memory_use(struct lightcone_props *props,
  * @param props The #lightcone_props structure
  *
  */
-void lightcone_write_index(struct lightcone_props *props) {
-
+void lightcone_write_index(struct lightcone_props *props,
+                           const struct unit_system *internal_units,
+                           const struct unit_system *snapshot_units) {
   int comm_size = 1;
 #ifdef WITH_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -1429,6 +1434,10 @@ void lightcone_write_index(struct lightcone_props *props) {
 #endif
 
   if(engine_rank == 0) {
+
+    /* Get conversion factor for shell radii */
+    const double length_conversion_factor =
+      units_conversion_factor(internal_units, snapshot_units, UNIT_CONV_LENGTH);
 
     /* Get the name of the index file */
     char fname[FILENAME_BUFFER_SIZE];
@@ -1465,8 +1474,8 @@ void lightcone_write_index(struct lightcone_props *props) {
     double *shell_inner_radii = malloc(sizeof(double)*nr_shells);
     double *shell_outer_radii = malloc(sizeof(double)*nr_shells);
     for(int i=0; i<nr_shells; i+=1) {
-      shell_inner_radii[i] = props->shell[i].rmin;
-      shell_outer_radii[i] = props->shell[i].rmax;
+      shell_inner_radii[i] = props->shell[i].rmin * length_conversion_factor;
+      shell_outer_radii[i] = props->shell[i].rmax * length_conversion_factor;
     }
     io_write_attribute(group_id, "shell_inner_radii", DOUBLE,
                        shell_inner_radii, nr_shells);

@@ -262,14 +262,17 @@ void lightcone_array_free_replications(struct lightcone_array_props *props,
  * props the #lightcone_array_props struct
  *
  */
-void lightcone_array_write_index(struct lightcone_array_props *props) {
+void lightcone_array_write_index(struct lightcone_array_props *props,
+                                 const struct unit_system *internal_units,
+                                 const struct unit_system *snapshot_units) {
   
   /* Get number of lightcones */
   const int nr_lightcones = props->nr_lightcones;
 
   /* Loop over lightcones and clean replication lists */
   for(int lightcone_nr=0; lightcone_nr<nr_lightcones; lightcone_nr+=1) {
-    lightcone_write_index(props->lightcone+lightcone_nr);
+    lightcone_write_index(props->lightcone+lightcone_nr,
+                          internal_units, snapshot_units);
   }
 
 }
