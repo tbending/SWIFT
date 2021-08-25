@@ -121,7 +121,7 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
   lightcone_io_field_list_append(list, "ComptonYParameters",      DOUBLE, 1, OFFSET(ycompton),         UNIT_CONV_AREA, 0.0, "DMantissa9");
 #endif
 #ifdef WITH_FOF
-  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "FOFGroupIDs", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
 #if defined(TRACERS_EAGLE) || defined(TRACERS_FLAMINGO)
   lightcone_io_field_list_append(list, "LastAGNFeedbackScaleFactors", FLOAT, 1, OFFSET(last_AGN_injection_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "BFloat16");
@@ -175,7 +175,7 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
   lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on"); 
 #ifdef WITH_FOF
-  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "FOFGroupIDs", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
 #ifdef STARS_EAGLE
   lightcone_io_field_list_append(list, "InitialMasses",     FLOAT, 1, OFFSET(mass_init),          UNIT_CONV_MASS, 0.0, "FMantissa9");
@@ -219,7 +219,7 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
   lightcone_io_field_list_append(list, "NumberOfHeatingEvents",       INT,   1, OFFSET(AGN_number_of_energy_injections), UNIT_CONV_NO_UNITS, 0.0, "on");
   lightcone_io_field_list_append(list, "LastHighEddingtonFractionScaleFactors", FLOAT, 1, OFFSET(last_high_Eddington_fraction_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "on");
 #ifdef WITH_FOF
-  lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "FOFGroupIDs", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
 #endif
 #undef OFFSET
