@@ -107,8 +107,8 @@ void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list)
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
-  lightcone_io_field_list_append(list, "SmoothingLength", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "SmoothingLengths", FLOAT,    1, OFFSET(h),    UNIT_CONV_LENGTH,   0.0, "on");
   lightcone_io_field_list_append(list, "Densities",       FLOAT,    1, OFFSET(rho),  UNIT_CONV_DENSITY, -3.0, "FMantissa9");
   lightcone_io_field_list_append(list, "Temperatures",    FLOAT,    1, OFFSET(temperature), UNIT_CONV_TEMPERATURE, 0.0, "FMantissa9");
 #ifdef CHEMISTRY_EAGLE
@@ -143,7 +143,7 @@ void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_lis
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -158,7 +158,7 @@ void lightcone_io_append_dark_matter_background_output_fields(struct lightcone_i
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
@@ -173,7 +173,7 @@ void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *lis
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on"); 
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on"); 
 #ifdef WITH_FOF
   lightcone_io_field_list_append(list, "GroupID", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
@@ -205,7 +205,7 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "DynamicalMasses", FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #ifdef BLACK_HOLES_EAGLE
   lightcone_io_field_list_append(list, "SubgridMasses",         FLOAT, 1, OFFSET(subgrid_mass), UNIT_CONV_MASS, 0.0, "on");
   lightcone_io_field_list_append(list, "FormationScaleFactors", FLOAT, 1, OFFSET(formation_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "on");
@@ -236,7 +236,7 @@ void lightcone_io_append_neutrino_output_fields(struct lightcone_io_field_list *
   lightcone_io_field_list_append(list, "Coordinates",     DOUBLE,   3, OFFSET(x),    UNIT_CONV_LENGTH,   1.0, "DScale5");
   lightcone_io_field_list_append(list, "Velocities",      FLOAT,    3, OFFSET(vel),  UNIT_CONV_SPEED,    0.0, "DScale1");
   lightcone_io_field_list_append(list, "Masses",          FLOAT,    1, OFFSET(mass), UNIT_CONV_MASS,     0.0, "on");
-  lightcone_io_field_list_append(list, "ExpansionFactor", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "ExpansionFactors", FLOAT,    1, OFFSET(a),    UNIT_CONV_NO_UNITS, 0.0, "on");
 #undef OFFSET
 }
 
