@@ -218,6 +218,7 @@ void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list
   lightcone_io_field_list_append(list, "NumberOfAGNEvents",           INT,   1, OFFSET(AGN_number_of_AGN_events),        UNIT_CONV_NO_UNITS, 0.0, "on");
   lightcone_io_field_list_append(list, "NumberOfHeatingEvents",       INT,   1, OFFSET(AGN_number_of_energy_injections), UNIT_CONV_NO_UNITS, 0.0, "on");
   lightcone_io_field_list_append(list, "LastHighEddingtonFractionScaleFactors", FLOAT, 1, OFFSET(last_high_Eddington_fraction_scale_factor), UNIT_CONV_NO_UNITS, 0.0, "on");
+  lightcone_io_field_list_append(list, "CumulativeNumberOfSeeds",     INT,   1, OFFSET(cumulative_number_seeds),         UNIT_CONV_NO_UNITS, 0.0, "on");
 #ifdef WITH_FOF
   lightcone_io_field_list_append(list, "FOFGroupIDs", LONGLONG, 1, OFFSET(group_id), UNIT_CONV_NO_UNITS, 0.0, "on");
 #endif
@@ -471,6 +472,7 @@ int lightcone_store_black_hole(const struct engine *e,
   data->AGN_number_of_AGN_events = bp->AGN_number_of_AGN_events;
   data->AGN_number_of_energy_injections = bp->AGN_number_of_energy_injections;
   data->last_high_Eddington_fraction_scale_factor = bp->last_high_Eddington_fraction_scale_factor;
+  data->cumulative_number_seeds = bp->cumulative_number_seeds;
 #ifdef WITH_FOF
   data->group_id = (long long) gp->fof_data.group_id;
 #endif

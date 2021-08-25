@@ -208,6 +208,7 @@ struct lightcone_black_hole_data {
   int AGN_number_of_AGN_events;
   int AGN_number_of_energy_injections;
   float last_high_Eddington_fraction_scale_factor;
+  int cumulative_number_seeds;
 #ifdef WITH_FOF
   long long group_id;
 #endif
