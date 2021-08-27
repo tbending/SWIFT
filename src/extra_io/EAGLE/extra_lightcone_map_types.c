@@ -23,7 +23,9 @@
 /* Local includes */
 #include "black_holes.h"
 #include "cooling.h"
+#include "cosmology.h"
 #include "engine.h"
+#include "error.h"
 #include "gravity.h"
 #include "hydro.h"
 #include "lightcone_map.h"
@@ -36,6 +38,63 @@
 /* Required for the xrays */
 #include "extra_io.h"
 #include "io_properties.h"
+
+
+/**
+ * @brief Determine time since AGN injection at scale factor a_cross
+ *
+ * Returns -1 if no there has been no AGN injection. Result is in
+ * internal time units.
+ *
+ * @param xp the #xpart for which we're evaluating the time
+ * @param c the #cosmology struct
+ * @param a_cross expansion factor at which the particle crosses the lightcone
+ */
+INLINE static double get_time_since_AGN_injection(const struct xpart *xp, const struct cosmology *c,
+                                                  double a_cross) {
+  
+  /* Check for the case where there has been no AGN injection yet */
+  const double last_AGN_injection_scale_factor = xp->tracers_data.last_AGN_injection_scale_factor;
+  if(last_AGN_injection_scale_factor < 0.0)return -1.0;
+
+  /* Check for heating after lightcone crossing - possible if heated on current time step? */
+  if(last_AGN_injection_scale_factor > a_cross)return 0.0;
+
+  /* Find time since the last injection in internal units */
+  const double last_AGN_injection_time = cosmology_get_time_since_big_bang(c, last_AGN_injection_scale_factor);
+  const double time_at_crossing = cosmology_get_time_since_big_bang(c, a_cross);
+  const double delta_time = time_at_crossing - last_AGN_injection_time;
+
+  return delta_time;
+}
+
+
+INLINE static int exclude_particle(const struct lightcone_props *lightcone_props,
+                                   const struct engine *e, const struct part *p,
+                                   const struct xpart *xp, double a_cross) {
+
+  /* Get AGN heating temperature */
+  const double AGN_delta_T = e->black_holes_properties->AGN_delta_T_desired;
+
+  /* Check if we need to exclude this particle due to recent AGN heating */
+  if(lightcone_props->xray_maps_recent_AGN_injection_exclusion_time > 0) {
+    const double t = get_time_since_AGN_injection(xp, e->cosmology, a_cross);
+    if(t >= 0 && t < lightcone_props->xray_maps_recent_AGN_injection_exclusion_time){
+
+      /* Check if it is within the exclusion temperature range */
+      const double temp_min = AGN_delta_T * lightcone_props->xray_maps_recent_AGN_min_temp_factor;
+      const double temp_max = AGN_delta_T * lightcone_props->xray_maps_recent_AGN_max_temp_factor;
+      const double part_temp = cooling_get_temperature(
+      e->physical_constants, e->hydro_properties, e->internal_units,
+      e->cosmology, e->cooling_func, p, xp);
+      if (part_temp > temp_min && part_temp < temp_max)
+        return 1;
+    }
+  }
+
+  /* Not excluding this particle */
+  return 0;
+}
 
 
 /**
@@ -60,6 +119,9 @@ double lightcone_map_xray_erosita_low_intrinsic_photons_get_value(const struct e
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
+
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
 
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
@@ -102,6 +164,9 @@ double lightcone_map_xray_erosita_low_intrinsic_energy_get_value(const struct en
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
 
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
 
@@ -142,6 +207,9 @@ double lightcone_map_xray_erosita_high_intrinsic_photons_get_value(const struct 
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
+
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
 
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
@@ -184,6 +252,9 @@ double lightcone_map_xray_erosita_high_intrinsic_energy_get_value(const struct e
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
 
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
 
@@ -225,6 +296,9 @@ double lightcone_map_xray_rosat_intrinsic_photons_get_value(const struct engine 
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
 
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
 
@@ -265,6 +339,9 @@ double lightcone_map_xray_rosat_intrinsic_energy_get_value(const struct engine *
   case swift_type_gas: {
     const struct part *p = &parts[-gp->id_or_neg_offset];
     const struct xpart *xp = &xparts[-gp->id_or_neg_offset];
+
+    /* Exclude recently AGN heated particles */
+    if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
 
     const double z_cross = (1 / a_cross) - 1;
     const double cdist_cross = sqrt( pow(x_cross[0], 2) + pow(x_cross[1], 2) + pow(x_cross[2], 2) );
@@ -313,6 +390,10 @@ double lightcone_map_compton_y_get_value(const struct engine *e,
     case swift_type_gas: {
       const struct part *p = &parts[-gp->id_or_neg_offset];
       const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
+
+      /* Exclude recently AGN heated particles */
+      if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
       double y_compton = cooling_get_ycompton(phys_const, hydro_props, us, cosmo,
                                        cool_func, p, xp);
       double x_squared = x_cross[0] * x_cross[0] * a_cross * a_cross;
@@ -366,6 +447,10 @@ double lightcone_map_doppler_b_get_value(const struct engine *e,
     case swift_type_gas: {
       const struct part *p = &parts[-gp->id_or_neg_offset];
       const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
+
+      /* Exclude recently AGN heated particles */
+      if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
       double n_e = cooling_get_electron_density(phys_const, hydro_props, us, cosmo,
                                           cool_func, p, xp);
 
@@ -436,6 +521,10 @@ double lightcone_map_dispersion_meassure_get_value(const struct engine *e,
     case swift_type_gas: {
       const struct part *p = &parts[-gp->id_or_neg_offset];
       const struct xpart* xp = &xparts[-gp->id_or_neg_offset];
+
+      /* Exclude recently AGN heated particles */
+      if(exclude_particle(lightcone_props, e, p, xp, a_cross)) return 0.0;
+
       double n_e = cooling_get_electron_density(phys_const, hydro_props, us, cosmo,
                                           cool_func, p, xp);
 

@@ -54,6 +54,7 @@ void lightcone_array_init(struct lightcone_array_props *props,
                           const struct cosmology *cosmo,
                           struct swift_params *params,
                           const struct unit_system *internal_units,
+                          const struct phys_const *physical_constants,
                           const int verbose) {
   
   /* Determine number of lightcones */
@@ -81,7 +82,8 @@ void lightcone_array_init(struct lightcone_array_props *props,
     if(parser_get_opt_param_int(params, name, 0)) {      
       check_snprintf(name, PARSER_MAX_LINE_SIZE, "Lightcone%d", props->nr_lightcones);
       lightcone_init(props->lightcone+lightcone_nr,
-                     lightcone_nr, s, cosmo, params, internal_units, verbose);
+                     lightcone_nr, s, cosmo, params, internal_units, physical_constants,
+                     verbose);
       props->nr_lightcones += 1;
     }
   }

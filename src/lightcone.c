@@ -370,6 +370,7 @@ void lightcone_init(struct lightcone_props *props,
                     const struct cosmology *cosmo,
                     struct swift_params *params,
                     const struct unit_system *internal_units,
+                    const struct phys_const *physical_constants,
                     const int verbose) {
   
   /* Macro to generate parameter names given section name */
@@ -434,6 +435,31 @@ void lightcone_init(struct lightcone_props *props,
     /* Convert temperature and density thresholds to internal units, assuming they're input in CGS */
     props->min_temp_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_TEMPERATURE);
     props->min_nh_for_filtered_gas /= units_cgs_conversion_factor(internal_units, UNIT_CONV_NUMBER_DENSITY);
+  }
+
+  /* Exclude particles from xray and sz maps if they have been recently AGN heated */
+  props->xray_maps_recent_AGN_injection_exclusion_time =
+    parser_get_opt_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_exclusion_time_myr"), -1.0);
+  /* Assume supplied value is in megayears and physical constants are in internal units */
+  props->xray_maps_recent_AGN_injection_exclusion_time *= 1.0e6*physical_constants->const_year;
+
+  /*
+    Temperature limits for recently AGN heated gas to be excluded from xray and sz maps.
+
+    Gas is excluded if it has log(temperature) which is greater than 
+    log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_min and less than 
+    log(AGN_Delta_T)+xray_maps_recent_AGN_logdT_max.
+    
+    Only takes effect if xray_maps_recent_AGN_injection_exclusion_time_myr is set.
+  */
+  if(props->xray_maps_recent_AGN_injection_exclusion_time > 0.0) {
+    double delta_logt_min = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_delta_logT_min"));
+    if(delta_logt_min > 0.0)error("xray_maps_recent_AGN_injection_delta_logT_min should be negative");
+    props->xray_maps_recent_AGN_min_temp_factor = pow(10.0, delta_logt_min);
+    double delta_logt_max = parser_get_param_double(params, YML_NAME("xray_maps_recent_AGN_injection_delta_logT_max"));
+    if(delta_logt_max < 0.0)error("xray_maps_recent_AGN_injection_delta_logT_max should be positive");
+    props->xray_maps_recent_AGN_max_temp_factor = pow(10.0, delta_logt_max);
+    if(delta_logt_max < delta_logt_min)error("xray_maps_recent_AGN_injection_delta_logT_max should be greater than _min!");
   }
 
   /* Directory in which to write this lightcone */
