@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# exit if anything fails
+set -e
+set -o pipefail
+
  # Generate the initial conditions if they are not present.
 if [ ! -e glassPlane_128.hdf5 ]
 then

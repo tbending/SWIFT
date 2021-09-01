@@ -29,6 +29,41 @@
  */
 
 /**
+ * @brief Preparation step for injection to gather necessary data.
+ * This function gets called during the feedback force loop.
+ *
+ * @param r2 Comoving square distance between the two particles.
+ * @param dx Comoving vector separating both particles (si - pj).
+ * @param hi Comoving smoothing-length of particle i.
+ * @param hj Comoving smoothing-length of particle j.
+ * @param si First (star) particle.
+ * @param pj Second (gas) particle (not updated).
+ * @param cosmo The cosmological model.
+ * @param rt_props Properties of the feedback scheme.
+ * generator
+ */
+
+__attribute__((always_inline)) INLINE static void
+runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
+                                     const float hi, const float hj,
+                                     struct spart *si, struct part *pj,
+                                     const struct cosmology *cosmo,
+                                     const struct rt_props *rt_props) {
+
+  /* NOTE: struct part *pj should be const struct part *pj,
+   * but I allow changes to it for debugging routines at the moment. 
+   * Nevertheless, you shouldn't be changing anything in a particle
+   * in this function. */
+
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  si->rt_data.debug_iact_hydro_inject_prep += 1;
+  si->rt_data.debug_iact_hydro_inject_prep_tot += 1ULL;
+  pj->rt_data.debug_iact_stars_inject_prep += 1;
+  pj->rt_data.debug_iact_stars_inject_prep_tot += 1ULL;
+#endif
+}
+
+/**
  * @brief Injection step interaction between star and hydro particles.
  *
  * @param r2 Comoving square distance between the two particles.
@@ -45,11 +80,35 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
     struct spart *restrict si, struct part *restrict pj, float a, float H) {
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
+
+  if (si->rt_data.debug_iact_hydro_inject_prep == 0)
+    error("Injecting energy from star that wasn't called"
+          " during injection prep");
+  if (pj->rt_data.debug_iact_stars_inject_prep == 0){
+
+    const float hig2 = hi * hi * kernel_gamma2;
+    const float res = sqrtf(r2 / hig2);
+    error("Injecting energy into part that wasn't called"
+          " during injection prep: sID %lld pID %lld r/H_s %.6f", si->id, pj->id, res);
+  }
+
   si->rt_data.debug_iact_hydro_inject += 1;
   si->rt_data.debug_radiation_emitted_tot += 1ULL;
 
   pj->rt_data.debug_iact_stars_inject += 1;
   pj->rt_data.debug_radiation_absorbed_tot += 1ULL;
+
+
+  /* Attempt to catch race condition/dependency error */
+  if (si->rt_data.debug_iact_hydro_inject_prep <
+      si->rt_data.debug_iact_hydro_inject)
+    error("Star interacts with more particles during"
+          " injection than during injection prep");
+
+  if (pj->rt_data.debug_iact_stars_inject_prep <
+      pj->rt_data.debug_iact_stars_inject)
+    error("Part interacts with more stars during"
+          " injection than during injection prep");
 #endif
 
   /* If the star doesn't have any neighbours, we
@@ -72,7 +131,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
     const float injected_energy = si->rt_data.emission_this_step[g] * psi;
     pj->rt_data.conserved[g].energy += injected_energy;
     /* We assume the path from the star to the gas is optically thin */
-    /* const float injected_flux = injected_energy * rt_params.reduced_speed_of_light; */
+    /* const float injected_flux = injected_energy *
+     * rt_params.reduced_speed_of_light; */
     /* pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0]; */
     /* pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1]; */
     /* pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2]; */

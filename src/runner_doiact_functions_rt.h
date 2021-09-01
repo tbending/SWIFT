@@ -386,6 +386,9 @@ void DO_SYM_PAIR1_RT(struct runner *r, struct cell *ci, struct cell *cj,
 
         /* Hit or miss? */
         if (r2 < hig2) {
+if (pj->id == 8780) message("Caught pID %lld in cell %lld in RT injection loop", pj->id, cj->cellID);
+/* if (pj->id == 8780) message("Caught pID %lld in cell %lld | x %f %f %f h %f dx %f %f %f hig2 %f r2 %f", pj->id, cj->cellID, pj->x[0], pj->x[1], pj->x[2], pj->h, dx[0], dx[1], dx[2], hig2, r2); */
+
           IACT_RT(r2, dx, hi, hj, spi, pj, a, H);
         }
       } /* loop over the parts in cj. */

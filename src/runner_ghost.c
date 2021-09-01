@@ -1240,6 +1240,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
+if (p->id == 8780) message("Resetting_2 part pID %lld in ghost", p->id);
             rt_reset_part(p);
 
             /* Ok, we are done with this particle */
@@ -1402,6 +1403,7 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
 
 #endif /* EXTRA_HYDRO_LOOP */
 
+if (p->id == 8780) message("Resetting_1 part pID %lld in ghost", p->id);
         rt_reset_part(p);
       }
 

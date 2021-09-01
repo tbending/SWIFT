@@ -49,6 +49,8 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   p->rt_data.debug_iact_stars_inject = 0;
+if (p->id == 8780) message("Resetting debug_iact_stars_inject_prep for pID %lld", p->id);
+  p->rt_data.debug_iact_stars_inject_prep = 0;
 
   p->rt_data.debug_calls_iact_gradient = 0;
   p->rt_data.debug_calls_iact_transport = 0;
@@ -71,6 +73,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
   rt_init_part(p);
   rt_reset_part(p);
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
+  p->rt_data.debug_iact_stars_inject_prep_tot = 0ULL;
 }
 
 /**
@@ -79,7 +82,10 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
  * are both called individually.
  */
 __attribute__((always_inline)) INLINE static void rt_init_spart(
-    struct spart* restrict sp) {}
+    struct spart* restrict sp) {
+
+    if (sp->id == 64000) message("reinit star %lld", sp->id);
+    }
 
 /**
  * @brief Reset of the RT star particle data not related to the density.
@@ -92,10 +98,12 @@ __attribute__((always_inline)) INLINE static void rt_reset_spart(
     struct spart* restrict sp) {
 
   /* reset everything */
+  if (sp->id == 64000) message("reset star %lld", sp->id);
 
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   sp->rt_data.debug_iact_hydro_inject = 0;
+  sp->rt_data.debug_iact_hydro_inject_prep = 0;
 
   sp->rt_data.debug_emission_rate_set = 0;
   sp->rt_data.debug_injection_check = 0;

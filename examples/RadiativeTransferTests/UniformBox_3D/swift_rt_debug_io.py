@@ -41,7 +41,6 @@ class RTGasData(object):
         self.coords = None
         self.h = None
 
-        self.RTStarIact = None
         self.RTCallsIactGradient = None
         self.RTCallsIactTransport = None
         self.RTCallsIactGradientInteraction = None
@@ -53,6 +52,7 @@ class RTGasData(object):
         self.GradientsDone = None
 
         self.RadiationAbsorbedTot = None
+        self.InjectPrepCountsTot = None
 
         return
 
@@ -68,10 +68,9 @@ class RTStarData(object):
         self.coords = None
         self.h = None
 
-        self.RTHydroIact = None
         self.EmissionRateSet = None
-
         self.RadiationEmittedTot = None
+        self.InjectPrepCountsTot = None
 
         return
 
@@ -197,7 +196,6 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
         newsnap.gas.coords = Gas["Coordinates"][:][inds]
         newsnap.gas.h = Gas["SmoothingLengths"][:][inds]
 
-        newsnap.gas.RTStarIact = Gas["RTDebugStarIact"][:][inds]
         newsnap.gas.RTCallsIactGradient = Gas["RTDebugCallsIactGradient"][:][inds]
         newsnap.gas.RTCallsIactTransport = Gas["RTDebugCallsIactTransport"][:][inds]
         newsnap.gas.RTCallsIactGradientInteraction = Gas[
@@ -212,6 +210,7 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
         newsnap.gas.ThermochemistryDone = Gas["RTDebugThermochemistryDone"][:][inds]
 
         newsnap.gas.RadiationAbsorbedTot = Gas["RTDebugRadAbsorbedTot"][:][inds]
+        newsnap.gas.InjectPrepCountsTot = Gas["RTDebugStarsInjectPrepTotCounts"][:][inds]
 
         try:
             Stars = F["PartType4"]
@@ -222,10 +221,10 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
             newsnap.stars.coords = Stars["Coordinates"][:][inds]
             newsnap.stars.h = Stars["SmoothingLengths"][:][inds]
 
-            newsnap.stars.RTHydroIact = Stars["RTDebugHydroIact"][:][inds]
             newsnap.stars.EmissionRateSet = Stars["RTDebugEmissionRateSet"][:][inds]
 
             newsnap.stars.RadiationEmittedTot = Stars["RTDebugRadEmittedTot"][:][inds]
+            newsnap.stars.InjectPrepCountsTot = Stars["RTDebugHydroInjectPrepCountsTot"][:][inds]
         except KeyError:
             newsnap.has_stars = False
 

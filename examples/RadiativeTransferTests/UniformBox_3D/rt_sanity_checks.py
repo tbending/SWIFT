@@ -203,6 +203,7 @@ def check_hydro_sanity(snapdata):
             )
             if break_on_diff:
                 quit()
+
         if (gas.RTCallsIactTransport < gas.RTCallsIactGradient).any():
             print("- checking hydro sanity pt2; snapshot", snap.snapnr)
             print(
@@ -212,28 +213,6 @@ def check_hydro_sanity(snapdata):
                 ),
                 "/",
                 npart,
-            )
-            if break_on_diff:
-                quit()
-
-        # --------------------------------------------------------------
-        # check that we didn't loose any radiation
-        # --------------------------------------------------------------
-        sum_gas_tot = gas.RadiationAbsorbedTot.sum()
-        if snap.has_stars:
-            sum_star_tot = stars.RadiationEmittedTot.sum()
-        else:
-            sum_star_tot = 0.0
-
-        if sum_gas_tot != sum_star_tot:
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
-            print(
-                "--- Total emitted and absorbed radiation not equal: Gas",
-                sum_gas_tot,
-                "stars",
-                sum_star_tot,
-                "diff",
-                sum_star_tot - sum_gas_tot,
             )
             if break_on_diff:
                 quit()
@@ -280,6 +259,79 @@ def check_stars_sanity(snapdata):
     return
 
 
+def check_stars_hydro_interaction_sanity(snapdata):
+    """
+    Sanity checks for hydro vs star interaction
+    call counts.
+    - are calls each step equal?
+    - are total calls each step equal?
+    """
+
+    nsnaps = len(snapdata)
+    npart = snapdata[0].gas.coords.shape[0]
+
+    print("Checking hydro vs stars")
+
+    # ----------------------------------------------
+    # check absolute values of every snapshot
+    # ----------------------------------------------
+    for snap in snapdata:
+
+        gas = snap.gas
+        stars = snap.stars
+
+        # --------------------------------------------------------------
+        # check that we didn't lose any radiation
+        # --------------------------------------------------------------
+        sum_gas_tot_radiation = gas.RadiationAbsorbedTot.sum()
+        if snap.has_stars:
+            sum_star_tot_radiation = stars.RadiationEmittedTot.sum()
+        else:
+            sum_star_tot_radiation = 0.0
+
+        if sum_gas_tot_radiation != sum_star_tot_radiation:
+            print("- checking hydro v star sanity pt1; snapshot", snap.snapnr)
+            print(
+                "--- Total emitted and absorbed radiation not equal: Gas",
+                sum_gas_tot_radiation,
+                "stars",
+                sum_star_tot_radiation,
+                "diff",
+                sum_star_tot_radiation - sum_gas_tot_radiation
+            )
+            if break_on_diff:
+                quit()
+
+
+        # --------------------------------------------------------------
+        # check that we have the correct amount of interactions recorded
+        # for injection prep between stars and gas
+        # --------------------------------------------------------------
+        sum_gas_tot_prep = gas.InjectPrepCountsTot.sum()
+        if snap.has_stars:
+            sum_star_tot_prep = stars.InjectPrepCountsTot.sum()
+        else:
+            sum_star_tot_prep = 0.0
+
+        if sum_gas_tot_prep != sum_star_tot_prep:
+            print("- checking hydro v star sanity pt2; snapshot", snap.snapnr)
+            print(
+                "--- Total interactions between gas and stars in prep is wrong:", 
+                sum_gas_tot_prep,
+                "stars",
+                sum_star_tot_prep,
+                "diff",
+                sum_star_tot_prep - sum_gas_tot_prep
+            )
+            if break_on_diff:
+                quit()
+
+    return
+
+
+
+
+
 def main():
     """
     Main function to run.
@@ -293,6 +345,9 @@ def main():
 
     check_hydro_sanity(snapdata)
     check_stars_sanity(snapdata)
+    check_stars_hydro_interaction_sanity(snapdata)
+
+    return
 
 
 if __name__ == "__main__":

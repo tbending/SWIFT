@@ -48,6 +48,10 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
   /* the Gizmo-style slope limiting doesn't help for RT as is,
    * so we're skipping it for now. */
   /* rt_slope_limit_cell_init(p); */
+
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  p->rt_data.debug_iact_stars_inject_prep = 0;
+#endif
 }
 
 /**
@@ -102,6 +106,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
   }
 #ifdef SWIFT_RT_DEBUG_CHECKS
   p->rt_data.debug_radiation_absorbed_tot = 0ULL;
+  p->rt_data.debug_iact_stars_inject_prep_tot = 0ULL;
 #endif
 }
 
@@ -113,7 +118,12 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
  * @param sp star particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_init_spart(
-    struct spart* restrict sp) {}
+    struct spart* restrict sp) {
+
+  for (int i = 0; i < 8; i++){
+    sp->rt_data.quadrant_weights[i] = 0.f;
+  }
+}
 
 /**
  * @brief Reset of the RT star particle data not related to the density.
@@ -135,6 +145,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_spart(
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   sp->rt_data.debug_iact_hydro_inject = 0;
+  sp->rt_data.debug_iact_hydro_inject_prep = 0;
 
   sp->rt_data.debug_emission_rate_set = 0;
   /* skip this for GEAR */
@@ -415,6 +426,13 @@ __attribute__((always_inline)) INLINE static void rt_tchem(
  * @param props the #rt_props.
  */
 __attribute__((always_inline)) INLINE static void rt_clean(
-    struct rt_props* props) {}
+    struct rt_props* props) {
+
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  fclose(props->conserved_energy_filep);
+  fclose(props->energy_density_filep);
+  fclose(props->star_emitted_energy_filep);
+#endif
+}
 
 #endif /* SWIFT_RT_GEAR_H */

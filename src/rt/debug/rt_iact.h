@@ -28,6 +28,35 @@
  */
 
 /**
+ * @brief Preparation step for injection to gather necessary data.
+ * This function gets called during the feedback force loop.
+ *
+ * @param r2 Comoving square distance between the two particles.
+ * @param dx Comoving vector separating both particles (si - pj).
+ * @param hi Comoving smoothing-length of particle i.
+ * @param hj Comoving smoothing-length of particle j.
+ * @param si First (star) particle.
+ * @param pj Second (gas) particle (not updated).
+ * @param cosmo The cosmological model.
+ * @param rt_props Properties of the feedback scheme.
+ * generator
+ */
+
+__attribute__((always_inline)) INLINE static void
+runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
+                                     const float hi, const float hj,
+                                     struct spart *si, struct part *pj,
+                                     const struct cosmology *cosmo,
+                                     const struct rt_props *rt_props) {
+
+  si->rt_data.debug_iact_hydro_inject_prep += 1;
+  si->rt_data.debug_iact_hydro_inject_prep_tot += 1ULL;
+  pj->rt_data.debug_iact_stars_inject_prep += 1;
+  pj->rt_data.debug_iact_stars_inject_prep_tot += 1ULL;
+/* if (pj->id == 8780) message("Caught pID %lld, %d %lld", pj->id, pj->rt_data.debug_iact_stars_inject_prep, pj->rt_data.debug_iact_stars_inject_prep_tot); */
+}
+
+/**
  * @brief Injection step interaction between star and hydro particles.
  *
  * @param r2 Comoving square distance between the two particles.
@@ -43,11 +72,33 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
     const float r2, float *dx, const float hi, const float hj,
     struct spart *restrict si, struct part *restrict pj, float a, float H) {
 
+  if (si->rt_data.debug_iact_hydro_inject_prep == 0)
+    error("Injecting energy from star that wasn't called"
+          " during injection prep");
+  if (pj->rt_data.debug_iact_stars_inject_prep == 0){
+
+    const float hig2 = hi * hi * kernel_gamma2;
+    const float res = sqrtf(r2 / hig2);
+    error("Injecting energy into part that wasn't called"
+          " during injection prep: sID %lld pID %lld r/H_s %.6f", si->id, pj->id, res);
+  }
+
   si->rt_data.debug_iact_hydro_inject += 1;
   si->rt_data.debug_radiation_emitted_tot += 1ULL;
 
   pj->rt_data.debug_iact_stars_inject += 1;
   pj->rt_data.debug_radiation_absorbed_tot += 1ULL;
+
+  /* Attempt to catch race condition/dependency error */
+  if (si->rt_data.debug_iact_hydro_inject_prep <
+      si->rt_data.debug_iact_hydro_inject)
+    error("Star interacts with more particles during"
+          " injection than during injection prep");
+
+  if (pj->rt_data.debug_iact_stars_inject_prep <
+      pj->rt_data.debug_iact_stars_inject)
+    error("Part interacts with more stars during"
+          " injection than during injection prep");
 }
 
 /**

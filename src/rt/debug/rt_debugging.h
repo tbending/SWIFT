@@ -38,15 +38,28 @@ static void rt_debugging_end_of_step_stars_mapper(void *restrict map_data,
   const struct engine *restrict e = (struct engine *)extra_data;
 
   int emission_sum = 0;
-  unsigned long long emission_sum_tot = 0;
+  int iacts_with_parts_sum = 0;
+  unsigned long long emission_sum_tot = 0ULL;
+  unsigned long long iacts_with_parts_sum_tot = 0ULL;
+
   for (int k = 0; k < scount; k++) {
+
     struct spart *restrict sp = &sparts[k];
     emission_sum += sp->rt_data.debug_iact_hydro_inject;
     emission_sum_tot += sp->rt_data.debug_radiation_emitted_tot;
+    /* Reset all values here in case stars won't be active next step */
     sp->rt_data.debug_iact_hydro_inject = 0;
+
+    iacts_with_parts_sum += sp->rt_data.debug_iact_hydro_inject_prep;
+    iacts_with_parts_sum_tot += sp->rt_data.debug_iact_hydro_inject_prep_tot;
+    /* Reset all values here in case stars won't be active next step */
+    sp->rt_data.debug_iact_hydro_inject_prep = 0;
   }
+
   atomic_add(&e->rt_props->debug_radiation_emitted_this_step, emission_sum);
   atomic_add(&e->rt_props->debug_radiation_emitted_tot, emission_sum_tot);
+  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step, iacts_with_parts_sum);
+  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_tot, iacts_with_parts_sum_tot);
 }
 
 /**
@@ -60,16 +73,29 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
   const struct engine *restrict e = (struct engine *)extra_data;
 
   int absorption_sum = 0;
-  unsigned long long absorption_sum_tot = 0;
+  int iacts_with_stars_sum = 0;
+  unsigned long long absorption_sum_tot = 0ULL;
+  unsigned long long iacts_with_stars_sum_tot = 0ULL;
+
   for (int k = 0; k < count; k++) {
+
     struct part *restrict p = &parts[k];
     absorption_sum += p->rt_data.debug_iact_stars_inject;
     absorption_sum_tot += p->rt_data.debug_radiation_absorbed_tot;
     /* Reset all values here in case particles won't be active next step */
     p->rt_data.debug_iact_stars_inject = 0;
+
+    iacts_with_stars_sum += p->rt_data.debug_iact_stars_inject_prep;
+    iacts_with_stars_sum_tot += p->rt_data.debug_iact_stars_inject_prep_tot;
+    /* Reset all values here in case particles won't be active next step */
+    if (p->id == 8780) message("Resetting debug_iact_stars_inject_prep for pID %lld", p->id);
+    p->rt_data.debug_iact_stars_inject_prep = 0;
   }
+
   atomic_add(&e->rt_props->debug_radiation_absorbed_this_step, absorption_sum);
   atomic_add(&e->rt_props->debug_radiation_absorbed_tot, absorption_sum_tot);
+  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step, iacts_with_stars_sum);
+  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_tot, iacts_with_stars_sum_tot);
 }
 
 /**
@@ -83,13 +109,16 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
 __attribute__((always_inline)) INLINE static void
 rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
 
-  const ticks tic = getticks();
   struct space *s = e->s;
   if (!(e->policy & engine_policy_rt)) return;
+
+  const ticks tic = getticks();
 
   /* reset values before the particle loops */
   e->rt_props->debug_radiation_emitted_this_step = 0ULL;
   e->rt_props->debug_radiation_absorbed_this_step = 0ULL;
+  e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step = 0;
+  e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step = 0;
 
   /* hydro particle loop */
   if (s->nr_parts > 0)
@@ -102,6 +131,19 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
     threadpool_map(&e->threadpool, rt_debugging_end_of_step_stars_mapper,
                    s->sparts, s->nr_sparts, sizeof(struct spart),
                    threadpool_auto_chunk_size, /*extra_data=*/e);
+
+  /* message("This step:     %12d %12d %12d %12d", */
+  /*           e->rt_props->debug_radiation_emitted_this_step, */
+  /*           e->rt_props->debug_radiation_absorbed_this_step, */
+  /*           e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step, */
+  /*           e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step */
+  /*         ); */
+  /* message("Over lifetime: %12lld %12lld %12lld %12lld",  */
+  /*         e->rt_props->debug_radiation_emitted_tot, */
+  /*         e->rt_props->debug_radiation_absorbed_tot,  */
+  /*         e->rt_props->debug_star_injection_prep_iacts_with_parts_tot, */
+  /*         e->rt_props->debug_part_injection_prep_iacts_with_stars_tot */
+  /*         ); */
 
   /* Have we accidentally invented or deleted some radiation somewhere? */
   if ((e->rt_props->debug_radiation_emitted_this_step !=
@@ -116,6 +158,32 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
         e->rt_props->debug_radiation_absorbed_this_step,
         e->rt_props->debug_radiation_emitted_tot,
         e->rt_props->debug_radiation_absorbed_tot);
+
+  if ((e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step !=
+       e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step) ||
+      (e->rt_props->debug_part_injection_prep_iacts_with_stars_tot !=
+       e->rt_props->debug_star_injection_prep_iacts_with_parts_tot))
+    error(
+        "Injection prep counts parts vs stars disagree.\n"
+        "  This step: star iacts: %12d; gas iacts: %12d\n"
+        "Since start: star iacts: %12lld; gas iacts: %12lld",
+        e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step,
+        e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step,
+        e->rt_props->debug_star_injection_prep_iacts_with_parts_tot,
+        e->rt_props->debug_part_injection_prep_iacts_with_stars_tot);
+
+  if ((e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step !=
+       e->rt_props->debug_radiation_emitted_this_step) ||
+      (e->rt_props->debug_part_injection_prep_iacts_with_stars_tot !=
+       e->rt_props->debug_radiation_emitted_tot))
+    error(
+        "Injection prep iact counts vs actual iact counts disagree.\n"
+        "  This step: prep iacts: %12d; inject iacts: %12d\n"
+        "Since start: prep iacts: %12lld; inject iacts: %12lld",
+        e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step,
+        e->rt_props->debug_radiation_emitted_this_step,
+        e->rt_props->debug_part_injection_prep_iacts_with_stars_tot,
+        e->rt_props->debug_radiation_emitted_tot);
 
   if (verbose)
     message("took %.3f %s.", clocks_from_ticks(getticks() - tic),
