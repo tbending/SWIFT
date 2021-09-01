@@ -64,10 +64,18 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
   const float psi = wi * hi_inv_dim / si->density.wcount;
+  /* const float r_inv = 1.f/r; */
+  /* const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv}; */
 
   /* TODO: this is done differently for RT_HYDRO_CONTROLLED_INJECTION */
   for (int g = 0; g < RT_NGROUPS; g++) {
-    pj->rt_data.conserved[g].energy += si->rt_data.emission_this_step[g] * psi;
+    const float injected_energy = si->rt_data.emission_this_step[g] * psi;
+    pj->rt_data.conserved[g].energy += injected_energy;
+    /* We assume the path from the star to the gas is optically thin */
+    /* const float injected_flux = injected_energy * rt_params.reduced_speed_of_light; */
+    /* pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0]; */
+    /* pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1]; */
+    /* pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2]; */
   }
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
