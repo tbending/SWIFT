@@ -29,6 +29,8 @@
 #include "./cooling/const_du/cooling_io.h"
 #elif defined(COOLING_CONST_LAMBDA)
 #include "./cooling/const_lambda/cooling_io.h"
+#elif defined(COOLING_PIECEWISE_POWERLAW)
+#include "./cooling/variable_lambda/cooling_io.h"
 #elif defined(COOLING_COMPTON)
 #include "./cooling/Compton/cooling_io.h"
 #elif defined(COOLING_GRACKLE)
