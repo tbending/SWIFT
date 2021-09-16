@@ -76,7 +76,7 @@ INLINE static void cooling_update(const struct cosmology* cosmo,
  * in cgs units [erg * g^-1 * s^-1].
  */
 __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
-    const struct physical_constants* phys_const, const struct unit_system* us,
+    const struct phys_const* phys_const, const struct unit_system* us,
     const struct cosmology* cosmo, const struct hydro_props* hydro_props,
     const struct cooling_function_data* cooling, const struct part* p, const struct xpart* xp) {
 
@@ -85,10 +85,10 @@ __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
   const double rho_cgs = rho * cooling->conv_factor_density_to_cgs;
 
   /* Get Hydrogen mass fraction */
-  const double X_H = hydro_props->hydrogen_mass_fraction;
+  // const double X_H = hydro_props->hydrogen_mass_fraction;
 
   /* Hydrogen number density (X_H * rho / m_p) [cm^-3] */
-  const double n_H_cgs = X_H * rho_cgs * cooling->proton_mass_cgs_inv;
+  // const double n_H_cgs = X_H * rho_cgs * cooling->proton_mass_cgs_inv;
 
   /* Get Temperature */
   const double temp = cooling_get_temperature(phys_const, hydro_props,
@@ -97,53 +97,55 @@ __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
 
  
   /* Calculate du_dt (Lamnbda / rho) */
-  const double du_dt_cgs;
+  double du_dt_cgs;
+  double coeff;
+  double index;
   if (temp <= 300){
     du_dt_cgs = 0;
   }
-  if (temp > 300) & (temp < 2000){
-    const coeff = 1e-26;
-    const index = 0.2;
+  if (temp > 300 & temp < 2000){
+    coeff = 1e-26;
+    index = 0.2;
     du_dt_cgs = -coeff * pow(temp / 300, index) / rho_cgs;
   }
-  else if (temp > 2000) & (temp < 8000){
-    const coeff = 1.5e-26;
-    const index = 0.5;
+  else if (temp > 2000 & temp < 8000){
+    coeff = 1.5e-26;
+    index = 0.5;
     du_dt_cgs = -coeff * pow(temp / 2000, index) / rho_cgs;   
   }
-  else if (temp > 8000) & (temp < 1e4){
-    const coeff = 3e-26;
-    const index = 19.6;
+  else if (temp > 8000 & temp < 1e4){
+    coeff = 3e-26;
+    index = 19.6;
     du_dt_cgs = -coeff * pow(temp / 8000, index) / rho_cgs;   
   }
-  else if (temp > 1e4) & (temp < 2e4){
-    const coeff = 2.4e-24;
-    const index = 6;
+  else if (temp > 1e4 & temp < 2e4){
+    coeff = 2.4e-24;
+    index = 6;
     du_dt_cgs = -coeff * pow(temp / 1e4, index) / rho_cgs;   
   }
-  else if (temp > 2e4) & (temp < 2e5){
-    const coeff = 1.5438e-24;
-    const index = 0.6;
+  else if (temp > 2e4 & temp < 2e5){
+    coeff = 1.5438e-24;
+    index = 0.6;
     du_dt_cgs = -coeff * pow(temp / 2e4, index) / rho_cgs;   
   }
-  else if (temp > 2e5) & (temp < 1.5e6){
-    const coeff = 6.6831e-22;
-    const index = -1.7;
+  else if (temp > 2e5 & temp < 1.5e6){
+    coeff = 6.6831e-22;
+    index = -1.7;
     du_dt_cgs = -coeff * pow(temp / 2e5, index) / rho_cgs;   
   }
-  else if (temp > 1.5e6) & (temp < 8e6){
-    const coeff = 2.7735e-23;
-    const index = -0.5;
+  else if (temp > 1.5e6 & temp < 8e6){
+    coeff = 2.7735e-23;
+    index = -0.5;
     du_dt_cgs = -coeff * pow(temp / 1.5e6, index) / rho_cgs;   
   }
-  else if (temp > 8e6) & (temp < 5.8e7){
-    const coeff = 1.1952e-23;
-    const index = 0.22;
+  else if (temp > 8e6 & temp < 5.8e7){
+    coeff = 1.1952e-23;
+    index = 0.22;
     du_dt_cgs = -coeff * pow(temp / 8e6, index) / rho_cgs;   
   }
   else if (temp > 5.8e7){
-    const coeff = 1.8421;
-    const index = 0.4;
+    coeff = 1.8421;
+    index = 0.4;
     du_dt_cgs = -coeff * pow(temp / 5.8e7, index) / rho_cgs;   
   }
   return du_dt_cgs;
@@ -267,7 +269,7 @@ __attribute__((always_inline)) INLINE static float cooling_timestep(
   /* Get current internal energy and cooling rate */
   const float u = hydro_get_physical_internal_energy(p, xp, cosmo);
   const double cooling_du_dt_cgs =
-      cooling_rate_cgs(cosmo, hydro_props, cooling, p);
+      cooling_rate_cgs(phys_const, us, cosmo, hydro_props, cooling, p, xp);
 
   /* Convert to internal units */
   const float cooling_du_dt = cooling_du_dt_cgs *
