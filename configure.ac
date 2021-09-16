@@ -2053,6 +2053,9 @@ case "$with_cooling" in
    const-lambda)
       AC_DEFINE([COOLING_CONST_LAMBDA], [1], [Const Lambda cooling function])
    ;;
+   piecewise-powerlaw)
+      AC_DEFINE([COOLING_PIECEWISE_POWERLAW], [1], [Piecewise powerlaw cooling function])
+   ;;
    grackle_*)
       AC_DEFINE([COOLING_GRACKLE], [1], [Cooling via the grackle library])
       primordial_chemistry=${with_cooling:8}
