@@ -506,7 +506,7 @@ void lightcone_init(struct lightcone_props *props,
 
   /* Initialize various counters */
   for(int i=0; i<swift_type_count; i+=1) {
-    props->tot_num_particles_written[i] = 0;
+    props->num_particles_written_this_rank[i] = 0;
     props->num_particles_written_to_file[i] = 0;
   }
   props->current_file = -1;
@@ -778,15 +778,24 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
                                     props->index, (int) num_to_write, part_type_names[ptype]);
           lightcone_write_particles(props, internal_units, snapshot_units, ptype, file_id);
           particle_buffer_empty(&props->buffer[ptype]);
-          props->num_particles_written_to_file[ptype] += num_to_write;          
+          props->num_particles_written_to_file[ptype] += num_to_write;
+          props->num_particles_written_this_rank[ptype] += num_to_write;
         }
       }
     }
 
-    /* If we're done writing to the file, write a flag to indicate this */
+    /* Check if this is the last write to this file */
     if(end_file) {
       hid_t group_id = H5Gopen(file_id, "Lightcone", H5P_DEFAULT);
+      /* Flag the file as complete */
       io_write_attribute_i(group_id, "file_complete", 1);
+      /* Write the expected number of particles in all files written by this rank
+         up to and including this one. */
+      for(int ptype=0; ptype<swift_type_count; ptype +=1) {
+        char name[PARSER_MAX_LINE_SIZE];
+        check_snprintf(name, PARSER_MAX_LINE_SIZE, "cumulative_count_%s", part_type_names[ptype]);
+        io_write_attribute_ll(group_id, name, props->num_particles_written_this_rank[ptype]);
+      }
       H5Gclose(group_id);
     }
 

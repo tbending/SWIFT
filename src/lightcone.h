@@ -134,11 +134,11 @@ struct lightcone_props {
   /*! List of periodic replications to check on this timestep */
   struct replication_list replication_list;
 
-  /*! Total number of particles written to the lightcone by this MPI rank */
-  long long tot_num_particles_written[swift_type_count];
-
   /*! Number of particles written to the current file by this MPI rank */
   long long num_particles_written_to_file[swift_type_count];
+
+  /*! Number of particles of each type which have been output on this rank */
+  long long num_particles_written_this_rank[swift_type_count];
 
   /*! Index of the current output file for this MPI rank */
   int current_file;
