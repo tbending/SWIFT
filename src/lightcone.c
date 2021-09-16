@@ -730,7 +730,7 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
       io_write_unit_system(file_id, internal_units, "InternalCodeUnits");
 
       /* Write the observer position and redshift limits */
-      hid_t group_id = H5Gcreate2(file_id, "Lightcone", H5P_DEFAULT,
+      hid_t group_id = H5Gcreate(file_id, "Lightcone", H5P_DEFAULT,
                                   H5P_DEFAULT, H5P_DEFAULT);
       io_write_attribute(group_id, "observer_position", DOUBLE,
                          props->observer_position, 3);
@@ -781,6 +781,13 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
           props->num_particles_written_to_file[ptype] += num_to_write;          
         }
       }
+    }
+
+    /* If we're done writing to the file, write a flag to indicate this */
+    if(end_file) {
+      hid_t group_id = H5Gopen(file_id, "Lightcone", H5P_DEFAULT);
+      io_write_attribute_i(group_id, "file_complete", 1);
+      H5Gclose(group_id);
     }
 
     /* We're done updating the output file */
@@ -1473,8 +1480,8 @@ void lightcone_write_index(struct lightcone_props *props,
     hid_t file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
     /* Write number of MPI ranks and number of files */
-    hid_t group_id = H5Gcreate2(file_id, "Lightcone", H5P_DEFAULT,
-                                H5P_DEFAULT, H5P_DEFAULT);
+    hid_t group_id = H5Gcreate(file_id, "Lightcone", H5P_DEFAULT,
+                               H5P_DEFAULT, H5P_DEFAULT);
     io_write_attribute_i(group_id, "nr_mpi_ranks", comm_size);
     io_write_attribute(group_id, "final_particle_file_on_rank", INT,
                        current_file_on_rank, comm_size);
