@@ -17,14 +17,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  ******************************************************************************/
-#ifndef SWIFT_COOLING_CONST_LAMBDA_H
-#define SWIFT_COOLING_CONST_LAMBDA_H
+#ifndef SWIFT_COOLING_PIECEWISE_POWERLAW_H
+#define SWIFT_COOLING_PIECEWISE_POWERLAW_H
 
 /**
- * @file src/cooling/const_lambda/cooling.h
- * @brief Routines related to the "constant lambda" cooling function.
+ * @file src/cooling/variable_lambda/cooling.h
+ * @brief Routines related to the "piecewise-powerlaw" cooling function.
  *
- * This model assumes a constant cooling rate Lambda irrespective of redshift
+ * This model assumes a piecewise powerlaw cooling (farber&gronke 2021) irrespective of redshift
  * or density.
  */
 
@@ -59,6 +59,51 @@ INLINE static void cooling_update(const struct cosmology* cosmo,
                                   struct space* s) {
   // Add content if required.
 }
+
+
+/**
+ * @brief Compute the temperature of a #part based on the cooling function.
+ *
+ * @param phys_const #phys_const data structure.
+ * @param hydro_props The properties of the hydro scheme.
+ * @param us The internal system of units.
+ * @param cosmo #cosmology data structure.
+ * @param cooling #cooling_function_data struct.
+ * @param p #part data.
+ * @param xp Pointer to the #xpart data.
+ */
+INLINE static float cooling_get_temperature(
+    const struct phys_const* restrict phys_const,
+    const struct hydro_props* restrict hydro_props,
+    const struct unit_system* restrict us,
+    const struct cosmology* restrict cosmo,
+    const struct cooling_function_data* restrict cooling,
+    const struct part* restrict p, const struct xpart* restrict xp) {
+
+  /* Physical constants */
+  const double m_H = phys_const->const_proton_mass;
+  const double k_B = phys_const->const_boltzmann_k;
+
+  /* Gas properties */
+  const double T_transition = hydro_props->hydrogen_ionization_temperature;
+  const double mu_neutral = hydro_props->mu_neutral;
+  const double mu_ionised = hydro_props->mu_ionised;
+
+  /* Particle temperature */
+  const double u = hydro_get_drifted_physical_internal_energy(p, cosmo);
+
+  /* Temperature over mean molecular weight */
+  const double T_over_mu = hydro_gamma_minus_one * u * m_H / k_B;
+
+  /* Are we above or below the HII -> HI transition? */
+  if (T_over_mu > (T_transition + 1.) / mu_ionised)
+    return T_over_mu * mu_ionised;
+  else if (T_over_mu < (T_transition - 1.) / mu_neutral)
+    return T_over_mu * mu_neutral;
+  else
+    return T_transition;
+}
+
 
 /**
  * @brief Calculates du/dt in CGS units for a particle.
@@ -307,50 +352,6 @@ __attribute__((always_inline)) INLINE static void cooling_first_init_part(
 
   xp->cooling_data.radiated_energy = 0.f;
 }
-
-/**
- * @brief Compute the temperature of a #part based on the cooling function.
- *
- * @param phys_const #phys_const data structure.
- * @param hydro_props The properties of the hydro scheme.
- * @param us The internal system of units.
- * @param cosmo #cosmology data structure.
- * @param cooling #cooling_function_data struct.
- * @param p #part data.
- * @param xp Pointer to the #xpart data.
- */
-INLINE static float cooling_get_temperature(
-    const struct phys_const* restrict phys_const,
-    const struct hydro_props* restrict hydro_props,
-    const struct unit_system* restrict us,
-    const struct cosmology* restrict cosmo,
-    const struct cooling_function_data* restrict cooling,
-    const struct part* restrict p, const struct xpart* restrict xp) {
-
-  /* Physical constants */
-  const double m_H = phys_const->const_proton_mass;
-  const double k_B = phys_const->const_boltzmann_k;
-
-  /* Gas properties */
-  const double T_transition = hydro_props->hydrogen_ionization_temperature;
-  const double mu_neutral = hydro_props->mu_neutral;
-  const double mu_ionised = hydro_props->mu_ionised;
-
-  /* Particle temperature */
-  const double u = hydro_get_drifted_physical_internal_energy(p, cosmo);
-
-  /* Temperature over mean molecular weight */
-  const double T_over_mu = hydro_gamma_minus_one * u * m_H / k_B;
-
-  /* Are we above or below the HII -> HI transition? */
-  if (T_over_mu > (T_transition + 1.) / mu_ionised)
-    return T_over_mu * mu_ionised;
-  else if (T_over_mu < (T_transition - 1.) / mu_neutral)
-    return T_over_mu * mu_neutral;
-  else
-    return T_transition;
-}
-
 /**
  * @brief Returns the subgrid temperature of a particle.
  *
