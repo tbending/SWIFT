@@ -148,42 +148,42 @@ __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
   if (temp <= 300){
     du_dt_cgs = 0;
   }
-  if (temp > 300 & temp < 2000){
+  if (temp > 300 & temp <= 2000){
     coeff = 1e-26;
     index = 0.2;
     du_dt_cgs = -coeff * pow(temp / 300, index) / rho_cgs;
   }
-  else if (temp > 2000 & temp < 8000){
+  else if (temp > 2000 & temp <= 8000){
     coeff = 1.5e-26;
     index = 0.5;
     du_dt_cgs = -coeff * pow(temp / 2000, index) / rho_cgs;   
   }
-  else if (temp > 8000 & temp < 1e4){
+  else if (temp > 8000 & temp <= 1e4){
     coeff = 3e-26;
     index = 19.6;
     du_dt_cgs = -coeff * pow(temp / 8000, index) / rho_cgs;   
   }
-  else if (temp > 1e4 & temp < 2e4){
+  else if (temp > 1e4 & temp <= 2e4){
     coeff = 2.4e-24;
     index = 6;
     du_dt_cgs = -coeff * pow(temp / 1e4, index) / rho_cgs;   
   }
-  else if (temp > 2e4 & temp < 2e5){
+  else if (temp > 2e4 & temp <= 2e5){
     coeff = 1.5438e-24;
     index = 0.6;
     du_dt_cgs = -coeff * pow(temp / 2e4, index) / rho_cgs;   
   }
-  else if (temp > 2e5 & temp < 1.5e6){
+  else if (temp > 2e5 & temp <= 1.5e6){
     coeff = 6.6831e-22;
     index = -1.7;
     du_dt_cgs = -coeff * pow(temp / 2e5, index) / rho_cgs;   
   }
-  else if (temp > 1.5e6 & temp < 8e6){
+  else if (temp > 1.5e6 & temp <= 8e6){
     coeff = 2.7735e-23;
     index = -0.5;
     du_dt_cgs = -coeff * pow(temp / 1.5e6, index) / rho_cgs;   
   }
-  else if (temp > 8e6 & temp < 5.8e7){
+  else if (temp > 8e6 & temp <= 5.8e7){
     coeff = 1.1952e-23;
     index = 0.22;
     du_dt_cgs = -coeff * pow(temp / 8e6, index) / rho_cgs;   
