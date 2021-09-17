@@ -189,7 +189,7 @@ void lightcone_array_flush(struct lightcone_array_props *props,
     if(flush_map_updates) lightcone_flush_map_updates(lc_props, tp);
 
     /* Flush particle buffers if they're large or flag is set */
-    lightcone_flush_particle_buffers(lc_props,
+    lightcone_flush_particle_buffers(lc_props, cosmo->a,
                                      internal_units, snapshot_units,
                                      flush_particles, end_file);
     

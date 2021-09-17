@@ -510,7 +510,8 @@ void lightcone_init(struct lightcone_props *props,
     props->num_particles_written_to_file[i] = 0;
   }
   props->current_file = -1;
-  
+  props->file_needs_finalizing = 0;
+
   /* Always start a new file initially */
   props->start_new_file = 1;
 
@@ -682,13 +683,16 @@ static void particle_file_name(char *buf, int len, char *subdir, char *basename,
  * @param end_file if true, subsequent calls write to a new file
  *
  */
-void lightcone_flush_particle_buffers(struct lightcone_props *props,
+void lightcone_flush_particle_buffers(struct lightcone_props *props, double a,
                                       const struct unit_system *internal_units,
                                       const struct unit_system *snapshot_units,
                                       int flush_all, int end_file) {
 
   ticks tic = getticks();
   
+  /* Should never be called with end_file=1 and flush_all=0 */
+  if(end_file && (!flush_all))error("Finalizing file without flushing buffers!");
+
   /* Will flush any buffers with more particles than this */
   size_t max_to_buffer = (size_t) props->max_particles_buffered;
   if(flush_all)max_to_buffer = 0;
@@ -703,7 +707,7 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
   }
   
   /* Check if there's anything to do */
-  if(types_to_flush>0) {
+  if((types_to_flush>0) || (end_file && props->file_needs_finalizing)) {
     
     /* We have data to flush, so open or create the output file */
     hid_t file_id;
@@ -718,6 +722,9 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
       /* Create the file */
       file_id = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
       if(file_id < 0)error("Unable to create new lightcone file: %s", fname);
+
+      /* This new file has not been finalized yet */
+      props->file_needs_finalizing = 1;
 
       /* We have now written no particles to the current file */
       for(int ptype=0; ptype<swift_type_count; ptype+=1)
@@ -794,7 +801,10 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
         check_snprintf(name, PARSER_MAX_LINE_SIZE, "cumulative_count_%s", part_type_names[ptype]);
         io_write_attribute_ll(group_id, name, props->num_particles_written_this_rank[ptype]);
       }
+      /* Write the expansion factor at which we closed this file */
+      io_write_attribute_d(group_id, "expansion_factor", a);
       H5Gclose(group_id);
+      props->file_needs_finalizing = 0;
     }
 
     /* We're done updating the output file */

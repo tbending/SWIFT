@@ -158,6 +158,9 @@ struct lightcone_props {
   /*! Whether we should make a new file on the next flush */
   int start_new_file;
 
+  /*! Whether we have started a particle file and not finalized it yet */
+  int file_needs_finalizing;
+
   /*! Number of pending map updates to trigger communication */
   int max_updates_buffered;
 
@@ -223,7 +226,7 @@ void lightcone_buffer_particle(struct lightcone_props *props,
                                const struct engine *e, const struct gpart *gp,
                                const double a_cross, const double x_cross[3]);
 
-void lightcone_flush_particle_buffers(struct lightcone_props *props,
+void lightcone_flush_particle_buffers(struct lightcone_props *props, double a,
                                       const struct unit_system *internal_units,
                                       const struct unit_system *snapshot_units,
                                       int flush_all, int end_file);
