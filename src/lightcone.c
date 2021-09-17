@@ -774,8 +774,6 @@ void lightcone_flush_particle_buffers(struct lightcone_props *props,
       if(props->use_type[ptype]) {
         const size_t num_to_write = particle_buffer_num_elements(&props->buffer[ptype]);
         if(num_to_write >= max_to_buffer && num_to_write > 0) {
-          if(props->verbose)message("lightcone %d: dumping %d particles of type %s",
-                                    props->index, (int) num_to_write, part_type_names[ptype]);
           lightcone_write_particles(props, internal_units, snapshot_units, ptype, file_id);
           particle_buffer_empty(&props->buffer[ptype]);
           props->num_particles_written_to_file[ptype] += num_to_write;
