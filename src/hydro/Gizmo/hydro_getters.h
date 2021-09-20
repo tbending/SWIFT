@@ -134,7 +134,7 @@ hydro_get_physical_internal_energy(const struct part* restrict p,
                                    const struct cosmology* cosmo) {
 
   return cosmo->a_factor_internal_energy *
-         hydro_get_comoving_internal_energy(p);
+         hydro_get_comoving_internal_energy(p, xp);
 }
 
 /**
@@ -156,7 +156,7 @@ hydro_get_drifted_physical_internal_energy(const struct part* restrict p,
  * @param p The particle of interest.
  */
 __attribute__((always_inline)) INLINE static float
-hydro_get_drifted_comoving_internal_energy(const struct part* restrict p, , const struct xpart* restrict xp) {
+hydro_get_drifted_comoving_internal_energy(const struct part* restrict p, const struct xpart* restrict xp) {
 
   return hydro_get_comoving_internal_energy(p, xp);
 }
