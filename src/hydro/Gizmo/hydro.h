@@ -47,6 +47,8 @@
 #define SPH_IMPLEMENTATION "GIZMO MFM (Hopkins 2015)"
 #endif
 
+struct entropy_floor_properties;
+
 /**
  * @brief Computes the hydro time-step of a given particle
  *
