@@ -113,7 +113,7 @@ __attribute__((always_inline)) INLINE static void hydro_part_get_slope_limiter(
  * @param p The particle of interest.
  */
 __attribute__((always_inline)) INLINE static float
-hydro_get_comoving_internal_energy(const struct part* restrict p) {
+hydro_get_comoving_internal_energy(const struct part* restrict p, const struct xpart* restrict xp) {
 
   if (p->rho > 0.0f)
     return gas_internal_energy_from_pressure(p->rho, p->P);
