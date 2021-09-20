@@ -156,9 +156,9 @@ hydro_get_drifted_physical_internal_energy(const struct part* restrict p,
  * @param p The particle of interest.
  */
 __attribute__((always_inline)) INLINE static float
-hydro_get_drifted_comoving_internal_energy(const struct part* restrict p) {
+hydro_get_drifted_comoving_internal_energy(const struct part* restrict p, , const struct xpart* restrict xp) {
 
-  return hydro_get_comoving_internal_energy(p);
+  return hydro_get_comoving_internal_energy(p, xp);
 }
 
 /**
