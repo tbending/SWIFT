@@ -61,6 +61,27 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
   pj->rt_data.debug_iact_stars_inject_prep += 1;
   pj->rt_data.debug_iact_stars_inject_prep_tot += 1ULL;
 #endif
+
+  /* Compute the weight of the neighbouring particle */
+  float wi;
+  const float r = sqrtf(r2);
+  const float hi_inv = 1.f / hi;
+  const float xi = r * hi_inv;
+  kernel_eval(xi, &wi);
+  const float hi_inv_dim = pow_dimension(hi_inv);
+  /* psi(x_star - x_gas, h_star) */
+  const float psi = wi * hi_inv_dim / si->density.wcount;
+ 
+  /* Now add that weight to the appropriate quadrant */
+  int quadrant_index = 0;
+
+  if (dx[0] > 0) quadrant_index += 1;
+  if (dx[1] > 0) quadrant_index += 2;
+  if (dx[2] > 0) quadrant_index += 4;
+
+  si->rt_data.quadrant_weights[quadrant_index] += psi;
+
+
 }
 
 /**
@@ -115,6 +136,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
    * have nothing to do here. */
   if (si->density.wcount == 0.f) return;
 
+  /* Compute weight and unit vector */
   float wi;
   const float r = sqrtf(r2);
   const float hi_inv = 1.f / hi;
@@ -123,19 +145,43 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
   const float psi = wi * hi_inv_dim / si->density.wcount;
-  /* const float r_inv = 1.f/r; */
-  /* const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv}; */
+  const float r_inv = 1.f/r;
+  const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv};
 
+  /* Compute isotropy correction */
+#if defined(HYDRO_DIMENSION_3D)
+  const int maxind = 8;
+#elif defined(HYDRO_DIMENSION_2D)
+  const int maxind = 4;
+#elif defined(HYDRO_DIMENSION_1D)
+  const int maxind = 2;
+#endif
+  float weight_sum = 0.f;
+  float nonempty_quadrants = 0.f;
+
+  for (int i = 0; i < maxind; i++) {
+    if (si->rt_data.quadrant_weights[i] > 0.f) nonempty_quadrants += 1.f;
+    weight_sum += si->rt_data.quadrant_weights[i];
+  }
+
+  int quadrant_index = 0;
+  if (dx[0] > 0) quadrant_index += 1;
+  if (dx[1] > 0) quadrant_index += 2;
+  if (dx[2] > 0) quadrant_index += 4;
+
+  const float isotropy_correction = weight_sum / nonempty_quadrants / si->rt_data.quadrant_weights[quadrant_index];
+
+  /* Nurse, the patient is ready now */
   /* TODO: this is done differently for RT_HYDRO_CONTROLLED_INJECTION */
   for (int g = 0; g < RT_NGROUPS; g++) {
     const float injected_energy = si->rt_data.emission_this_step[g] * psi;
     pj->rt_data.conserved[g].energy += injected_energy;
     /* We assume the path from the star to the gas is optically thin */
-    /* const float injected_flux = injected_energy *
-     * rt_params.reduced_speed_of_light; */
-    /* pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0]; */
-    /* pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1]; */
-    /* pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2]; */
+    const float injected_flux = injected_energy *
+    rt_params.reduced_speed_of_light * isotropy_correction;
+    pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0];
+    pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1];
+    pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2];
   }
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
