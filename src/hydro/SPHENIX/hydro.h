@@ -42,6 +42,8 @@
 
 #include <float.h>
 
+struct entropy_floor_properties;
+
 /**
  * @brief Returns the comoving internal energy of a particle at the last
  * time the particle was kicked.
