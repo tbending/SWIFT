@@ -607,27 +607,48 @@ void lightcone_init(struct lightcone_props *props,
   }
   if(engine_rank==0)message("lightcone %d: there are %d lightcone shells and %d maps per shell",
                             index, nr_shells, nr_maps);
+  
+  /* For each particle type, find the full redshift range to search for lightcone crossings */
+  int have_particle_output = 0;
+  for(int i=0; i<swift_type_count; i+=1) {
 
-  /* Determine the full redshift range to search for lightcone crossings */
+    /* Initially set range to search to range used for particle output, if any */
+    if(props->use_type[i]) {
+      props->a_min_search_for_type[i] = 1.0/(1.0+props->z_max_for_type[i]);
+      props->a_max_search_for_type[i] = 1.0/(1.0+props->z_min_for_type[i]);
+      have_particle_output = 1;
+    } else {
+      props->a_min_search_for_type[i] =  DBL_MAX;
+      props->a_max_search_for_type[i] =  0.0;
+    }
+
+    /* Then expand the range to include any healpix maps this type contributes to */
+    for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
+      const double shell_a_min = props->shell[shell_nr].amin;
+      const double shell_a_max = props->shell[shell_nr].amax;
+      for(int map_nr=0; map_nr<nr_maps; map_nr+=1) {
+        const struct lightcone_map_type *map_type = &(props->map_type[map_nr]);
+        if(map_type->ptype_contributes(i)) {
+          if(shell_a_min < props->a_min_search_for_type[i])
+            props->a_min_search_for_type[i] = shell_a_min;
+          if(shell_a_max > props->a_max_search_for_type[i])
+            props->a_max_search_for_type[i] = shell_a_max;
+        }
+      }
+    }
+    /* Next particle type */
+  }
+
+  /* Determine the full redshift range to search for all particle types */
   double a_min = DBL_MAX;
   double a_max = 0.0;
-  int have_particle_output = 0;
-  /* First check redshift range for each particle type */
   for(int i=0; i<swift_type_count; i+=1) {
-    if(props->use_type[i]) {
-      have_particle_output = 1;
-      const double a_min_for_type = 1.0/(1.0+props->z_max_for_type[i]);
-      const double a_max_for_type = 1.0/(1.0+props->z_min_for_type[i]);
-      if(a_min_for_type < a_min)a_min = a_min_for_type;
-      if(a_max_for_type > a_max)a_max = a_max_for_type;
+    if(props->a_max_search_for_type[i] > props->a_min_search_for_type[i]) {
+      if(props->a_min_search_for_type[i] < a_min)
+        a_min = props->a_min_search_for_type[i];
+      if(props->a_max_search_for_type[i] > a_max)
+        a_max = props->a_max_search_for_type[i];
     }
-  }
-  /* Then extend the range to include all healpix map shells */
-  for(int shell_nr=0;shell_nr<nr_shells; shell_nr+=1) {
-    const double shell_a_min = props->shell[shell_nr].amin;
-    const double shell_a_max = props->shell[shell_nr].amax;
-    if(shell_a_min < a_min)a_min = shell_a_min;
-    if(shell_a_max > a_max)a_max = shell_a_max;
   }
 
   /* Check we have a valid range in expansion factor for the lightcone */
@@ -635,8 +656,12 @@ void lightcone_init(struct lightcone_props *props,
     error("Code was run with --lightcone but no particle outputs or healpix maps are enabled");
   props->a_min = a_min;
   props->a_max = a_max;
-  if(engine_rank==0)message("lightcone %d: range in expansion factor to search lightcone: %e to %e",
-                            index, a_min, a_max);
+  if(engine_rank==0) {
+    for(int i=0; i<swift_type_count; i+=1) {
+      message("lightcone %d: range in expansion factor for %s: %e to %e", index, part_type_names[i], a_min, a_max);
+    }
+    message("lightcone %d: range in expansion factor overall: %e to %e", index, a_min, a_max);
+  }
 
   /* Store the corresponding comoving distance squared */
   props->r2_max = pow(cosmology_get_comoving_distance(cosmo, a_min), 2.0);
@@ -1218,6 +1243,15 @@ void lightcone_prepare_for_step(struct lightcone_props *props,
   }
   props->shell_nr_min = shell_nr_min;
   props->shell_nr_max = shell_nr_max;
+
+  /* Determine which particle types might contribute to lightcone outputs at this step */
+  for(int i=0; i<swift_type_count; i+=1) {
+    props->check_type_for_crossing[i] = 0;
+    if(props->a_max_search_for_type[i] >= props->a_min_search_for_type[i]) {
+      if(a_current >= props->a_min_search_for_type[i] && a_old <= props->a_max_search_for_type[i])
+        props->check_type_for_crossing[i] = 1;
+    }
+  }
 
   if (props->verbose && engine_rank==0)
     message("lightcone %d: Lightcone timestep preparations took %.3f %s.",

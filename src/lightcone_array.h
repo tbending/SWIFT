@@ -50,6 +50,9 @@ struct lightcone_array_props {
   /*! Lightcone properties */
   struct lightcone_props *lightcone;
 
+  /*! Whether we need to do lightcone crossing checks for each type at this step */
+  int check_type_for_crossing[swift_type_count];
+
   /*! Whether to generate memory usage reports */
   int verbose;
 

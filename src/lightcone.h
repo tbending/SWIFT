@@ -56,11 +56,20 @@ struct lightcone_props {
   /*! Which particle types we're doing */
   int use_type[swift_type_count];
 
-  /*! Minimum redshift for each type */
+  /*! Minimum redshift for particle output for each type */
   double z_min_for_type[swift_type_count];
 
-  /*! Maximum redshift for each type */
+  /*! Maximum redshift for particle output for each type */
   double z_max_for_type[swift_type_count];
+
+  /*! Minimum a to search for lightcone crossing for each type  */
+  double a_min_search_for_type[swift_type_count];
+
+  /*! Maximum a to search for lightcone crossing for each type  */
+  double a_max_search_for_type[swift_type_count];
+
+  /*! Whether we need to do lightcone crossing checks for each type at this step */
+  int check_type_for_crossing[swift_type_count];
 
   /*! Enable selective output of high redshift gas */
   int gas_filtering_enabled;

@@ -60,7 +60,10 @@ __attribute__((always_inline)) INLINE static void lightcone_check_particle_cross
      const double *x, const float *v_full, const struct gpart *gp, const double dt_drift,
      const integertime_t ti_old, const integertime_t ti_current, const double cell_loc[3]) {
 
-  /* First, check if we have any replications to search */
+  /* Does this particle type contribute to any lightcone outputs at this redshift? */
+  if(e->lightcone_array_properties->check_type_for_crossing[gp->type]==0)return;
+
+  /* Check if we have any replications to search */
   /* TODO: pre-calculate this for each cell to save time */
   int nrep_tot = 0;
   const int nr_lightcones = e->lightcone_array_properties->nr_lightcones;
