@@ -658,7 +658,14 @@ void lightcone_init(struct lightcone_props *props,
   props->a_max = a_max;
   if(engine_rank==0) {
     for(int i=0; i<swift_type_count; i+=1) {
-      message("lightcone %d: range in expansion factor for %s: %e to %e", index, part_type_names[i], a_min, a_max);
+      if(props->a_max_search_for_type[i] > props->a_min_search_for_type[i]) {
+        message("lightcone %d: range in expansion factor for %s: %e to %e",
+                index, part_type_names[i], props->a_min_search_for_type[i],
+                props->a_max_search_for_type[i]);
+      } else {
+        message("lightcone %d: no lightcone output for %s",
+                index, part_type_names[i]);
+      }
     }
     message("lightcone %d: range in expansion factor overall: %e to %e", index, a_min, a_max);
   }
