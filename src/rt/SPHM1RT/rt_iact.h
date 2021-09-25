@@ -39,7 +39,6 @@
  * @param pj Second (gas) particle (not updated).
  * @param cosmo The cosmological model.
  * @param rt_props Properties of the feedback scheme.
- * generator
  */
 
 __attribute__((always_inline)) INLINE static void

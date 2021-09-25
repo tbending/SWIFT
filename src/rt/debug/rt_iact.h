@@ -39,7 +39,6 @@
  * @param pj Second (gas) particle (not updated).
  * @param cosmo The cosmological model.
  * @param rt_props Properties of the feedback scheme.
- * generator
  */
 
 __attribute__((always_inline)) INLINE static void
@@ -53,7 +52,6 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
   si->rt_data.debug_iact_hydro_inject_prep_tot += 1ULL;
   pj->rt_data.debug_iact_stars_inject_prep += 1;
   pj->rt_data.debug_iact_stars_inject_prep_tot += 1ULL;
-/* if (pj->id == 8780) message("Caught pID %lld, %d %lld", pj->id, pj->rt_data.debug_iact_stars_inject_prep, pj->rt_data.debug_iact_stars_inject_prep_tot); */
 }
 
 /**

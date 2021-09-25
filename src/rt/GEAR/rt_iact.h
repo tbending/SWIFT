@@ -40,7 +40,6 @@
  * @param pj Second (gas) particle (not updated).
  * @param cosmo The cosmological model.
  * @param rt_props Properties of the feedback scheme.
- * generator
  */
 
 __attribute__((always_inline)) INLINE static void
@@ -63,15 +62,15 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
 #endif
 
   /* Compute the weight of the neighbouring particle */
-  float wi;
   const float r = sqrtf(r2);
+  float wi;
   const float hi_inv = 1.f / hi;
   const float xi = r * hi_inv;
   kernel_eval(xi, &wi);
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
   const float psi = wi * hi_inv_dim / si->density.wcount;
- 
+
   /* Now add that weight to the appropriate quadrant */
   int quadrant_index = 0;
 
@@ -119,7 +118,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   pj->rt_data.debug_iact_stars_inject += 1;
   pj->rt_data.debug_radiation_absorbed_tot += 1ULL;
 
-
   /* Attempt to catch race condition/dependency error */
   if (si->rt_data.debug_iact_hydro_inject_prep <
       si->rt_data.debug_iact_hydro_inject)
@@ -136,19 +134,16 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
    * have nothing to do here. */
   if (si->density.wcount == 0.f) return;
 
-  /* Compute weight and unit vector */
-  float wi;
+  /* Compute the weight of the neighbouring particle */
   const float r = sqrtf(r2);
+  float wi;
   const float hi_inv = 1.f / hi;
   const float xi = r * hi_inv;
   kernel_eval(xi, &wi);
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
   const float psi = wi * hi_inv_dim / si->density.wcount;
-  const float r_inv = 1.f/r;
-  const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv};
 
-  /* Compute isotropy correction */
 #if defined(HYDRO_DIMENSION_3D)
   const int maxind = 8;
 #elif defined(HYDRO_DIMENSION_2D)
@@ -156,6 +151,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 #elif defined(HYDRO_DIMENSION_1D)
   const int maxind = 2;
 #endif
+  float total_weight = 0.f;
+  for (int i = 0; i < maxind; i++){
+    total_weight += si->rt_data.quadrant_weights[i]; 
+  }
+
+  /* Compute unit vector and isotropy correction */
+  const float r_inv = 1.f/sqrtf(r2);
+  const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv};
+
   float weight_sum = 0.f;
   float nonempty_quadrants = 0.f;
 
@@ -165,20 +169,24 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   }
 
   int quadrant_index = 0;
-  if (dx[0] > 0) quadrant_index += 1;
-  if (dx[1] > 0) quadrant_index += 2;
-  if (dx[2] > 0) quadrant_index += 4;
+  if (dx[0] > 0.f) quadrant_index += 1;
+  if (dx[1] > 0.f) quadrant_index += 2;
+  if (dx[2] > 0.f) quadrant_index += 4;
 
-  const float isotropy_correction = weight_sum / nonempty_quadrants / si->rt_data.quadrant_weights[quadrant_index];
+  const float isotropy_correction = weight_sum / nonempty_quadrants / 
+                si->rt_data.quadrant_weights[quadrant_index];
 
   /* Nurse, the patient is ready now */
   /* TODO: this is done differently for RT_HYDRO_CONTROLLED_INJECTION */
+  const float f = psi / total_weight * isotropy_correction;
   for (int g = 0; g < RT_NGROUPS; g++) {
-    const float injected_energy = si->rt_data.emission_this_step[g] * psi;
+    /* Inject energy. */
+    const float injected_energy = si->rt_data.emission_this_step[g] * f;
     pj->rt_data.conserved[g].energy += injected_energy;
+
+    /* Inject flux. */
     /* We assume the path from the star to the gas is optically thin */
-    const float injected_flux = injected_energy *
-    rt_params.reduced_speed_of_light * isotropy_correction;
+    const float injected_flux = injected_energy * rt_params.reduced_speed_of_light;
     pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0];
     pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1];
     pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2];
@@ -187,7 +195,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* Take note how much energy we actually injected */
   for (int g = 0; g < RT_NGROUPS; g++) {
-    float res = si->rt_data.emission_this_step[g] * psi;
+    float res = si->rt_data.emission_this_step[g] * f;
     si->rt_data.debug_injected_energy[g] += res;
     si->rt_data.debug_injected_energy_tot[g] += res;
   }

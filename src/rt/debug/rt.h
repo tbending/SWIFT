@@ -42,6 +42,8 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
  * are both called individually. Also, if debugging checks are active, an
  * extra call to rt_reset_part is made in space_convert_rt_quantities() after
  * the zeroth time step is finished.
+ *
+ * @param p the particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_reset_part(
     struct part* restrict p) {
@@ -49,7 +51,6 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   p->rt_data.debug_iact_stars_inject = 0;
-if (p->id == 8780) message("Resetting debug_iact_stars_inject_prep for pID %lld", p->id);
   p->rt_data.debug_iact_stars_inject_prep = 0;
 
   p->rt_data.debug_calls_iact_gradient = 0;
@@ -66,6 +67,8 @@ if (p->id == 8780) message("Resetting debug_iact_stars_inject_prep for pID %lld"
 
 /**
  * @brief First initialisation of the RT hydro particle data.
+ *
+ * @param p particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_first_init_part(
     struct part* restrict p) {
@@ -80,12 +83,11 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
  * @brief Initialisation of the RT density loop related star particle data.
  * Note: during initalisation (space_init), rt_reset_spart and rt_init_spart
  * are both called individually.
+ *
+ * @param sp star particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_init_spart(
-    struct spart* restrict sp) {
-
-    if (sp->id == 64000) message("reinit star %lld", sp->id);
-    }
+    struct spart* restrict sp) {}
 
 /**
  * @brief Reset of the RT star particle data not related to the density.
@@ -93,12 +95,13 @@ __attribute__((always_inline)) INLINE static void rt_init_spart(
  * are both called individually. Also, if debugging checks are active, an
  * extra call to rt_reset_spart is made in space_convert_rt_quantities() after
  * the zeroth time step is finished.
+ *
+ * @param sp star particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_reset_spart(
     struct spart* restrict sp) {
 
   /* reset everything */
-  if (sp->id == 64000) message("reset star %lld", sp->id);
 
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
@@ -111,6 +114,8 @@ __attribute__((always_inline)) INLINE static void rt_reset_spart(
 
 /**
  * @brief First initialisation of the RT star particle data.
+ *
+ * @param sp star particle to work on
  */
 __attribute__((always_inline)) INLINE static void rt_first_init_spart(
     struct spart* restrict sp) {
@@ -181,9 +186,7 @@ __attribute__((always_inline)) INLINE static double rt_part_dt(
 }
 
 /**
- * @brief Update the photon number of a particle, i.e. compute
- *  E^{n+1} = E^n + dt * dE_* / dt. This function finalises
- *  the injection step.
+ * @brief This function finalises the injection step.
  *
  * @param p particle to work on
  * @param props struct #rt_props that contains global RT properties

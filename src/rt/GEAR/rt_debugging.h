@@ -125,7 +125,6 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
     iacts_with_stars_sum += p->rt_data.debug_iact_stars_inject_prep;
     iacts_with_stars_sum_tot += p->rt_data.debug_iact_stars_inject_prep_tot;
     /* Reset all values here in case particles won't be active next step */
-    if (p->id == 8780) message("Resetting debug_iact_stars_inject_prep for pID %lld", p->id);
     p->rt_data.debug_iact_stars_inject_prep = 0;
 
     for (int g = 0; g < RT_NGROUPS; g++) {
@@ -164,10 +163,16 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
   const ticks tic = getticks();
 
   /* reset values before the particle loops */
-  e->rt_props->debug_radiation_emitted_this_step = 0ULL;
-  e->rt_props->debug_radiation_absorbed_this_step = 0ULL;
+  e->rt_props->debug_radiation_emitted_this_step = 0;
+  e->rt_props->debug_radiation_absorbed_this_step = 0;
   e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step = 0;
   e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step = 0;
+  /* reset total counts as well. We track the totals since the beginning
+   * of time in particles individually. */
+  e->rt_props->debug_radiation_emitted_tot = 0LL;
+  e->rt_props->debug_radiation_absorbed_tot = 0LL;
+  e->rt_props->debug_star_injection_prep_iacts_with_parts_tot = 0LL;
+  e->rt_props->debug_part_injection_prep_iacts_with_stars_tot = 0LL;
   for (int g = 0; g < RT_NGROUPS; g++) {
     e->rt_props->debug_total_radiation_energy_density[g] = 0.f;
     e->rt_props->debug_total_radiation_conserved_energy[g] = 0.f;
@@ -191,9 +196,9 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
   /*           e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step, */
   /*           e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step */
   /*         ); */
-  /* message("Over lifetime: %12lld %12lld %12lld %12lld",  */
+  /* message("Over lifetime: %12lld %12lld %12lld %12lld", */
   /*         e->rt_props->debug_radiation_emitted_tot, */
-  /*         e->rt_props->debug_radiation_absorbed_tot,  */
+  /*         e->rt_props->debug_radiation_absorbed_tot, */
   /*         e->rt_props->debug_star_injection_prep_iacts_with_parts_tot, */
   /*         e->rt_props->debug_part_injection_prep_iacts_with_stars_tot */
   /*         ); */

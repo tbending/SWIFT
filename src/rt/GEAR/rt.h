@@ -48,10 +48,6 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
   /* the Gizmo-style slope limiting doesn't help for RT as is,
    * so we're skipping it for now. */
   /* rt_slope_limit_cell_init(p); */
-
-#ifdef SWIFT_RT_DEBUG_CHECKS
-  p->rt_data.debug_iact_stars_inject_prep = 0;
-#endif
 }
 
 /**
@@ -70,6 +66,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   /* reset this here as well as in the rt_debugging_checks_end_of_step()
    * routine to test task dependencies are done right */
   p->rt_data.debug_iact_stars_inject = 0;
+  p->rt_data.debug_iact_stars_inject_prep = 0;
 
   p->rt_data.debug_calls_iact_gradient = 0;
   p->rt_data.debug_calls_iact_transport = 0;
@@ -123,6 +120,7 @@ __attribute__((always_inline)) INLINE static void rt_init_spart(
   for (int i = 0; i < 8; i++){
     sp->rt_data.quadrant_weights[i] = 0.f;
   }
+
 }
 
 /**
@@ -258,7 +256,7 @@ __attribute__((always_inline)) INLINE static double rt_part_dt(
 }
 
 /**
- * @brief  This function finalises the injection step.
+ * @brief This function finalises the injection step.
  *
  * @param p particle to work on
  * @param props struct #rt_props that contains global RT properties
@@ -357,7 +355,7 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
  * @brief finishes up the transport step
  *
  * @param p particle to work on
- * @param dt the current time step of the particle of the particle
+ * @param dt the current time step of the particle
  */
 __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     struct part* restrict p, const double dt) {

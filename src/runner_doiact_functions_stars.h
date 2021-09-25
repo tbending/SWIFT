@@ -81,7 +81,7 @@ void DOSELF1_STARS(struct runner *r, struct cell *c, int timer) {
     if (!spart_is_active(si, e)) continue;
 
     /* Skip inactive particles */
-    int si_active_feedback = feedback_is_active(si, e->time, cosmo, with_cosmology);
+    int si_active_feedback = feedback_is_active(si, e);
     if (!si_active_feedback && !with_rt) continue;
 
     const float hi = si->h;
@@ -209,7 +209,7 @@ void DO_NONSYM_PAIR1_STARS_NAIVE(struct runner *r, struct cell *restrict ci,
     if (!spart_is_active(si, e)) continue;
 
     /* Skip inactive particles */
-    int si_active_feedback = feedback_is_active(si, e->time, cosmo, with_cosmology);
+    int si_active_feedback = feedback_is_active(si, e);
     if (!si_active_feedback && !with_rt) continue;
 
     const float hi = si->h;
@@ -364,7 +364,7 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
       if (!spart_is_active(spi, e)) continue;
 
       /* Skip inactive particles */
-      const int spi_active_feedback = feedback_is_active(spi, e->time, cosmo, with_cosmology);
+      const int spi_active_feedback = feedback_is_active(spi, e);
       if (!spi_active_feedback && !with_rt) continue;
 
       /* Compute distance from the other cell. */
@@ -509,7 +509,7 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
       if (!spart_is_active(spj, e)) continue;
 
       /* Skip inactive particles */
-      int spj_active_feedback = feedback_is_active(spj, e->time, cosmo, with_cosmology);
+      int spj_active_feedback = feedback_is_active(spj, e);
       if (!spj_active_feedback && !with_rt) continue;
 
       /* Compute distance from the other cell. */

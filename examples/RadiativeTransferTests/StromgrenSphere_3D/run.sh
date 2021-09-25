@@ -4,13 +4,13 @@
 set -e
 set -o pipefail
 
-if [ ! -e glassPlane_128.hdf5 ]
+if [ ! -e glassCube_64.hdf5 ]
 then
     echo "Fetching initial glass file for Strömgen Sphere 2D example ..."
     ./getGlass.sh
 fi
 
-if [ ! -f 'stromgrenSphere-2D.hdf5' ]; then
+if [ ! -f 'stromgrenSphere-3D.hdf5' ]; then
     echo "Generating ICs"
     python3 makeIC.py
 fi
@@ -19,7 +19,7 @@ fi
 ../../swift \
     --hydro --threads=4 --stars --external-gravity \
     --feedback --radiation \
-    stromgrenSphere-2D.yml 2>&1 | tee output.log
+    stromgrenSphere-3D.yml 2>&1 | tee output.log
 
 # Plot the photon propagation checks.
 # Make sure you set the correct photon group to plot
