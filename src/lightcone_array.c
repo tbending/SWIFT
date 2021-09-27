@@ -150,11 +150,10 @@ void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
     for(int i=0; i<props->nr_lightcones; i+=1) {
       if(props->lightcone[i].check_type_for_crossing[ptype]) {
         props->check_type_for_crossing[ptype] = 1;
-        if(props->verbose) {
-          message("need to check type %s for crossing at this step: %d",
-                  part_type_names[ptype], props->check_type_for_crossing[ptype]);
-        }
       }
+    }
+    if(props->check_type_for_crossing[ptype] && props->verbose && engine_rank==0) {
+      message("need to check type %s for crossing at this step", part_type_names[ptype]);
     }
   }
 }
