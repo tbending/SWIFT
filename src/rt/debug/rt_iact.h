@@ -71,14 +71,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
     struct spart *restrict si, struct part *restrict pj, float a, float H) {
 
   if (si->rt_data.debug_iact_hydro_inject_prep == 0)
-    error("Injecting energy from star that wasn't called"
-          " during injection prep");
-  if (pj->rt_data.debug_iact_stars_inject_prep == 0){
+    error(
+        "Injecting energy from star that wasn't called"
+        " during injection prep");
+  if (pj->rt_data.debug_iact_stars_inject_prep == 0) {
 
     const float hig2 = hi * hi * kernel_gamma2;
     const float res = sqrtf(r2 / hig2);
-    error("Injecting energy into part that wasn't called"
-          " during injection prep: sID %lld pID %lld r/H_s %.6f", si->id, pj->id, res);
+    error(
+        "Injecting energy into part that wasn't called"
+        " during injection prep: sID %lld pID %lld r/H_s %.6f",
+        si->id, pj->id, res);
   }
 
   si->rt_data.debug_iact_hydro_inject += 1;
@@ -90,13 +93,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   /* Attempt to catch race condition/dependency error */
   if (si->rt_data.debug_iact_hydro_inject_prep <
       si->rt_data.debug_iact_hydro_inject)
-    error("Star interacts with more particles during"
-          " injection than during injection prep");
+    error(
+        "Star interacts with more particles during"
+        " injection than during injection prep");
 
   if (pj->rt_data.debug_iact_stars_inject_prep <
       pj->rt_data.debug_iact_stars_inject)
-    error("Part interacts with more stars during"
-          " injection than during injection prep");
+    error(
+        "Part interacts with more stars during"
+        " injection than during injection prep");
 }
 
 /**

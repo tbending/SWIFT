@@ -210,7 +210,9 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
         newsnap.gas.ThermochemistryDone = Gas["RTDebugThermochemistryDone"][:][inds]
 
         newsnap.gas.RadiationAbsorbedTot = Gas["RTDebugRadAbsorbedTot"][:][inds]
-        newsnap.gas.InjectPrepCountsTot = Gas["RTDebugStarsInjectPrepTotCounts"][:][inds]
+        newsnap.gas.InjectPrepCountsTot = Gas["RTDebugStarsInjectPrepTotCounts"][:][
+            inds
+        ]
 
         try:
             Stars = F["PartType4"]
@@ -224,7 +226,9 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
             newsnap.stars.EmissionRateSet = Stars["RTDebugEmissionRateSet"][:][inds]
 
             newsnap.stars.RadiationEmittedTot = Stars["RTDebugRadEmittedTot"][:][inds]
-            newsnap.stars.InjectPrepCountsTot = Stars["RTDebugHydroInjectPrepCountsTot"][:][inds]
+            newsnap.stars.InjectPrepCountsTot = Stars[
+                "RTDebugHydroInjectPrepCountsTot"
+            ][:][inds]
         except KeyError:
             newsnap.has_stars = False
 

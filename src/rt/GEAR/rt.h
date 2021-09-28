@@ -117,10 +117,9 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 __attribute__((always_inline)) INLINE static void rt_init_spart(
     struct spart* restrict sp) {
 
-  for (int i = 0; i < 8; i++){
+  for (int i = 0; i < 8; i++) {
     sp->rt_data.quadrant_weights[i] = 0.f;
   }
-
 }
 
 /**

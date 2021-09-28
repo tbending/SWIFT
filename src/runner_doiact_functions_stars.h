@@ -61,7 +61,7 @@ void DOSELF1_STARS(struct runner *r, struct cell *c, int timer) {
   struct xpart *restrict xparts = c->hydro.xparts;
 #endif
 #if (!(defined RT_NONE) && (FUNCTION_TASK_LOOP == TASK_LOOP_FEEDBACK))
-  /* Don't exit early if star isn't active for feedback 
+  /* Don't exit early if star isn't active for feedback
    * when we're running with RT */
   const int with_rt = (e->policy & engine_policy_rt);
 #else
@@ -132,7 +132,8 @@ void DOSELF1_STARS(struct runner *r, struct cell *c, int timer) {
                                           e->feedback_props, ti_current);
       }
       if (r2 < hig2 && with_rt) {
-        runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, si, pj, cosmo, e->rt_props);
+        runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, si, pj, cosmo,
+                                             e->rt_props);
 #endif
       }
     } /* loop over the parts in ci. */
@@ -179,13 +180,12 @@ void DO_NONSYM_PAIR1_STARS_NAIVE(struct runner *r, struct cell *restrict ci,
   struct xpart *restrict xparts_j = cj->hydro.xparts;
 #endif
 #if (!(defined RT_NONE) && (FUNCTION_TASK_LOOP == TASK_LOOP_FEEDBACK))
-  /* Don't exit early if star isn't active for feedback 
+  /* Don't exit early if star isn't active for feedback
    * when we're running with RT */
   const int with_rt = (e->policy & engine_policy_rt);
 #else
   const int with_rt = 0;
 #endif
-
 
   /* Get the relative distance between the pairs, wrapping. */
   double shift[3] = {0.0, 0.0, 0.0};
@@ -261,7 +261,8 @@ void DO_NONSYM_PAIR1_STARS_NAIVE(struct runner *r, struct cell *restrict ci,
                                           e->feedback_props, ti_current);
       }
       if (r2 < hig2 && with_rt) {
-        runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, si, pj, cosmo, e->rt_props);
+        runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, si, pj, cosmo,
+                                             e->rt_props);
 #endif
       }
     } /* loop over the parts in cj. */
@@ -309,13 +310,12 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
 #endif
 
 #if (!(defined RT_NONE) && (FUNCTION_TASK_LOOP == TASK_LOOP_FEEDBACK))
-  /* Don't exit early if star isn't active for feedback 
+  /* Don't exit early if star isn't active for feedback
    * when we're running with RT */
   const int with_rt = (e->policy & engine_policy_rt);
 #else
   const int with_rt = 0;
 #endif
-
 
   if (do_ci_stars) {
 
@@ -456,7 +456,8 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
                                             e->feedback_props, ti_current);
         }
         if (r2 < hig2 && with_rt) {
-          runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, spi, pj, cosmo, e->rt_props);
+          runner_iact_nonsym_rt_injection_prep(r2, dx, hi, hj, spi, pj, cosmo,
+                                               e->rt_props);
 #endif
         }
       } /* loop over the parts in cj. */
@@ -602,7 +603,8 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
                                             e->feedback_props, ti_current);
         }
         if (r2 < hjg2 && with_rt) {
-          runner_iact_nonsym_rt_injection_prep(r2, dx, hj, hi, spj, pi, cosmo, e->rt_props);
+          runner_iact_nonsym_rt_injection_prep(r2, dx, hj, hi, spj, pi, cosmo,
+                                               e->rt_props);
 #endif
         }
       } /* loop over the parts in ci. */

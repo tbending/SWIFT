@@ -50,7 +50,7 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
                                      const struct rt_props *rt_props) {
 
   /* NOTE: struct part *pj should be const struct part *pj,
-   * but I allow changes to it for debugging routines at the moment. 
+   * but I allow changes to it for debugging routines at the moment.
    * Nevertheless, you shouldn't be changing anything in a particle
    * in this function. */
 
@@ -79,8 +79,6 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
   if (dx[2] > 0) quadrant_index += 4;
 
   si->rt_data.quadrant_weights[quadrant_index] += psi;
-
-
 }
 
 /**
@@ -102,14 +100,17 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 #ifdef SWIFT_RT_DEBUG_CHECKS
 
   if (si->rt_data.debug_iact_hydro_inject_prep == 0)
-    error("Injecting energy from star that wasn't called"
-          " during injection prep");
-  if (pj->rt_data.debug_iact_stars_inject_prep == 0){
+    error(
+        "Injecting energy from star that wasn't called"
+        " during injection prep");
+  if (pj->rt_data.debug_iact_stars_inject_prep == 0) {
 
     const float hig2 = hi * hi * kernel_gamma2;
     const float res = sqrtf(r2 / hig2);
-    error("Injecting energy into part that wasn't called"
-          " during injection prep: sID %lld pID %lld r/H_s %.6f", si->id, pj->id, res);
+    error(
+        "Injecting energy into part that wasn't called"
+        " during injection prep: sID %lld pID %lld r/H_s %.6f",
+        si->id, pj->id, res);
   }
 
   si->rt_data.debug_iact_hydro_inject += 1;
@@ -121,13 +122,15 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   /* Attempt to catch race condition/dependency error */
   if (si->rt_data.debug_iact_hydro_inject_prep <
       si->rt_data.debug_iact_hydro_inject)
-    error("Star interacts with more particles during"
-          " injection than during injection prep");
+    error(
+        "Star interacts with more particles during"
+        " injection than during injection prep");
 
   if (pj->rt_data.debug_iact_stars_inject_prep <
       pj->rt_data.debug_iact_stars_inject)
-    error("Part interacts with more stars during"
-          " injection than during injection prep");
+    error(
+        "Part interacts with more stars during"
+        " injection than during injection prep");
 #endif
 
   /* If the star doesn't have any neighbours, we
@@ -152,13 +155,13 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   const int maxind = 2;
 #endif
   float total_weight = 0.f;
-  for (int i = 0; i < maxind; i++){
-    total_weight += si->rt_data.quadrant_weights[i]; 
+  for (int i = 0; i < maxind; i++) {
+    total_weight += si->rt_data.quadrant_weights[i];
   }
 
   /* Compute unit vector and isotropy correction */
-  const float r_inv = 1.f/sqrtf(r2);
-  const float n_unit[3] = {dx[0]*r_inv, dx[1]*r_inv, dx[2]*r_inv};
+  const float r_inv = 1.f / sqrtf(r2);
+  const float n_unit[3] = {dx[0] * r_inv, dx[1] * r_inv, dx[2] * r_inv};
 
   float weight_sum = 0.f;
   float nonempty_quadrants = 0.f;
@@ -173,8 +176,9 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   if (dx[1] > 0.f) quadrant_index += 2;
   if (dx[2] > 0.f) quadrant_index += 4;
 
-  const float isotropy_correction = weight_sum / nonempty_quadrants / 
-                si->rt_data.quadrant_weights[quadrant_index];
+  const float isotropy_correction =
+      weight_sum / nonempty_quadrants /
+      si->rt_data.quadrant_weights[quadrant_index];
 
   /* Nurse, the patient is ready now */
   /* TODO: this is done differently for RT_HYDRO_CONTROLLED_INJECTION */
@@ -186,7 +190,8 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 
     /* Inject flux. */
     /* We assume the path from the star to the gas is optically thin */
-    const float injected_flux = injected_energy * rt_params.reduced_speed_of_light;
+    const float injected_flux =
+        injected_energy * rt_params.reduced_speed_of_light;
     pj->rt_data.conserved[g].flux[0] += injected_flux * n_unit[0];
     pj->rt_data.conserved[g].flux[1] += injected_flux * n_unit[1];
     pj->rt_data.conserved[g].flux[2] += injected_flux * n_unit[2];

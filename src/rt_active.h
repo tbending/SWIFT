@@ -113,7 +113,7 @@ __attribute__((always_inline)) INLINE static int rt_should_iact_cell_pair(
   return (cell_is_active_hydro(cj, e) && (cj->hydro.count > 0) &&
           (ci->stars.count > 0));
 #else
-  return (cell_is_active_stars(ci, e) && (ci->stars.count > 0) && 
+  return (cell_is_active_stars(ci, e) && (ci->stars.count > 0) &&
           (cj->hydro.count > 0));
 #endif
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-#----------------------------------------------------------------------
-# plots 
+# ----------------------------------------------------------------------
+# plots
 #   - radiation energies of particles as function of radius
 #   - magnitude of radiation fluxes of particles as function of radius
 #   - total energy in radial bins
@@ -11,10 +11,10 @@
 #   give snapshot number as cmdline arg to plot
 #   single snapshot, otherwise this script plots
 #   all snapshots available in the workdir.
-#   Make sure to select the photon group to plot that 
+#   Make sure to select the photon group to plot that
 #   doesn't interact with gas to check the *propagaion*
 #   correctly.
-#----------------------------------------------------------------------
+# ----------------------------------------------------------------------
 
 import sys, os, gc
 import swiftsimio
@@ -27,10 +27,10 @@ from scipy import stats
 from scipy.optimize import curve_fit
 
 # Parameters users should/may tweak
-snapshot_base = "output"    # snapshot basename
-group_index = 0 # which photon group to use.
+snapshot_base = "output"  # snapshot basename
+group_index = 0  # which photon group to use.
 
-#-----------------------------------------------------------------------
+# -----------------------------------------------------------------------
 
 scatterplot_kwargs = {
     "alpha": 0.6,
@@ -40,9 +40,7 @@ scatterplot_kwargs = {
     "facecolor": "blue",
 }
 
-lineplot_kwargs = {
-    "linewidth": 2
-}
+lineplot_kwargs = {"linewidth": 2}
 
 
 # Read in cmdline arg: Are we plotting only one snapshot, or all?
@@ -52,7 +50,7 @@ try:
 except IndexError:
     plot_all = True
 
-mpl.rcParams['text.usetex'] = True
+mpl.rcParams["text.usetex"] = True
 
 
 def analytical_intgrated_energy_solution(L, time, r, rmax):
@@ -62,18 +60,19 @@ def analytical_intgrated_energy_solution(L, time, r, rmax):
     at bin edges <r> and maximal radius <rmax>
     """
 
-    r_center =  0.5*(r[:-1]+r[1:])
+    r_center = 0.5 * (r[:-1] + r[1:])
     r0 = r[0]
     Etot = L * time
 
     if rmax == 0:
-        return r_center, np.zeros(r.shape[0]-1) * Etot.units
+        return r_center, np.zeros(r.shape[0] - 1) * Etot.units
 
-    E = np.zeros(r.shape[0]-1) * Etot.units
+    E = np.zeros(r.shape[0] - 1) * Etot.units
     mask = r_center <= rmax
-    E[mask] = Etot / (rmax - r0) * (r[1:]-r[:-1])[mask]
+    E[mask] = Etot / (rmax - r0) * (r[1:] - r[:-1])[mask]
 
     return r_center, E
+
 
 def analytical_energy_solution(L, time, r, rmax):
     """
@@ -81,32 +80,32 @@ def analytical_energy_solution(L, time, r, rmax):
     for given injection rate <L> at time <time> at radii <r>
     """
 
-    r_center =  0.5*(r[:-1]+r[1:])
+    r_center = 0.5 * (r[:-1] + r[1:])
     r0 = r[0]
     Etot = L * time
 
     if rmax == 0:
-        return r_center, np.zeros(r.shape[0]-1) * Etot.units
+        return r_center, np.zeros(r.shape[0] - 1) * Etot.units
 
-    E_fraction_bin = np.zeros(r.shape[0]-1) * Etot.units
+    E_fraction_bin = np.zeros(r.shape[0] - 1) * Etot.units
     mask = r_center <= rmax
-    dr = r[1:]-r[:-1]
-    E_fraction_bin[mask] = 1. / (rmax - r0) * dr[mask]
+    dr = r[1:] - r[:-1]
+    E_fraction_bin[mask] = 1.0 / (rmax - r0) * dr[mask]
     bin_surface = dr
-    total_weight = Etot / np.sum(E_fraction_bin / bin_surface) 
+    total_weight = Etot / np.sum(E_fraction_bin / bin_surface)
     E = E_fraction_bin / bin_surface * total_weight
 
     return r_center, E
 
+
 def analytical_flux_magnitude_solution(L, time, r, rmax):
     r, E = analytical_energy_solution(L, time, r, rmax)
-    F = unyt.c * E / r.units**3
+    F = unyt.c * E / r.units ** 3
     return r, F
 
+
 def line(x, a, b):
-    return a*x + b
-
-
+    return a * x + b
 
 
 def get_snapshot_list(snapshot_basename="output"):
@@ -114,7 +113,7 @@ def get_snapshot_list(snapshot_basename="output"):
     Find the snapshot(s) that are to be plotted 
     and return their names as list
     """
-    
+
     snaplist = []
 
     if plot_all:
@@ -131,7 +130,7 @@ def get_snapshot_list(snapshot_basename="output"):
             print("Didn't find file", fname)
             quit(1)
         snaplist.append(fname)
-    
+
     return snaplist
 
 
@@ -157,7 +156,7 @@ def plot_photons(filename, emin, emax, fmin, fmax):
     xstar = data.stars.coordinates
     xpart = data.gas.coordinates
     dxp = xpart - xstar
-    r = np.sqrt(np.sum(dxp**2, axis=1))
+    r = np.sqrt(np.sum(dxp ** 2, axis=1))
 
     time = meta.time
     r_expect = meta.time * meta.reduced_lightspeed
@@ -180,43 +179,44 @@ def plot_photons(filename, emin, emax, fmin, fmax):
         const_emission_rates = unyt.unyt_array(emlist, unyt.L_Sun)
         L = const_emission_rates[group_index]
 
-
-
-    fig = plt.figure(figsize=(5*4, 5.5), dpi=200)
+    fig = plt.figure(figsize=(5 * 4, 5.5), dpi=200)
 
     nbins = 100
-    r_bin_edges = np.linspace(0.5*edgelen*1e-2, 0.501*edgelen, nbins+1)
-    r_bin_centres = 0.5 *(r_bin_edges[1:] + r_bin_edges[:-1])
-    r_analytical_bin_edges = np.linspace(0.5*edgelen*1e-2, 0.501*edgelen, 501)
+    r_bin_edges = np.linspace(0.5 * edgelen * 1e-2, 0.501 * edgelen, nbins + 1)
+    r_bin_centres = 0.5 * (r_bin_edges[1:] + r_bin_edges[:-1])
+    r_analytical_bin_edges = np.linspace(0.5 * edgelen * 1e-2, 0.501 * edgelen, 501)
 
-    #--------------------------
+    # --------------------------
     # Read in and process data
-    #--------------------------
+    # --------------------------
 
-    energies = getattr(data.gas.photon_energies, "group"+str(group_index+1))
-    Fx = getattr(data.gas.photon_fluxes, "Group"+str(group_index+1)+"X")
-    Fy = getattr(data.gas.photon_fluxes, "Group"+str(group_index+1)+"Y")
+    energies = getattr(data.gas.photon_energies, "group" + str(group_index + 1))
+    Fx = getattr(data.gas.photon_fluxes, "Group" + str(group_index + 1) + "X")
+    Fy = getattr(data.gas.photon_fluxes, "Group" + str(group_index + 1) + "Y")
 
-    fmag = np.sqrt(Fx**2 + Fy**2)
+    fmag = np.sqrt(Fx ** 2 + Fy ** 2)
     sum_fmag = fmag.sum()
     max_fmag = fmag.max()
-    particle_count, _ = np.histogram(r, bins=r_analytical_bin_edges, range=(r_analytical_bin_edges[0], r_analytical_bin_edges[-1]))
+    particle_count, _ = np.histogram(
+        r,
+        bins=r_analytical_bin_edges,
+        range=(r_analytical_bin_edges[0], r_analytical_bin_edges[-1]),
+    )
     L = L.to(energies.units / time.units)
 
     xlabel_units_str = boxsize.units.latex_representation()
     energy_units_str = energies.units.latex_representation()
     flux_units_str = Fx.units.latex_representation()
 
-
-    #------------------------
+    # ------------------------
     # Plot photon energies
-    #------------------------
+    # ------------------------
     ax1 = fig.add_subplot(1, 4, 1)
     ax1.set_title("Particle Radiation Energies")
-    ax1.set_ylabel("Photon Energy [$"+energy_units_str+"$]")
+    ax1.set_ylabel("Photon Energy [$" + energy_units_str + "$]")
 
     # don't expect more than float precision
-    emin_to_use = max(emin, 1e-5*emax)
+    emin_to_use = max(emin, 1e-5 * emax)
 
     if use_const_emission_rates:
         # plot entire expected solution
@@ -234,23 +234,48 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             # proprtional to r.
             lin_res = stats.linregress(rA, pcount)
 
-            ax1.plot(rA, EA / line(rA.v, lin_res.slope, lin_res.intercept), **lineplot_kwargs, linestyle="--", c="red", label="analytical solution")
+            ax1.plot(
+                rA,
+                EA / line(rA.v, lin_res.slope, lin_res.intercept),
+                **lineplot_kwargs,
+                linestyle="--",
+                c="red",
+                label="analytical solution",
+            )
     else:
         # just plot where photon front should be
-        ax1.plot([r_expect, r_expect], [emin_to_use, emax*1.1], label="expected photon front", color="red")
+        ax1.plot(
+            [r_expect, r_expect],
+            [emin_to_use, emax * 1.1],
+            label="expected photon front",
+            color="red",
+        )
 
-    ax1.scatter(r, energies, **scatterplot_kwargs, label="Radiation energy of particles")
-    ax1.set_ylim(emin_to_use, emax*1.1)
+    ax1.scatter(
+        r, energies, **scatterplot_kwargs, label="Radiation energy of particles"
+    )
+    ax1.set_ylim(emin_to_use, emax * 1.1)
 
-    #------------------------------
+    # ------------------------------
     # Plot binned photon energies
-    #------------------------------
+    # ------------------------------
     ax2 = fig.add_subplot(1, 4, 2)
     ax2.set_title("Total Radiation Energy in radial bins")
-    ax2.set_ylabel("Total Photon Energy [$"+energy_units_str+"$]")
+    ax2.set_ylabel("Total Photon Energy [$" + energy_units_str + "$]")
 
-    energies_summed_bin, _, _ = stats.binned_statistic(r, energies, statistic="sum", bins=r_bin_edges, range=(r_bin_edges[0], r_bin_edges[-1]))
-    ax2.plot(r_bin_centres, energies_summed_bin, **lineplot_kwargs, label="total energy in bin")
+    energies_summed_bin, _, _ = stats.binned_statistic(
+        r,
+        energies,
+        statistic="sum",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
+    ax2.plot(
+        r_bin_centres,
+        energies_summed_bin,
+        **lineplot_kwargs,
+        label="total energy in bin",
+    )
     current_ylims = ax2.get_ylim()
     ax2.set_ylim(emin_to_use, current_ylims[1])
 
@@ -260,28 +285,40 @@ def plot_photons(filename, emin, emax, fmin, fmax):
         # actual results
         rA, EA = analytical_intgrated_energy_solution(L, time, r_bin_edges, r_expect)
 
-        ax2.plot(rA, EA.to(energies.units), **lineplot_kwargs, linestyle="--", c="red", label="analytical solution")
+        ax2.plot(
+            rA,
+            EA.to(energies.units),
+            **lineplot_kwargs,
+            linestyle="--",
+            c="red",
+            label="analytical solution",
+        )
     else:
         # just plot where photon front should be
-        ax2.plot([r_expect, r_expect], ax2.get_ylim(r), label="expected photon front", color="red")
+        ax2.plot(
+            [r_expect, r_expect],
+            ax2.get_ylim(r),
+            label="expected photon front",
+            color="red",
+        )
 
-
-
-    #------------------------------
+    # ------------------------------
     # Plot photon fluxes
-    #------------------------------
+    # ------------------------------
     ax3 = fig.add_subplot(1, 4, 3)
     ax3.set_title("Particle Radiation Flux Magnitudes")
-    ax3.set_ylabel("Photon Flux Magnitude [$"+flux_units_str+"$]")
+    ax3.set_ylabel("Photon Flux Magnitude [$" + flux_units_str + "$]")
 
-    fmin_to_use = max(fmin, 1e-5*fmax)
-    ax3.set_ylim(fmin_to_use, fmax*1.1)
+    fmin_to_use = max(fmin, 1e-5 * fmax)
+    ax3.set_ylim(fmin_to_use, fmax * 1.1)
 
     ax3.scatter(r, fmag, **scatterplot_kwargs, label="Radiation Flux of particles")
 
     if use_const_emission_rates:
         # plot entire expected solution
-        rA, FA = analytical_flux_magnitude_solution(L, time, r_analytical_bin_edges, r_expect)
+        rA, FA = analytical_flux_magnitude_solution(
+            L, time, r_analytical_bin_edges, r_expect
+        )
 
         mask = particle_count > 0
         if mask.any():
@@ -295,43 +332,88 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             # proprtional to r.
             lin_res = stats.linregress(rA, pcount)
 
-            ax3.plot(rA, FA / line(rA.v, lin_res.slope, lin_res.intercept), **lineplot_kwargs, linestyle="--", c="red", label="analytical solution")
+            ax3.plot(
+                rA,
+                FA / line(rA.v, lin_res.slope, lin_res.intercept),
+                **lineplot_kwargs,
+                linestyle="--",
+                c="red",
+                label="analytical solution",
+            )
     else:
         # just plot where photon front should be
-        ax1.plot([r_expect, r_expect], [emin_to_use, emax*1.1], label="expected photon front", color="red")
+        ax1.plot(
+            [r_expect, r_expect],
+            [emin_to_use, emax * 1.1],
+            label="expected photon front",
+            color="red",
+        )
 
-
-
-    #------------------------------
+    # ------------------------------
     # Plot photon flux sum
-    #------------------------------
+    # ------------------------------
 
     ax4 = fig.add_subplot(1, 4, 4)
     ax4.set_title("Vectorial Sum of Radiation Flux in radial bins")
     ax4.set_ylabel("[1]")
 
-    fmag_sum_bin, _, _ = stats.binned_statistic(r, fmag, statistic="sum", bins=r_bin_edges, range=(r_bin_edges[0], r_bin_edges[-1]))
+    fmag_sum_bin, _, _ = stats.binned_statistic(
+        r,
+        fmag,
+        statistic="sum",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
     mask_sum = fmag_sum_bin > 0
-    fmag_max_bin, _, _ = stats.binned_statistic(r, fmag, statistic="max", bins=r_bin_edges, range=(r_bin_edges[0], r_bin_edges[-1]))
+    fmag_max_bin, _, _ = stats.binned_statistic(
+        r,
+        fmag,
+        statistic="max",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
     mask_max = fmag_max_bin > 0
-    Fx_sum_bin, _, _ = stats.binned_statistic(r, Fx, statistic="sum", bins=r_bin_edges, range=(r_bin_edges[0], r_bin_edges[-1]))
-    Fy_sum_bin, _, _ = stats.binned_statistic(r, Fy, statistic="sum", bins=r_bin_edges, range=(r_bin_edges[0], r_bin_edges[-1]))
-    F_sum_bin = np.sqrt(Fx_sum_bin**2 + Fy_sum_bin**2)
+    Fx_sum_bin, _, _ = stats.binned_statistic(
+        r,
+        Fx,
+        statistic="sum",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
+    Fy_sum_bin, _, _ = stats.binned_statistic(
+        r,
+        Fy,
+        statistic="sum",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
+    F_sum_bin = np.sqrt(Fx_sum_bin ** 2 + Fy_sum_bin ** 2)
 
-    ax4.plot(r_bin_centres[mask_sum], F_sum_bin[mask_sum] / fmag_sum_bin[mask_sum], **lineplot_kwargs, label="$\left| \sum_{i \in \mathrm{particles \ in \ bin}} \mathbf{F}_i \\right| $ / $\sum_{i \in \mathrm{particles \ in \ bin}} \left| \mathbf{F}_{i} \\right| $")
-    ax4.plot(r_bin_centres[mask_max], F_sum_bin[mask_max] / fmag_max_bin[mask_max], **lineplot_kwargs, linestyle="--", label="$\left| \sum_{i \in \mathrm{particles \ in \ bin}} \mathbf{F}_i \\right| $ / $\max_{i \in \mathrm{particles \ in \ bin}} \left| \mathbf{F}_{i} \\right| $")
+    ax4.plot(
+        r_bin_centres[mask_sum],
+        F_sum_bin[mask_sum] / fmag_sum_bin[mask_sum],
+        **lineplot_kwargs,
+        label="$\left| \sum_{i \in \mathrm{particles \ in \ bin}} \mathbf{F}_i \\right| $ / $\sum_{i \in \mathrm{particles \ in \ bin}} \left| \mathbf{F}_{i} \\right| $",
+    )
+    ax4.plot(
+        r_bin_centres[mask_max],
+        F_sum_bin[mask_max] / fmag_max_bin[mask_max],
+        **lineplot_kwargs,
+        linestyle="--",
+        label="$\left| \sum_{i \in \mathrm{particles \ in \ bin}} \mathbf{F}_i \\right| $ / $\max_{i \in \mathrm{particles \ in \ bin}} \left| \mathbf{F}_{i} \\right| $",
+    )
 
-    #-------------------------------------------
+    # -------------------------------------------
     # Cosmetics that all axes have in common
-    #-------------------------------------------
+    # -------------------------------------------
     for ax in fig.axes:
-        ax.set_xlabel("r [$"+xlabel_units_str+"$]")
+        ax.set_xlabel("r [$" + xlabel_units_str + "$]")
         ax.set_yscale("log")
-        ax.set_xlim(0., 0.501*edgelen)
+        ax.set_xlim(0.0, 0.501 * edgelen)
         ax.legend(fontsize="x-small")
 
     # Add title
-    title = filename.replace("_", "\_") # exception handle underscore for latex
+    title = filename.replace("_", "\_")  # exception handle underscore for latex
     if meta.cosmology is not None:
         title += ", $z$ = {0:.2e}".format(meta.z)
     title += ", $t$ = {0:.2e}".format(meta.time)
@@ -354,19 +436,19 @@ def get_plot_boundaries(filenames):
     """
 
     data = swiftsimio.load(filenames[0])
-    energies = getattr(data.gas.photon_energies, "group"+str(group_index+1))
+    energies = getattr(data.gas.photon_energies, "group" + str(group_index + 1))
     emaxguess = energies.max()
 
     emin = emaxguess
-    emax = 0.
+    emax = 0.0
     fmagmin = 1e30
-    fmagmax = -10.
+    fmagmax = -10.0
 
     for f in filenames:
         data = swiftsimio.load(f)
 
-        energies = getattr(data.gas.photon_energies, "group"+str(group_index+1))
-        mask = energies > 0.
+        energies = getattr(data.gas.photon_energies, "group" + str(group_index + 1))
+        mask = energies > 0.0
 
         if mask.any():
 
@@ -377,10 +459,9 @@ def get_plot_boundaries(filenames):
             this_emax = energies.max()
             emax = max(emax, this_emax)
 
-
-        fx = getattr(data.gas.photon_fluxes, "Group"+str(group_index+1)+"X")
-        fy = getattr(data.gas.photon_fluxes, "Group"+str(group_index+1)+"Y")
-        fmag = np.sqrt(fx**2 + fy**2)
+        fx = getattr(data.gas.photon_fluxes, "Group" + str(group_index + 1) + "X")
+        fy = getattr(data.gas.photon_fluxes, "Group" + str(group_index + 1) + "Y")
+        fmag = np.sqrt(fx ** 2 + fy ** 2)
 
         fmagmin = min(fmagmin, fmag.min())
         fmagmax = max(fmagmax, fmag.max())
@@ -388,13 +469,12 @@ def get_plot_boundaries(filenames):
     return emin, emax, fmagmin, fmagmax
 
 
-
-
-
 if __name__ == "__main__":
-    
-    print("REMINDER: Make sure you selected the correct photon group", 
-            "to plot, which is hardcoded in this script.")
+
+    print(
+        "REMINDER: Make sure you selected the correct photon group",
+        "to plot, which is hardcoded in this script.",
+    )
     snaplist = get_snapshot_list(snapshot_base)
     emin, emax, fmagmin, fmagmax = get_plot_boundaries(snaplist)
     for f in snaplist:

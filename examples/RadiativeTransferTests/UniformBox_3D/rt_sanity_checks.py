@@ -297,11 +297,10 @@ def check_stars_hydro_interaction_sanity(snapdata):
                 "stars",
                 sum_star_tot_radiation,
                 "diff",
-                sum_star_tot_radiation - sum_gas_tot_radiation
+                sum_star_tot_radiation - sum_gas_tot_radiation,
             )
             if break_on_diff:
                 quit()
-
 
         # --------------------------------------------------------------
         # check that we have the correct amount of interactions recorded
@@ -316,20 +315,17 @@ def check_stars_hydro_interaction_sanity(snapdata):
         if sum_gas_tot_prep != sum_star_tot_prep:
             print("- checking hydro v star sanity pt2; snapshot", snap.snapnr)
             print(
-                "--- Total interactions between gas and stars in prep is wrong:", 
+                "--- Total interactions between gas and stars in prep is wrong:",
                 sum_gas_tot_prep,
                 "stars",
                 sum_star_tot_prep,
                 "diff",
-                sum_star_tot_prep - sum_gas_tot_prep
+                sum_star_tot_prep - sum_gas_tot_prep,
             )
             if break_on_diff:
                 quit()
 
     return
-
-
-
 
 
 def main():

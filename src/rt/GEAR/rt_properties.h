@@ -73,19 +73,19 @@ struct rt_props {
    * but a placeholder to sum up a global variable */
   unsigned long long debug_radiation_absorbed_tot;
 
-  /* Interactions of a star with gas during injection prep this step. This is not 
-   * really a property, but a placeholder to sum up a global variable */
+  /* Interactions of a star with gas during injection prep this step. This is
+   * not really a property, but a placeholder to sum up a global variable */
   int debug_star_injection_prep_iacts_with_parts_this_step;
 
-  /* Interactions of a star with gas during injection prep. This is not 
+  /* Interactions of a star with gas during injection prep. This is not
    * really a property, but a placeholder to sum up a global variable */
   unsigned long long debug_star_injection_prep_iacts_with_parts_tot;
 
-  /* Interactions of a star with gas during injection prep this step. This is not 
-   * really a property, but a placeholder to sum up a global variable */
+  /* Interactions of a star with gas during injection prep this step. This is
+   * not really a property, but a placeholder to sum up a global variable */
   int debug_part_injection_prep_iacts_with_stars_this_step;
 
-  /* Interactions of a star with gas during injection prep. This is not 
+  /* Interactions of a star with gas during injection prep. This is not
    * really a property, but a placeholder to sum up a global variable */
   unsigned long long debug_part_injection_prep_iacts_with_stars_tot;
 

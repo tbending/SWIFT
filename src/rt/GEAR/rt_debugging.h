@@ -88,8 +88,10 @@ static void rt_debugging_end_of_step_stars_mapper(void *restrict map_data,
 
   atomic_add(&e->rt_props->debug_radiation_emitted_this_step, emission_sum);
   atomic_add(&e->rt_props->debug_radiation_emitted_tot, emission_sum_tot);
-  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step, iacts_with_parts_sum);
-  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_tot, iacts_with_parts_sum_tot);
+  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step,
+             iacts_with_parts_sum);
+  atomic_add(&e->rt_props->debug_star_injection_prep_iacts_with_parts_tot,
+             iacts_with_parts_sum_tot);
   for (int g = 0; g < RT_NGROUPS; g++)
     atomic_add_f(&e->rt_props->debug_total_star_emitted_energy[g],
                  emitted_energy[g]);
@@ -135,8 +137,10 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
 
   atomic_add(&e->rt_props->debug_radiation_absorbed_this_step, absorption_sum);
   atomic_add(&e->rt_props->debug_radiation_absorbed_tot, absorption_sum_tot);
-  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step, iacts_with_stars_sum);
-  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_tot, iacts_with_stars_sum_tot);
+  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step,
+             iacts_with_stars_sum);
+  atomic_add(&e->rt_props->debug_part_injection_prep_iacts_with_stars_tot,
+             iacts_with_stars_sum_tot);
 
   for (int g = 0; g < RT_NGROUPS; g++) {
     atomic_add_f(&(e->rt_props->debug_total_radiation_conserved_energy[g]),
@@ -193,8 +197,10 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
   /* message("This step:     %12d %12d %12d %12d", */
   /*           e->rt_props->debug_radiation_emitted_this_step, */
   /*           e->rt_props->debug_radiation_absorbed_this_step, */
-  /*           e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step, */
-  /*           e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step */
+  /*           e->rt_props->debug_star_injection_prep_iacts_with_parts_this_step,
+   */
+  /*           e->rt_props->debug_part_injection_prep_iacts_with_stars_this_step
+   */
   /*         ); */
   /* message("Over lifetime: %12lld %12lld %12lld %12lld", */
   /*         e->rt_props->debug_radiation_emitted_tot, */
@@ -242,7 +248,6 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
         e->rt_props->debug_radiation_emitted_this_step,
         e->rt_props->debug_part_injection_prep_iacts_with_stars_tot,
         e->rt_props->debug_radiation_emitted_tot);
-
 
   /* Write down energy budget for this timestep. */
   if (e->step > 1) {

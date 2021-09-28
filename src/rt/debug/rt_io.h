@@ -99,8 +99,11 @@ INLINE static int rt_write_particles(const struct part* parts,
       "RTDebugRadAbsorbedTot", ULONGLONG, 1, UNIT_CONV_NO_UNITS, 0, parts,
       rt_data.debug_radiation_absorbed_tot,
       "Radiation absorbed by this part during its lifetime");
-  list[9] = io_make_output_field("RTDebugStarsInjectPrepTotCounts", ULONGLONG, 1, UNIT_CONV_NO_UNITS, 0, parts, 
-  rt_data.debug_iact_stars_inject_prep_tot, "Total interactions with stars during " "injection prep during its lifetime");
+  list[9] = io_make_output_field("RTDebugStarsInjectPrepTotCounts", ULONGLONG,
+                                 1, UNIT_CONV_NO_UNITS, 0, parts,
+                                 rt_data.debug_iact_stars_inject_prep_tot,
+                                 "Total interactions with stars during "
+                                 "injection prep during its lifetime");
 
   return 10;
 }
@@ -123,8 +126,11 @@ INLINE static int rt_write_stars(const struct spart* sparts,
       "RTDebugRadEmittedTot", ULONGLONG, 1, UNIT_CONV_NO_UNITS, 0, sparts,
       rt_data.debug_radiation_emitted_tot,
       "Total radiation emitted during the lifetime of this star");
-  list[3] = io_make_output_field("RTDebugHydroInjectPrepCountsTot", ULONGLONG, 1, UNIT_CONV_NO_UNITS, 0, sparts, 
-  rt_data.debug_iact_hydro_inject_prep_tot, "Total interactions with particles during " "injection prep during its lifetime");
+  list[3] = io_make_output_field("RTDebugHydroInjectPrepCountsTot", ULONGLONG,
+                                 1, UNIT_CONV_NO_UNITS, 0, sparts,
+                                 rt_data.debug_iact_hydro_inject_prep_tot,
+                                 "Total interactions with particles during "
+                                 "injection prep during its lifetime");
 
   return 4;
 }

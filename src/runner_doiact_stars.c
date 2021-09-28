@@ -27,10 +27,10 @@
 #include "cell.h"
 #include "engine.h"
 #include "feedback.h"
+#include "rt.h"
 #include "runner.h"
 #include "space_getsid.h"
 #include "stars.h"
-#include "rt.h"
 #include "timers.h"
 
 /* Import the stars density loop functions. */

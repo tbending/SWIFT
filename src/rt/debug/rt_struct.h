@@ -30,32 +30,33 @@ struct rt_part_data {
   /* data to store during entire run */
 
   /*! how much radiation this part received from stars during total lifetime */
-  unsigned long long debug_radiation_absorbed_tot; 
+  unsigned long long debug_radiation_absorbed_tot;
 
-  /*! how many interactions this part had with stars in injection prep over total lifetime */
-  unsigned long long debug_iact_stars_inject_prep_tot; 
+  /*! how many interactions this part had with stars in injection prep over
+   * total lifetime */
+  unsigned long long debug_iact_stars_inject_prep_tot;
 
   /* data to store during one time step */
 
   /*! how many stars this part interacted with during preparation*/
   /* Note: It's useless to write this in outputs, as it gets reset
    * at the end of every step. */
-  int debug_iact_stars_inject_prep; 
+  int debug_iact_stars_inject_prep;
 
   /*! how many stars this part interacted with during injection*/
   /* Note: It's useless to write this in outputs, as it gets reset
    * at the end of every step. */
-  int debug_iact_stars_inject;      
+  int debug_iact_stars_inject;
 
   /*! calls from gradient interaction loop */
-  int debug_calls_iact_gradient;    
+  int debug_calls_iact_gradient;
 
   /*! calls from transport interaction loop */
-  int debug_calls_iact_transport;   
+  int debug_calls_iact_transport;
 
   /*! called in a self/rt_injection task? */
-  int debug_injection_check;        
- 
+  int debug_injection_check;
+
   /*! calls from gradient interaction loop in actual function */
   int debug_calls_iact_gradient_interaction;
 
@@ -65,7 +66,7 @@ struct rt_part_data {
   /* Task completion flags */
 
   /*! calls from ghost1 tasks */
-  int debug_injection_done;  
+  int debug_injection_done;
 
   /*! finalised computing gradients? */
   int debug_gradients_done;
@@ -91,11 +92,11 @@ struct rt_spart_data {
 
   /* data to store during one time step */
 
-  /*! how many hydro particles this particle interacted with 
+  /*! how many hydro particles this particle interacted with
    * during injection */
   int debug_iact_hydro_inject;
 
-  /*! how many hydro particles this particle interacted with 
+  /*! how many hydro particles this particle interacted with
    * during injection prep*/
   int debug_iact_hydro_inject_prep;
 
@@ -103,7 +104,7 @@ struct rt_spart_data {
   int debug_emission_rate_set;
 
   /*! called in a self/rt_injection task? */
-  int debug_injection_check;   
+  int debug_injection_check;
 };
 
 #endif /* SWIFT_RT_STRUCT_DEBUG_H */

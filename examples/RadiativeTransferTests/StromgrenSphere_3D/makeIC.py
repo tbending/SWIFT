@@ -19,7 +19,7 @@ glass.close()
 
 # replace the particle closest to the center
 # by the star
-r = np.sqrt(np.sum((0.5 - xp)**2, axis=1))
+r = np.sqrt(np.sum((0.5 - xp) ** 2, axis=1))
 rmin = np.argmin(r)
 xs = xp[rmin]
 xp = np.delete(xp, rmin, axis=0)
@@ -28,16 +28,18 @@ h = np.delete(h, rmin)
 
 unitL = unyt.cm
 t_end = 1e-3 * unyt.s
-edgelen = unyt.c.to('cm/s') * t_end * 2.
+edgelen = unyt.c.to("cm/s") * t_end * 2.0
 edgelen = edgelen.to(unitL)
 boxsize = unyt.unyt_array([edgelen.v, edgelen.v, edgelen.v], unitL)
 
-xs = unyt.unyt_array([np.array([xs[0]*edgelen, xs[1]*edgelen, xs[2]*edgelen])], unitL)
+xs = unyt.unyt_array(
+    [np.array([xs[0] * edgelen, xs[1] * edgelen, xs[2] * edgelen])], unitL
+)
 xp *= edgelen
 h *= edgelen
 
 
-w = Writer(unit_system = unyt.unit_systems.cgs_unit_system, box_size=boxsize, dimension=3)
+w = Writer(unit_system=unyt.unit_systems.cgs_unit_system, box_size=boxsize, dimension=3)
 
 w.gas.coordinates = xp
 w.stars.coordinates = xs
