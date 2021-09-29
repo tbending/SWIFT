@@ -189,7 +189,7 @@ __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
     du_dt_cgs = -coeff * pow(temp / 8e6, index) / rho_cgs;   
   }
   else if (temp > 5.8e7){
-    coeff = 1.8421;
+    coeff = 1.8421e-23;
     index = 0.4;
     du_dt_cgs = -coeff * pow(temp / 5.8e7, index) / rho_cgs;   
   }
