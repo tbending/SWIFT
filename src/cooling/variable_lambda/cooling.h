@@ -195,7 +195,7 @@ __attribute__((always_inline)) INLINE static double cooling_rate_cgs(
   // }
   
   // Cooling ceiling
-  else if {temp > 2e5 & temp < 6e5}{
+  else if (temp > 2e5 & temp < 6e5){
     coeff = 6.6831e-22;
     index = -1.7;
     du_dt_cgs = -coeff * pow(temp / 2e5, index) / rho_cgs;   
