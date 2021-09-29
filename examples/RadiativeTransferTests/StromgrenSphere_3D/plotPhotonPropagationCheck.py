@@ -6,13 +6,13 @@
 #   - magnitude of radiation fluxes of particles as function of radius
 #   - total energy in radial bins
 #   - total vectorial sum of fluxes in radial bins
-# and compare with expected propagaion speed solution.
+# and compare with expected propagation speed solution.
 # Usage:
 #   give snapshot number as cmdline arg to plot
 #   single snapshot, otherwise this script plots
 #   all snapshots available in the workdir.
 #   Make sure to select the photon group to plot that
-#   doesn't interact with gas to check the *propagaion*
+#   doesn't interact with gas to check the *propagation*
 #   correctly.
 # ----------------------------------------------------------------------
 
@@ -22,15 +22,16 @@ import numpy as np
 import unyt
 from matplotlib import pyplot as plt
 import matplotlib as mpl
-from matplotlib.colors import LogNorm, SymLogNorm
 from scipy import stats
 from scipy.optimize import curve_fit
 
 # Parameters users should/may tweak
-snapshot_base = "output"  # snapshot basename
-group_index = 0  # which photon group to use.
 
-# -----------------------------------------------------------------------
+# snapshot basename
+snapshot_base = "output"
+
+# which photon group to use.
+group_index = 0
 
 scatterplot_kwargs = {
     "alpha": 0.1,
@@ -42,6 +43,7 @@ scatterplot_kwargs = {
 
 lineplot_kwargs = {"linewidth": 2}
 
+# -----------------------------------------------------------------------
 
 # Read in cmdline arg: Are we plotting only one snapshot, or all?
 plot_all = False
@@ -99,8 +101,13 @@ def analytical_energy_solution(L, time, r, rmax):
 
 
 def analytical_flux_magnitude_solution(L, time, r, rmax):
+    """
+    For radiation that doesn't interact with the gas, the
+    flux should correspond to the free streaming (optically
+    thin) limit. So compute and return that.
+    """
     r, E = analytical_energy_solution(L, time, r, rmax)
-    F = unyt.c.to(r.units / unyt.s) * E / r.units ** 3
+    F = unyt.c.to(r.units / time.units) * E / r.units ** 3
     return r, F
 
 
@@ -139,10 +146,10 @@ def plot_photons(filename, emin, emax, fmin, fmax):
     Create the actual plot.
 
     filename: file to work with
-    emin: list of minimal nonzero energy of all snapshots for each group
-    emax: list of maximal energy of all snapshots for each group
-    fmin: list of minimal flux magnitude of all snapshots for each group
-    fmax: list of maximal flux magnitude of all snapshots for each group
+    emin: list of minimal nonzero energy of all snapshots
+    emax: list of maximal energy of all snapshots
+    fmin: list of minimal flux magnitude of all snapshots
+    fmax: list of maximal flux magnitude of all snapshots
     """
 
     print("working on", filename)
@@ -293,8 +300,7 @@ def plot_photons(filename, emin, emax, fmin, fmax):
 
     if use_const_emission_rates:
         # plot entire expected solution
-        # Note: you need to use the same bins as for the
-        # actual results
+        # Note: you need to use the same bins as for the actual results
         rA, EA = analytical_intgrated_energy_solution(L, time, r_bin_edges, r_expect)
 
         ax2.plot(
@@ -460,7 +466,6 @@ def plot_photons(filename, emin, emax, fmin, fmax):
 def get_plot_boundaries(filenames):
     """
     Get minimal and maximal nonzero photon energy values
-    for each photon group
     """
 
     data = swiftsimio.load(filenames[0])

@@ -5,7 +5,6 @@
 # ---------------------------------------------------------------------
 
 from swiftsimio import Writer
-
 import unyt
 import numpy as np
 import h5py
@@ -14,6 +13,7 @@ import h5py
 glass = h5py.File("glassPlane_128.hdf5", "r")
 parts = glass["PartType0"]
 xp = parts["Coordinates"][:]
+h = parts["SmoothingLength"][:]
 glass.close()
 
 # replace the particle closest to the center
@@ -22,6 +22,7 @@ r = np.sqrt(np.sum((0.5 - xp) ** 2, axis=1))
 rmin = np.argmin(r)
 xs = xp[rmin]
 xp = np.delete(xp, rmin, axis=0)
+h = np.delete(h, rmin)
 
 
 unitL = unyt.cm
@@ -34,6 +35,7 @@ xs = unyt.unyt_array(
     [np.array([xs[0] * edgelen, xs[1] * edgelen, 0.0 * edgelen])], unitL
 )
 xp *= edgelen
+h *= edgelen
 
 
 w = Writer(unit_system=unyt.unit_systems.cgs_unit_system, box_size=boxsize, dimension=2)
@@ -48,11 +50,7 @@ w.gas.internal_energy = (
     np.ones(xp.shape[0], dtype=np.float) * (300.0 * unyt.kb * unyt.K) / (unyt.g)
 )
 
-# Generate initial guess for smoothing lengths based on MIPS
-w.gas.generate_smoothing_lengths(boxsize=boxsize, dimension=2)
-# take some smoothing length from the gas, otherwise you get boxsize for a single star
-w.stars.generate_smoothing_lengths(boxsize=boxsize, dimension=2)
-w.stars.smoothing_length[0] = w.gas.smoothing_length[0]
+w.gas.smoothing_length = h
+w.stars.smoothing_length = w.gas.smoothing_length[:1]
 
-# If IDs are not present, this automatically generates
 w.write("stromgrenSphere-2D.hdf5")

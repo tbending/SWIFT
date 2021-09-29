@@ -5,7 +5,6 @@
 # ---------------------------------------------------------------------
 
 from swiftsimio import Writer
-
 import unyt
 import numpy as np
 import h5py
@@ -51,9 +50,7 @@ w.gas.internal_energy = (
     np.ones(xp.shape[0], dtype=np.float) * (300.0 * unyt.kb * unyt.K) / (unyt.g)
 )
 
-# Generate initial guess for smoothing lengths based on MIPS
 w.gas.smoothing_length = h
 w.stars.smoothing_length = w.gas.smoothing_length[:1]
 
-# If IDs are not present, this automatically generates
 w.write("stromgrenSphere-3D.hdf5")

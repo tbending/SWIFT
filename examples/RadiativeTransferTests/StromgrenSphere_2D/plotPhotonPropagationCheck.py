@@ -6,13 +6,13 @@
 #   - magnitude of radiation fluxes of particles as function of radius
 #   - total energy in radial bins
 #   - total vectorial sum of fluxes in radial bins
-# and compare with expected propagaion speed solution.
+# and compare with expected propagation speed solution.
 # Usage:
 #   give snapshot number as cmdline arg to plot
 #   single snapshot, otherwise this script plots
 #   all snapshots available in the workdir.
 #   Make sure to select the photon group to plot that
-#   doesn't interact with gas to check the *propagaion*
+#   doesn't interact with gas to check the *propagation*
 #   correctly.
 # ----------------------------------------------------------------------
 
@@ -22,19 +22,20 @@ import numpy as np
 import unyt
 from matplotlib import pyplot as plt
 import matplotlib as mpl
-from matplotlib.colors import LogNorm, SymLogNorm
 from scipy import stats
 from scipy.optimize import curve_fit
 
 # Parameters users should/may tweak
-snapshot_base = "output"  # snapshot basename
-group_index = 0  # which photon group to use.
 
-# -----------------------------------------------------------------------
+# snapshot basename
+snapshot_base = "output"
+
+# which photon group to use.
+group_index = 0
 
 scatterplot_kwargs = {
-    "alpha": 0.6,
-    "s": 4,
+    "alpha": 0.3,
+    "s": 2,
     "marker": ".",
     "linewidth": 0.0,
     "facecolor": "blue",
@@ -42,6 +43,7 @@ scatterplot_kwargs = {
 
 lineplot_kwargs = {"linewidth": 2}
 
+# -----------------------------------------------------------------------
 
 # Read in cmdline arg: Are we plotting only one snapshot, or all?
 plot_all = False
@@ -99,8 +101,13 @@ def analytical_energy_solution(L, time, r, rmax):
 
 
 def analytical_flux_magnitude_solution(L, time, r, rmax):
+    """
+    For radiation that doesn't interact with the gas, the
+    flux should correspond to the free streaming (optically
+    thin) limit. So compute and return that.
+    """
     r, E = analytical_energy_solution(L, time, r, rmax)
-    F = unyt.c * E / r.units ** 3
+    F = unyt.c.to(r.units / time.units) * E / r.units ** 3
     return r, F
 
 
@@ -139,10 +146,10 @@ def plot_photons(filename, emin, emax, fmin, fmax):
     Create the actual plot.
 
     filename: file to work with
-    emin: list of minimal nonzero energy of all snapshots for each group
-    emax: list of maximal energy of all snapshots for each group
-    fmin: list of minimal flux magnitude of all snapshots for each group
-    fmax: list of maximal flux magnitude of all snapshots for each group
+    emin: list of minimal nonzero energy of all snapshots
+    emax: list of maximal energy of all snapshots
+    fmin: list of minimal flux magnitude of all snapshots
+    fmax: list of maximal flux magnitude of all snapshots
     """
 
     print("working on", filename)
@@ -182,9 +189,11 @@ def plot_photons(filename, emin, emax, fmin, fmax):
     fig = plt.figure(figsize=(5 * 4, 5.5), dpi=200)
 
     nbins = 100
-    r_bin_edges = np.linspace(0.5 * edgelen * 1e-2, 0.501 * edgelen, nbins + 1)
+    r_bin_edges = np.linspace(0.5 * edgelen * 1e-2, 0.507 * edgelen, nbins + 1)
     r_bin_centres = 0.5 * (r_bin_edges[1:] + r_bin_edges[:-1])
-    r_analytical_bin_edges = np.linspace(0.5 * edgelen * 1e-2, 0.501 * edgelen, 501)
+    r_analytical_bin_edges = np.linspace(
+        0.5 * edgelen * 1e-2, 0.507 * edgelen, nbins + 1
+    )
 
     # --------------------------
     # Read in and process data
@@ -231,7 +240,8 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             # the particle bin counts will introduce noise.
             # So use a linear fit for the plot. I assume here
             # that the particle number per bin increases
-            # proprtional to r.
+            # proprtional to r, which should roughly be the
+            # case for the underlying glass particle distribution.
             lin_res = stats.linregress(rA, pcount)
 
             ax1.plot(
@@ -240,8 +250,9 @@ def plot_photons(filename, emin, emax, fmin, fmax):
                 **lineplot_kwargs,
                 linestyle="--",
                 c="red",
-                label="analytical solution",
+                label="Analytical Solution",
             )
+
     else:
         # just plot where photon front should be
         ax1.plot(
@@ -251,8 +262,16 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             color="red",
         )
 
-    ax1.scatter(
-        r, energies, **scatterplot_kwargs, label="Radiation energy of particles"
+    ax1.scatter(r, energies, **scatterplot_kwargs)
+    energies_binned, _, _ = stats.binned_statistic(
+        r,
+        energies,
+        statistic="mean",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
+    ax1.plot(
+        r_bin_centres, energies_binned, **lineplot_kwargs, label="Mean Radiation Energy"
     )
     ax1.set_ylim(emin_to_use, emax * 1.1)
 
@@ -274,15 +293,14 @@ def plot_photons(filename, emin, emax, fmin, fmax):
         r_bin_centres,
         energies_summed_bin,
         **lineplot_kwargs,
-        label="total energy in bin",
+        label="Total Energy in Bin",
     )
     current_ylims = ax2.get_ylim()
     ax2.set_ylim(emin_to_use, current_ylims[1])
 
     if use_const_emission_rates:
         # plot entire expected solution
-        # Note: you need to use the same bins as for the
-        # actual results
+        # Note: you need to use the same bins as for the actual results
         rA, EA = analytical_intgrated_energy_solution(L, time, r_bin_edges, r_expect)
 
         ax2.plot(
@@ -291,14 +309,14 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             **lineplot_kwargs,
             linestyle="--",
             c="red",
-            label="analytical solution",
+            label="Analytical Solution",
         )
     else:
         # just plot where photon front should be
         ax2.plot(
             [r_expect, r_expect],
             ax2.get_ylim(r),
-            label="expected photon front",
+            label="Expected Photon Front",
             color="red",
         )
 
@@ -312,7 +330,21 @@ def plot_photons(filename, emin, emax, fmin, fmax):
     fmin_to_use = max(fmin, 1e-5 * fmax)
     ax3.set_ylim(fmin_to_use, fmax * 1.1)
 
-    ax3.scatter(r, fmag, **scatterplot_kwargs, label="Radiation Flux of particles")
+    ax3.scatter(r, fmag, **scatterplot_kwargs)
+
+    fmag_mean_bin, _, _ = stats.binned_statistic(
+        r,
+        fmag,
+        statistic="mean",
+        bins=r_bin_edges,
+        range=(r_bin_edges[0], r_bin_edges[-1]),
+    )
+    ax3.plot(
+        r_bin_centres,
+        fmag_mean_bin,
+        **lineplot_kwargs,
+        label="Mean Radiation Flux of particles",
+    )
 
     if use_const_emission_rates:
         # plot entire expected solution
@@ -329,7 +361,8 @@ def plot_photons(filename, emin, emax, fmin, fmax):
             # the particle bin counts will introduce noise.
             # So use a linear fit for the plot. I assume here
             # that the particle number per bin increases
-            # proprtional to r.
+            # proprtional to r, which should roughly be the
+            # case for the underlying glass particle distribution.
             lin_res = stats.linregress(rA, pcount)
 
             ax3.plot(
@@ -340,6 +373,7 @@ def plot_photons(filename, emin, emax, fmin, fmax):
                 c="red",
                 label="analytical solution",
             )
+
     else:
         # just plot where photon front should be
         ax1.plot(
@@ -432,7 +466,6 @@ def plot_photons(filename, emin, emax, fmin, fmax):
 def get_plot_boundaries(filenames):
     """
     Get minimal and maximal nonzero photon energy values
-    for each photon group
     """
 
     data = swiftsimio.load(filenames[0])

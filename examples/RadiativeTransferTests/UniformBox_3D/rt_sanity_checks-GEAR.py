@@ -296,7 +296,6 @@ def check_injection(snapdata, rundata):
             )
             plt.title("Injected energies vs expectations")
             plt.show()
-            #  plt.savefig("boundaries.png", dpi=300)
             plt.close()
 
     return

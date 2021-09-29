@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 # ----------------------------------------------------
-# plot photon data
-# give snapshot number as cmdline arg to plot
+# plots 2D projection of radiation energy and fluxes
+#
+# Usage: give snapshot number as cmdline arg to plot
 # single snapshot, otherwise this script plots
-# all snapshots available in the workdir
+# all snapshots available in the workdir.
 # ----------------------------------------------------
 
 import sys
@@ -15,17 +16,21 @@ import gc
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import LogNorm, SymLogNorm
+from matplotlib.colors import SymLogNorm
 
 # Parameters users should/may tweak
-plot_all_data = True  # plot all groups and all photon quantities
-snapshot_base = "output"  # snapshot basename
-fancy = True  # fancy up the plots a bit?
+
+# plot all groups and all photon quantities
+plot_all_data = True
+# snapshot basename
+snapshot_base = "output"
+# fancy up the plots a bit?
+fancy = True
 
 # parameters for imshow plots
 imshow_kwargs = {"origin": "lower", "cmap": "viridis"}
 
-
+# parameters for swiftsimio projections
 projection_kwargs = {"resolution": 1024, "parallel": True}
 # -----------------------------------------------------------------------
 
@@ -82,6 +87,10 @@ def remove_zeros(arr):
 
 
 def set_colorbar(ax, im):
+    """
+    Adapt the colorbar a bit for axis object <ax> and
+    imshow instance <im>
+    """
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="5%", pad=0.05)
     plt.colorbar(im, cax=cax)
@@ -116,23 +125,22 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
         # add mass weights to remove surface density dependence in images
         new_attribute_str = "mass_weighted_radiation_energy" + str(g + 1)
         en = getattr(data.gas.photon_energies, "group" + str(g + 1))
-        en = remove_zeros(en)
+        #  en = remove_zeros(en)
         en *= data.gas.masses
         setattr(data.gas, new_attribute_str, en)
 
         if plot_all_data:
             # prepare also the fluxes
-            #  for direction in ["X", "Y", "Z"]:
             for direction in ["X", "Y"]:
                 new_attribute_str = (
                     "mass_weighted_radiation_flux" + str(g + 1) + direction
                 )
                 f = getattr(data.gas.photon_fluxes, "Group" + str(g + 1) + direction)
-                f = remove_zeros(f)
+                #  f = remove_zeros(f)
                 f *= data.gas.masses
                 setattr(data.gas, new_attribute_str, f)
 
-    # get mass surface density projection that we'll use to remove density dependence in  impage
+    # get mass surface density projection that we'll use to remove density dependence in image
     mass_map = swiftsimio.visualisation.projection.project_gas(
         data, project="masses", **projection_kwargs
     )
@@ -152,8 +160,6 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
             ax = fig.add_subplot(ngroups, 3, g * 3 + 1)
             if energy_boundaries is not None:
-                #  imshow_kwargs["vmin"] = energy_boundaries[g][0]
-                #  imshow_kwargs["vmax"] = energy_boundaries[g][1]
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=energy_boundaries[g][0],
                     vmax=energy_boundaries[g][1],
@@ -176,8 +182,6 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
             ax = fig.add_subplot(ngroups, 3, g * 3 + 2)
             if flux_boundaries is not None:
-                #  imshow_kwargs["vmin"] = flux_boundaries[g][0]
-                #  imshow_kwargs["vmax"] = flux_boundaries[g][1]
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=flux_boundaries[g][0],
                     vmax=flux_boundaries[g][1],

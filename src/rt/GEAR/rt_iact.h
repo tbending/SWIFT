@@ -160,8 +160,9 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   }
 
   /* Compute unit vector and isotropy correction */
-  const float r_inv = 1.f / sqrtf(r2);
-  const float n_unit[3] = {dx[0] * r_inv, dx[1] * r_inv, dx[2] * r_inv};
+  const float min_r_inv = -1.f / sqrtf(r2);
+  const float n_unit[3] = {dx[0] * min_r_inv, dx[1] * min_r_inv,
+                           dx[2] * min_r_inv};
 
   float weight_sum = 0.f;
   float nonempty_quadrants = 0.f;
