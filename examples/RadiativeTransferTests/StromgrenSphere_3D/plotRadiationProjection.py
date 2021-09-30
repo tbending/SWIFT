@@ -105,6 +105,9 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
     global imshow_kwargs
     imshow_kwargs["extent"] = [0, meta.boxsize[0].v, 0, meta.boxsize[1].v]
 
+    rotation_matrix = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]])
+    rotation_center = meta.boxsize * 0.5
+
     for g in range(ngroups):
         # workaround to access named columns data with swiftsimio visualisaiton
         # add mass weights to remove surface density dependence in images
@@ -115,7 +118,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
         if plot_all_data:
             # prepare also the fluxes
-            for direction in ["X", "Y"]:
+            for direction in ["X", "Y", "Z"]:
                 new_attribute_str = (
                     "mass_weighted_radiation_flux" + str(g + 1) + direction
                 )
@@ -129,7 +132,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
     )
 
     if plot_all_data:
-        fig = plt.figure(figsize=(5 * 3, 5.05 * ngroups), dpi=200)
+        fig = plt.figure(figsize=(5 * 4, 5.05 * ngroups), dpi=200)
         figname = filename[:-5] + "-all-quantities.png"
 
         for g in range(ngroups):
@@ -141,7 +144,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             )
             photon_map /= mass_map
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 1)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 1)
             if energy_boundaries is not None:
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=energy_boundaries[g][0],
@@ -163,7 +166,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             )
             photon_map /= mass_map
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 2)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 2)
             if flux_boundaries is not None:
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=flux_boundaries[g][0],
@@ -185,13 +188,32 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             )
             photon_map /= mass_map
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 3)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 3)
             im = ax.imshow(photon_map.T, **imshow_kwargs)
             set_colorbar(ax, im)
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             ax.set_ylabel("y [$" + xlabel_units_str + "$]")
             if g == 0:
                 ax.set_title("Flux Y")
+
+            # get flux Z projection
+            new_attribute_str = "mass_weighted_radiation_flux" + str(g + 1) + "Z"
+            photon_map = swiftsimio.visualisation.projection.project_gas(
+                data,
+                project=new_attribute_str,
+                **projection_kwargs,
+                rotation_matrix=rotation_matrix,
+                rotation_center=rotation_center,
+            )
+            photon_map /= mass_map
+
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 4)
+            im = ax.imshow(photon_map.T, **imshow_kwargs)
+            set_colorbar(ax, im)
+            ax.set_xlabel("x [$" + xlabel_units_str + "$]")
+            ax.set_ylabel("z [$" + xlabel_units_str + "$]")
+            if g == 0:
+                ax.set_title("Flux Z")
 
     else:  # plot just energies
 
@@ -242,7 +264,7 @@ def get_minmax_vals(snaplist):
     returns:
 
     energy_boundaries: list of [E_min, E_max] for each photon group
-    flux_boundaries: list of [Fx_min, Fy_max] for each photon group
+    flux_boundaries: list of [F_min, F_max] for each photon group
     """
 
     emins = []
@@ -271,7 +293,7 @@ def get_minmax_vals(snaplist):
 
             dirmin = []
             dirmax = []
-            for direction in ["X", "Y"]:
+            for direction in ["X", "Y", "Z"]:
                 new_attribute_str = "radiation_flux" + str(g + 1) + direction
                 f = getattr(data.gas.photon_fluxes, "Group" + str(g + 1) + direction)
                 dirmin.append(f.min())

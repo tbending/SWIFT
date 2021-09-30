@@ -74,9 +74,9 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
   /* Now add that weight to the appropriate quadrant */
   int quadrant_index = 0;
 
-  if (dx[0] > 0) quadrant_index += 1;
-  if (dx[1] > 0) quadrant_index += 2;
-  if (dx[2] > 0) quadrant_index += 4;
+  if (dx[0] > 0.f) quadrant_index += 1;
+  if (dx[1] > 0.f) quadrant_index += 2;
+  if (dx[2] > 0.f) quadrant_index += 4;
 
   si->rt_data.quadrant_weights[quadrant_index] += psi;
 }
@@ -154,22 +154,12 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 #elif defined(HYDRO_DIMENSION_1D)
   const int maxind = 2;
 #endif
-  float total_weight = 0.f;
-  for (int i = 0; i < maxind; i++) {
-    total_weight += si->rt_data.quadrant_weights[i];
-  }
 
-  /* Compute unit vector and isotropy correction */
-  const float min_r_inv = -1.f / sqrtf(r2);
-  const float n_unit[3] = {dx[0] * min_r_inv, dx[1] * min_r_inv,
-                           dx[2] * min_r_inv};
-
-  float weight_sum = 0.f;
+  /* Get weight for particle, including isotropy correction */
   float nonempty_quadrants = 0.f;
 
   for (int i = 0; i < maxind; i++) {
     if (si->rt_data.quadrant_weights[i] > 0.f) nonempty_quadrants += 1.f;
-    weight_sum += si->rt_data.quadrant_weights[i];
   }
 
   int quadrant_index = 0;
@@ -177,16 +167,18 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   if (dx[1] > 0.f) quadrant_index += 2;
   if (dx[2] > 0.f) quadrant_index += 4;
 
-  const float isotropy_correction =
-      weight_sum / nonempty_quadrants /
-      si->rt_data.quadrant_weights[quadrant_index];
+  const float weight =
+      psi / nonempty_quadrants / si->rt_data.quadrant_weights[quadrant_index];
+
+  const float minus_r_inv = -1.f / r;
+  const float n_unit[3] = {dx[0] * minus_r_inv, dx[1] * minus_r_inv,
+                           dx[2] * minus_r_inv};
 
   /* Nurse, the patient is ready now */
   /* TODO: this is done differently for RT_HYDRO_CONTROLLED_INJECTION */
-  const float f = psi / total_weight * isotropy_correction;
   for (int g = 0; g < RT_NGROUPS; g++) {
     /* Inject energy. */
-    const float injected_energy = si->rt_data.emission_this_step[g] * f;
+    const float injected_energy = si->rt_data.emission_this_step[g] * weight;
     pj->rt_data.conserved[g].energy += injected_energy;
 
     /* Inject flux. */
@@ -201,7 +193,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* Take note how much energy we actually injected */
   for (int g = 0; g < RT_NGROUPS; g++) {
-    float res = si->rt_data.emission_this_step[g] * f;
+    float res = si->rt_data.emission_this_step[g] * weight;
     si->rt_data.debug_injected_energy[g] += res;
     si->rt_data.debug_injected_energy_tot[g] += res;
   }

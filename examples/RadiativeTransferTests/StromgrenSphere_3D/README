@@ -10,6 +10,10 @@ Intented to compile with :
 
 Scripts in this directory:
 
+    - plotRadiationProjection.py:
+        plot photon energies and fluxes as a 2D projected 
+        image
+
     - plotPhotonPropagationCheck.py:
         Plots radiation energies and fluxes as function of 
         radius centered on the injecting star. 
