@@ -171,10 +171,11 @@ __attribute__((always_inline)) INLINE static integertime_t get_part_timestep(
   const float new_dt_chemistry =
       chemistry_timestep(e->physical_constants, e->cosmology, e->internal_units,
                          e->hydro_properties, e->chemistry, p);
-#if defined(RT_GEAR)
+#ifndef RT_NONE
   /* Temporary, while we don't have RT subcycling */
-  const float new_dt_radiation =
-      rt_compute_timestep(p, e->rt_props, e->cosmology);
+  float new_dt_radiation = FLT_MAX;
+  if (e->policy & engine_policy_rt)
+    new_dt_radiation = rt_compute_timestep(p, e->rt_props, e->cosmology);
   float new_dt = min5(new_dt_hydro, new_dt_cooling, new_dt_grav,
                       new_dt_chemistry, new_dt_radiation);
 #else
