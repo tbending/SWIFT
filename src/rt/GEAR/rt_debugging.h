@@ -129,6 +129,7 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
     /* Reset all values here in case particles won't be active next step */
     p->rt_data.debug_iact_stars_inject_prep = 0;
 
+    /* Sum up total energies for budget */
     for (int g = 0; g < RT_NGROUPS; g++) {
       energy_density_sum[g] += p->rt_data.density[g].energy;
       energy_sum[g] += p->rt_data.conserved[g].energy;
@@ -180,7 +181,9 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
   for (int g = 0; g < RT_NGROUPS; g++) {
     e->rt_props->debug_total_radiation_energy_density[g] = 0.f;
     e->rt_props->debug_total_radiation_conserved_energy[g] = 0.f;
+    e->rt_props->debug_total_star_emitted_energy[g] = 0.f;
   }
+
 
   /* hydro particle loop */
   if (s->nr_parts > 0)
