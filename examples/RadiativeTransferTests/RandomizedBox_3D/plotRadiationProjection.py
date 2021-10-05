@@ -17,7 +17,7 @@ import unyt
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from matplotlib.colors import SymLogNorm
+from matplotlib.colors import SymLogNorm, LogNorm
 
 # Parameters users should/may tweak
 
@@ -35,11 +35,11 @@ imshow_kwargs = {"origin": "lower", "cmap": "viridis"}
 projection_kwargs = {"resolution": 1024, "parallel": True}
 
 # Set Units of your choice
-energy_units = unyt.erg
-energy_units_str = "\\rm{erg}"
-flux_units = 1e10 * energy_units / unyt.cm **2 / unyt.s
-flux_units_str = "10^{10} \\rm{erg} \\ \\rm{cm}^{-2} \\ \\rm{s}^{-1}"
-time_units = unyt.s
+energy_units = 1e50 * unyt.erg
+energy_units_str = "10^{50} \\rm{erg}"
+flux_units = energy_units / unyt.kpc **2 / unyt.Gyr
+flux_units_str = "10^{50} \\rm{erg} \\ \\rm{kpc}^{-2} \\ \\rm{Gyr}^{-1}"
+time_units = unyt.Gyr
 # -----------------------------------------------------------------------
 
 
@@ -113,6 +113,9 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
     global imshow_kwargs
     imshow_kwargs["extent"] = [0, meta.boxsize[0].v, 0, meta.boxsize[1].v]
 
+    rotation_matrix = np.array([[1.0, 0.0, 0.0], [0.0, 0.0, 1.0], [0.0, -1.0, 0.0]])
+    rotation_center = meta.boxsize * 0.5
+
     for g in range(ngroups):
         # workaround to access named columns data with swiftsimio visualisaiton
         # add mass weights to remove surface density dependence in images
@@ -122,7 +125,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
         if plot_all_data:
             # prepare also the fluxes
-            for direction in ["X", "Y"]:
+            for direction in ["X", "Y", "Z"]:
                 new_attribute_str = (
                     "mass_weighted_radiation_flux" + str(g + 1) + direction
                 )
@@ -135,7 +138,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
     )
 
     if plot_all_data:
-        fig = plt.figure(figsize=(5 * 3, 5.05 * ngroups), dpi=200)
+        fig = plt.figure(figsize=(5 * 4, 5.05 * ngroups), dpi=200)
         figname = filename[:-5] + "-all-quantities.png"
 
         for g in range(ngroups):
@@ -149,9 +152,12 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             photon_map = mass_weighted_photon_map / mass_map
             photon_map.convert_to_units(energy_units)
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 1)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 1)
 
             if energy_boundaries is not None:
+                #  imshow_kwargs["norm"] = None
+                #  imshow_kwargs["vmin"] = energy_boundaries[g][0]
+                #  imshow_kwargs["vmax"] = energy_boundaries[g][1]
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=energy_boundaries[g][0],
                     vmax=energy_boundaries[g][1],
@@ -174,8 +180,10 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             photon_map = mass_weighted_flux_map / mass_map
             photon_map.convert_to_units(flux_units)
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 2)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 2)
             if flux_boundaries is not None:
+                imshow_kwargs["vmin"] = None
+                imshow_kwargs["vmax"] = None
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=flux_boundaries[g][0],
                     vmax=flux_boundaries[g][1],
@@ -198,7 +206,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             photon_map = mass_weighted_flux_map / mass_map
             photon_map.convert_to_units(flux_units)
 
-            ax = fig.add_subplot(ngroups, 3, g * 3 + 3)
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 3)
             im = ax.imshow(photon_map.T, **imshow_kwargs)
             set_colorbar(ax, im)
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
@@ -206,6 +214,26 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             if g == 0:
                 ax.set_title("Flux Y [$"+flux_units_str+"$]")
 
+            # get flux Z projection
+            new_attribute_str = "mass_weighted_radiation_flux" + str(g + 1) + "Z"
+            mass_weighted_flux_map = swiftsimio.visualisation.projection.project_gas(
+                data,
+                project=new_attribute_str,
+                **projection_kwargs,
+                rotation_matrix=rotation_matrix,
+                rotation_center=rotation_center,
+            )
+            # mass_weighted_flux_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_flux_map / mass_map
+            photon_map.convert_to_units(flux_units)
+
+            ax = fig.add_subplot(ngroups, 4, g * 4 + 4)
+            im = ax.imshow(photon_map.T, **imshow_kwargs)
+            set_colorbar(ax, im)
+            ax.set_xlabel("x [$" + xlabel_units_str + "$]")
+            ax.set_ylabel("z [$" + xlabel_units_str + "$]")
+            if g == 0:
+                ax.set_title("Flux Z [$"+flux_units_str+"$]")
 
     else:  # plot just energies
 
@@ -228,6 +256,12 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             if energy_boundaries is not None:
                 imshow_kwargs["vmin"] = energy_boundaries[g][0]
                 imshow_kwargs["vmax"] = energy_boundaries[g][1]
+                #  imshow_kwargs["norm"] = SymLogNorm(
+                #      vmin=energy_boundaries[g][0],
+                #      vmax=energy_boundaries[g][1],
+                #      linthresh = 1e-2,
+                #      base=10
+                # )
             im = ax.imshow(photon_map.T, **imshow_kwargs)
             set_colorbar(ax, im)
             ax.set_title("Group {0:2d}".format(g + 1))
@@ -293,7 +327,7 @@ def get_minmax_vals(snaplist):
 
             dirmin = []
             dirmax = []
-            for direction in ["X", "Y"]:
+            for direction in ["X", "Y", "Z"]:
                 new_attribute_str = "radiation_flux" + str(g + 1) + direction
                 f = getattr(data.gas.photon_fluxes, "Group" + str(g + 1) + direction)
                 dirmin.append(f.min())

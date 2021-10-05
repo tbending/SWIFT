@@ -13,6 +13,7 @@ import os
 import swiftsimio
 import numpy as np
 import gc
+import unyt
 from matplotlib import pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -32,6 +33,13 @@ imshow_kwargs = {"origin": "lower", "cmap": "viridis"}
 
 # parameters for swiftsimio projections
 projection_kwargs = {"resolution": 1024, "parallel": True}
+
+# Set Units of your choice
+energy_units = unyt.erg
+energy_units_str = "\\rm{erg}"
+flux_units = 1e10 * energy_units / unyt.cm **2 / unyt.s
+flux_units_str = "10^{10} \\rm{erg} \\ \\rm{cm}^{-2} \\ \\rm{s}^{-1}"
+time_units = unyt.s
 # -----------------------------------------------------------------------
 
 
@@ -112,8 +120,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
         # workaround to access named columns data with swiftsimio visualisaiton
         # add mass weights to remove surface density dependence in images
         new_attribute_str = "mass_weighted_radiation_energy" + str(g + 1)
-        en = getattr(data.gas.photon_energies, "group" + str(g + 1))
-        en *= data.gas.masses
+        en = getattr(data.gas.photon_energies, "group" + str(g + 1)) * data.gas.masses
         setattr(data.gas, new_attribute_str, en)
 
         if plot_all_data:
@@ -122,8 +129,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
                 new_attribute_str = (
                     "mass_weighted_radiation_flux" + str(g + 1) + direction
                 )
-                f = getattr(data.gas.photon_fluxes, "Group" + str(g + 1) + direction)
-                f *= data.gas.masses
+                f = getattr(data.gas.photon_fluxes, "Group" + str(g + 1) + direction) * data.gas.masses
                 setattr(data.gas, new_attribute_str, f)
 
     # get mass surface density projection that we'll use to remove density dependence in image
@@ -139,17 +145,20 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
             # get energy projection
             new_attribute_str = "mass_weighted_radiation_energy" + str(g + 1)
-            photon_map = swiftsimio.visualisation.projection.project_gas(
+            mass_weighted_photon_map = swiftsimio.visualisation.projection.project_gas(
                 data, project=new_attribute_str, **projection_kwargs
             )
-            photon_map /= mass_map
+            # mass_weighted_photon_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_photon_map / mass_map
+            photon_map.convert_to_units(energy_units)
 
             ax = fig.add_subplot(ngroups, 4, g * 4 + 1)
+
             if energy_boundaries is not None:
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=energy_boundaries[g][0],
                     vmax=energy_boundaries[g][1],
-                    linthresh=1e-2,
+                    linthresh=1e-3,
                     base=10,
                 )
             im = ax.imshow(photon_map.T, **imshow_kwargs)
@@ -157,21 +166,23 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             ax.set_ylabel("Group {0:2d}".format(g + 1))
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             if g == 0:
-                ax.set_title("Energies")
+                ax.set_title("Energies [$"+energy_units_str+"$]")
 
             # get flux X projection
             new_attribute_str = "mass_weighted_radiation_flux" + str(g + 1) + "X"
-            photon_map = swiftsimio.visualisation.projection.project_gas(
+            mass_weighted_flux_map = swiftsimio.visualisation.projection.project_gas(
                 data, project=new_attribute_str, **projection_kwargs
             )
-            photon_map /= mass_map
+            # mass_weighted_flux_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_flux_map / mass_map
+            photon_map.convert_to_units(flux_units)
 
             ax = fig.add_subplot(ngroups, 4, g * 4 + 2)
             if flux_boundaries is not None:
                 imshow_kwargs["norm"] = SymLogNorm(
                     vmin=flux_boundaries[g][0],
                     vmax=flux_boundaries[g][1],
-                    linthresh=1e2,
+                    linthresh=1e-3,
                     base=10,
                 )
             im = ax.imshow(photon_map.T, **imshow_kwargs)
@@ -179,14 +190,16 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             ax.set_ylabel("y [$" + xlabel_units_str + "$]")
             if g == 0:
-                ax.set_title("Flux X")
+                ax.set_title("Flux X [$"+flux_units_str+"$]")
 
             # get flux Y projection
             new_attribute_str = "mass_weighted_radiation_flux" + str(g + 1) + "Y"
-            photon_map = swiftsimio.visualisation.projection.project_gas(
+            mass_weighted_flux_map = swiftsimio.visualisation.projection.project_gas(
                 data, project=new_attribute_str, **projection_kwargs
             )
-            photon_map /= mass_map
+            # mass_weighted_flux_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_flux_map / mass_map
+            photon_map.convert_to_units(flux_units)
 
             ax = fig.add_subplot(ngroups, 4, g * 4 + 3)
             im = ax.imshow(photon_map.T, **imshow_kwargs)
@@ -194,18 +207,20 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             ax.set_ylabel("y [$" + xlabel_units_str + "$]")
             if g == 0:
-                ax.set_title("Flux Y")
+                ax.set_title("Flux Y [$"+flux_units_str+"$]")
 
             # get flux Z projection
             new_attribute_str = "mass_weighted_radiation_flux" + str(g + 1) + "Z"
-            photon_map = swiftsimio.visualisation.projection.project_gas(
+            mass_weighted_flux_map = swiftsimio.visualisation.projection.project_gas(
                 data,
                 project=new_attribute_str,
                 **projection_kwargs,
                 rotation_matrix=rotation_matrix,
                 rotation_center=rotation_center,
             )
-            photon_map /= mass_map
+            # mass_weighted_flux_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_flux_map / mass_map
+            photon_map.convert_to_units(flux_units)
 
             ax = fig.add_subplot(ngroups, 4, g * 4 + 4)
             im = ax.imshow(photon_map.T, **imshow_kwargs)
@@ -213,7 +228,7 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
             ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             ax.set_ylabel("z [$" + xlabel_units_str + "$]")
             if g == 0:
-                ax.set_title("Flux Z")
+                ax.set_title("Flux Z [$"+flux_units_str+"$]")
 
     else:  # plot just energies
 
@@ -224,26 +239,30 @@ def plot_photons(filename, energy_boundaries=None, flux_boundaries=None):
 
             # get projection
             new_attribute_str = "mass_weighted_radiation_energy" + str(g + 1)
-            photon_map = swiftsimio.visualisation.projection.project_gas(
+            mass_weighted_photon_map = swiftsimio.visualisation.projection.project_gas(
                 data, project=new_attribute_str, **projection_kwargs
             )
-            photon_map /= mass_map
+            # mass_weighted_photon_map /= mass_map may cause RecursionErrors...
+            photon_map = mass_weighted_photon_map / mass_map
+            photon_map.convert_to_units(energy_units)
 
             ax = fig.add_subplot(1, ngroups, g + 1)
+
             if energy_boundaries is not None:
                 imshow_kwargs["vmin"] = energy_boundaries[g][0]
                 imshow_kwargs["vmax"] = energy_boundaries[g][1]
             im = ax.imshow(photon_map.T, **imshow_kwargs)
             set_colorbar(ax, im)
             ax.set_title("Group {0:2d}".format(g + 1))
+            ax.set_xlabel("x [$" + xlabel_units_str + "$]")
             if g == 0:
-                ax.set_ylabel("Energies")
+                ax.set_ylabel("Energies [$"+energy_units_str+"$]")
 
     # Add title
     title = filename.replace("_", "\_")  # exception handle underscore for latex
     if meta.cosmology is not None:
         title += ", $z$ = {0:.2e}".format(meta.z)
-    title += ", $t$ = {0:.2e}".format(meta.time)
+    title += ", $t$ = {0:.2e}".format(meta.time.to(time_units))
     fig.suptitle(title)
 
     plt.tight_layout()
@@ -288,8 +307,12 @@ def get_minmax_vals(snaplist):
         for g in range(ngroups):
 
             en = getattr(data.gas.photon_energies, "group" + str(g + 1))
-            emin_group.append(en.min())
             emax_group.append(en.max())
+            mask = en > 0
+            if mask.any():
+                emin_group.append(en[mask].min())
+            else:
+                emin_group.append(en.max())
 
             dirmin = []
             dirmax = []
@@ -309,11 +332,16 @@ def get_minmax_vals(snaplist):
     energy_boundaries = []
     flux_boundaries = []
     for g in range(ngroups):
-        emin = min([emins[f][g] for f in range(len(snaplist))])
+        # Note: snapshot 0 can have emax=0
+        emin = min([emins[f][g] for f in range(len(snaplist)) if emins[f][g] > 0])
         emax = max([emaxs[f][g] for f in range(len(snaplist))])
+        emin.convert_to_units(energy_units)
+        emax.convert_to_units(energy_units)
         energy_boundaries.append([emin, emax])
         fmin = min([fmins[f][g] for f in range(len(snaplist))])
+        fmin.convert_to_units(flux_units)
         fmax = max([fmaxs[f][g] for f in range(len(snaplist))])
+        fmax.convert_to_units(flux_units)
         flux_boundaries.append([fmin, fmax])
 
     return energy_boundaries, flux_boundaries
