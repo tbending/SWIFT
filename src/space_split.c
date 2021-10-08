@@ -651,6 +651,10 @@ void space_split_recursive(struct space *s, struct cell *c,
   c->black_holes.h_max_active = black_holes_h_max_active;
   c->maxdepth = maxdepth;
 
+  /* TODO: TEMP FOR DEBUGGING */
+  c->cell_count_transport = 0;
+  c->cell_count_gradient = 0;
+
   /* Set ownership according to the start of the parts array. */
   if (s->nr_parts > 0)
     c->owner = ((c->hydro.parts - s->parts) % s->nr_parts) * s->nr_queues /

@@ -115,6 +115,17 @@ struct rt_part_data {
 
   /*! thermochemistry done? */
   int debug_thermochem_done;
+
+  /*! Called in (hydro) ghost this step? */
+  int debug_called_in_ghost;
+
+  /* taskcount indices:
+   * 0: self
+   * 1: self-naive
+   * 2: pair
+   * 3: pair-naive */
+  int debug_calls_iact_transport_taskcount[4];
+  int debug_calls_iact_gradient_taskcount[4];
 #endif
 };
 

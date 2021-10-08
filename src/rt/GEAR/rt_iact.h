@@ -66,10 +66,10 @@ runner_iact_nonsym_rt_injection_prep(const float r2, const float *dx,
 #endif
 
   /* Compute the weight of the neighbouring particle */
-  const float r = sqrtf(r2);
-  float wi;
   const float hi_inv = 1.f / hi;
+  const float r = sqrtf(r2);
   const float xi = r * hi_inv;
+  float wi;
   kernel_eval(xi, &wi);
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
@@ -105,11 +105,48 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
    * have nothing to do here. */
   if (si->density.wcount == 0.f) return;
 
+#ifdef SWIFT_RT_DEBUG_CHECKS
+  /* Do some checks and increase neighbour counts
+   * before other potential early exits */
+  if (si->rt_data.debug_iact_hydro_inject_prep == 0)
+    error(
+        "Injecting energy from star that wasn't called"
+        " during injection prep");
+  if (pj->rt_data.debug_iact_stars_inject_prep == 0) {
+
+    const float hig2 = hi * hi * kernel_gamma2;
+    const float res = sqrtf(r2 / hig2);
+    error(
+        "Injecting energy into part that wasn't called"
+        " during injection prep: sID %lld pID %lld r/H_s %.6f",
+        si->id, pj->id, res);
+  }
+
+  si->rt_data.debug_iact_hydro_inject += 1;
+  si->rt_data.debug_radiation_emitted_tot += 1ULL;
+
+  pj->rt_data.debug_iact_stars_inject += 1;
+  pj->rt_data.debug_radiation_absorbed_tot += 1ULL;
+
+  /* Attempt to catch race condition/dependency error */
+  if (si->rt_data.debug_iact_hydro_inject_prep <
+      si->rt_data.debug_iact_hydro_inject)
+    error(
+        "Star interacts with more particles during"
+        " injection than during injection prep");
+
+  if (pj->rt_data.debug_iact_stars_inject_prep <
+      pj->rt_data.debug_iact_stars_inject)
+    error(
+        "Part interacts with more stars during"
+        " injection than during injection prep");
+#endif
+
   /* Compute the weight of the neighbouring particle */
-  const float r = sqrtf(r2);
-  float wi;
   const float hi_inv = 1.f / hi;
+  const float r = sqrtf(r2);
   const float xi = r * hi_inv;
+  float wi;
   kernel_eval(xi, &wi);
   const float hi_inv_dim = pow_dimension(hi_inv);
   /* psi(x_star - x_gas, h_star) */
@@ -162,39 +199,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_inject(
   }
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
-  if (si->rt_data.debug_iact_hydro_inject_prep == 0)
-    error(
-        "Injecting energy from star that wasn't called"
-        " during injection prep");
-  if (pj->rt_data.debug_iact_stars_inject_prep == 0) {
-
-    const float hig2 = hi * hi * kernel_gamma2;
-    const float res = sqrtf(r2 / hig2);
-    error(
-        "Injecting energy into part that wasn't called"
-        " during injection prep: sID %lld pID %lld r/H_s %.6f",
-        si->id, pj->id, res);
-  }
-
-  si->rt_data.debug_iact_hydro_inject += 1;
-  si->rt_data.debug_radiation_emitted_tot += 1ULL;
-
-  pj->rt_data.debug_iact_stars_inject += 1;
-  pj->rt_data.debug_radiation_absorbed_tot += 1ULL;
-
-  /* Attempt to catch race condition/dependency error */
-  if (si->rt_data.debug_iact_hydro_inject_prep <
-      si->rt_data.debug_iact_hydro_inject)
-    error(
-        "Star interacts with more particles during"
-        " injection than during injection prep");
-
-  if (pj->rt_data.debug_iact_stars_inject_prep <
-      pj->rt_data.debug_iact_stars_inject)
-    error(
-        "Part interacts with more stars during"
-        " injection than during injection prep");
-
   /* Take note how much energy we actually injected */
   for (int g = 0; g < RT_NGROUPS; g++) {
     const float injected_energy = si->rt_data.emission_this_step[g] * weight;
@@ -470,6 +474,7 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_gradient(
     float r2, const float *dx, float hi, float hj, struct part *restrict pi,
     struct part *restrict pj, float a, float H) {
 
+  message("called symmetric gradient");
   rt_gradients_collect(r2, dx, hi, hj, pi, pj);
 }
 

@@ -323,6 +323,10 @@ enum cell_flags {
  */
 struct cell {
 
+  /* TEMPORARY FOR DEBUGGING. */
+  int cell_count_transport;
+  int cell_count_gradient;
+
   /*! The cell location on the grid (corner nearest to the origin). */
   double loc[3];
 
