@@ -48,10 +48,6 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
   /* the Gizmo-style slope limiting doesn't help for RT as is,
    * so we're skipping it for now. */
   /* rt_slope_limit_cell_init(p); */
-
-#ifdef SWIFT_RT_DEBUG_CHECKS
-  p->rt_data.debug_called_in_ghost += 1;
-#endif
 }
 
 /**
@@ -72,12 +68,6 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   p->rt_data.debug_iact_stars_inject = 0;
   p->rt_data.debug_iact_stars_inject_prep = 0;
 
-  p->rt_data.debug_calls_iact_gradient = 0;
-  p->rt_data.debug_calls_iact_transport = 0;
-  for (int i = 0; i < 4; i++){
-    p->rt_data.debug_calls_iact_transport_taskcount[i] = 0;
-    p->rt_data.debug_calls_iact_gradient_taskcount[i] = 0;
-  }
   /* skip this for GEAR */
   /* p->rt_data.debug_injection_check = 0; */
   p->rt_data.debug_calls_iact_gradient_interaction = 0;
@@ -87,8 +77,6 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
   p->rt_data.debug_gradients_done = 0;
   p->rt_data.debug_transport_done = 0;
   p->rt_data.debug_thermochem_done = 0;
-
-  p->rt_data.debug_called_in_ghost += 1;
 #endif
 
   rt_part_reset_fluxes(p);
@@ -343,11 +331,6 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
         "where injection count = %d",
         p->rt_data.debug_injection_done);
 
-  if (p->rt_data.debug_calls_iact_gradient == 0)
-    error(
-        "Called finalise gradient on particle "
-        "with iact gradient count = %d",
-        p->rt_data.debug_calls_iact_gradient);
   if (p->rt_data.debug_calls_iact_gradient_interaction == 0)
     message(
         "WARNING: Called finalise gradient on particle "
@@ -382,17 +365,6 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
         "rt_finalise_gradient count is %d",
         p->rt_data.debug_gradients_done);
 
-  if (p->rt_data.debug_calls_iact_gradient == 0)
-    error(
-        "Called finalise transport on particle "
-        "with iact gradient count = %d",
-        p->rt_data.debug_calls_iact_gradient);
-
-  if (p->rt_data.debug_calls_iact_transport == 0)
-    error(
-        "Called finalise transport on particle "
-        "with iact transport count = %d",
-        p->rt_data.debug_calls_iact_transport);
   if (p->rt_data.debug_calls_iact_transport_interaction == 0)
     message(
         "WARNING: Called finalise transport on particle "

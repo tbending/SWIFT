@@ -1118,8 +1118,6 @@ void runner_do_ghost(struct runner *r, struct cell *c, int timer) {
         /* Get a direct pointer on the part. */
         struct part *p = &parts[pid[i]];
         struct xpart *xp = &xparts[pid[i]];
-        
-        if (p->id == 939091) message("called part %lld in ghost", p->id);
 
 #ifdef SWIFT_DEBUG_CHECKS
         /* Is this part within the timestep? */

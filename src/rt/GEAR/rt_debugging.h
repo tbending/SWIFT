@@ -134,9 +134,6 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
       energy_density_sum[g] += p->rt_data.density[g].energy;
       energy_sum[g] += p->rt_data.conserved[g].energy;
     }
-
-    /* Other resets that need to be done every step */
-    p->rt_data.debug_called_in_ghost = 0;
   }
 
   atomic_add(&e->rt_props->debug_radiation_absorbed_this_step, absorption_sum);
@@ -151,24 +148,6 @@ static void rt_debugging_end_of_step_hydro_mapper(void *restrict map_data,
                  energy_sum[g]);
     atomic_add_f(&(e->rt_props->debug_total_radiation_energy_density[g]),
                  energy_density_sum[g]);
-  }
-}
-
-/**
- * @brief Debugging checks loop over all cells after each time step
- */
-static void rt_debugging_check_cell(struct cell *c){
-
-  /* TODO: REMOVE THIS LATER */
-  if (c->split) {
-    /* Recurse! */
-    for (int k = 0; k < 8; ++k)
-      if (c->progeny[k] != NULL)
-        rt_debugging_check_cell(c->progeny[k]);
-  } else {
-    /* Do stuff */
-    c->cell_count_transport = 0;
-    c->cell_count_gradient = 0;
   }
 }
 
@@ -218,11 +197,11 @@ rt_debugging_checks_end_of_step(struct engine *e, int verbose) {
                    threadpool_auto_chunk_size, /*extra_data=*/e);
 
   /* cell loop */
-  for (int i = 0; i < s->nr_cells; ++i){
-    if (s->cells_top[i].nodeID == engine_rank) {
-      rt_debugging_check_cell(&s->cells_top[i]);
-    }
-  }
+  /* for (int i = 0; i < s->nr_cells; ++i){ */
+  /*   if (s->cells_top[i].nodeID == engine_rank) { */
+  /*     rt_debugging_check_cell(&s->cells_top[i]); */
+  /*   } */
+  /* } */
   
 
   /* message("This step:     %12d %12d %12d %12d", */
@@ -354,129 +333,6 @@ rt_debugging_check_injection_spart(struct spart *restrict s,
   /* skip this for GEAR */
   /* if (props->do_all_parts_have_stars_checks) */
   /*   s->rt_data.debug_injection_check += 1; */
-}
-
-/**
- * @brief Mark that a particle has been called during the gradient calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_gradient_call(struct part *restrict p, int task, struct cell *ci, struct cell *cj) {
-
-  p->rt_data.debug_calls_iact_gradient += 1;
-  p->rt_data.debug_calls_iact_gradient_taskcount[task] += 1;
-
-  /* if (p->id == 866380 || p->id == 939091) { */
-/*   if (p->id == 939091) { */
-    /* if (cj == NULL){ */
-    /*   message( */
-    /*         "part %lld iact count %d/%d [%d/%d %d/%d]; cell %lld",  */
-    /*         p->id,  */
-    /*         p->rt_data.debug_calls_iact_gradient,  */
-    /*         p->rt_data.debug_calls_iact_transport, */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[0],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[0], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[1],  <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[1], <] */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[2],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[2], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[3], <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[3], <] */
-    /*         ci->cellID */
-    /*       ); */
-    /* } else { */
-    /*   message( */
-    /*         "part %lld iact count %d/%d [%d/%d %d/%d]; cells %lld %lld",  */
-    /*         p->id,  */
-    /*         p->rt_data.debug_calls_iact_gradient,  */
-    /*         p->rt_data.debug_calls_iact_transport, */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[0],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[0], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[1],  <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[1], <] */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[2],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[2], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[3], <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[3], <] */
-    /*         ci->cellID,  */
-    /*         cj->cellID */
-    /*       ); */
-    /* } */
-/*   } */
-}
-
-/**
- * @brief Mark that a particle has been called during the gradient calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_active_gradient_call(struct part *restrict p) {
-
-  if (!p->rt_data.debug_called_in_ghost) error("part %lld in gradient call hasn't been in ghost", p->id);
-}
-
-
-/**
- * @brief Mark that a particle has been called during the transport calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_transport_call(struct part *restrict p, int task, struct cell *ci, struct cell *cj) {
-
-  p->rt_data.debug_calls_iact_transport += 1;
-  p->rt_data.debug_calls_iact_transport_taskcount[task] += 1;
-
-  /* if (p->id == 866380 || p->id == 939091) { */
-  /* if (p->id == 939091) { */
-  /*   if (cj == NULL){ */
-  /*     message( */
-  /*           "part %lld iact count %d/%d [%d/%d %d/%d]; cell %lld",  */
-  /*           p->id,  */
-  /*           p->rt_data.debug_calls_iact_gradient,  */
-  /*           p->rt_data.debug_calls_iact_transport, */
-  /*           p->rt_data.debug_calls_iact_gradient_taskcount[0],  */
-  /*           p->rt_data.debug_calls_iact_transport_taskcount[0], */
-  /*           [> p->rt_data.debug_calls_iact_gradient_taskcount[1],  <] */
-  /*           [> p->rt_data.debug_calls_iact_transport_taskcount[1], <] */
-  /*           p->rt_data.debug_calls_iact_gradient_taskcount[2],  */
-  /*           p->rt_data.debug_calls_iact_transport_taskcount[2], */
-  /*           [> p->rt_data.debug_calls_iact_gradient_taskcount[3], <] */
-  /*           [> p->rt_data.debug_calls_iact_transport_taskcount[3], <] */
-  /*           ci->cellID */
-  /*         ); */
-    /* } else { */
-    /*   message( */
-    /*         "part %lld iact count %d/%d [%d/%d %d/%d]; cells %lld %lld",  */
-    /*         p->id,  */
-    /*         p->rt_data.debug_calls_iact_gradient,  */
-    /*         p->rt_data.debug_calls_iact_transport, */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[0],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[0], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[1],  <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[1], <] */
-    /*         p->rt_data.debug_calls_iact_gradient_taskcount[2],  */
-    /*         p->rt_data.debug_calls_iact_transport_taskcount[2], */
-    /*         [> p->rt_data.debug_calls_iact_gradient_taskcount[3], <] */
-    /*         [> p->rt_data.debug_calls_iact_transport_taskcount[3], <] */
-    /*         ci->cellID,  */
-    /*         cj->cellID */
-    /*       ); */
-  /*   } */
-  /* } */
-}
-
-/**
- * @brief Mark that a particle has been called during the transport calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_active_transport_call(struct part *restrict p) {
-
-  if (!p->rt_data.debug_called_in_ghost) error("part %lld in transport call hasn't been in ghost", p->id);
 }
 #endif /* SWIFT_RT_DEBUG_CHECKS */
 #endif /* SWIFT_RT_DEBUGGING_GEAR_H */

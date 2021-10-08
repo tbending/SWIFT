@@ -130,11 +130,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_flux_common(
         "finalise injection count is %d",
         pi->rt_data.debug_injection_done);
 
-  if (pi->rt_data.debug_calls_iact_gradient == 0)
-    error(
-        "Called iact transport on particle "
-        "with iact gradient count 0");
-
   if (pi->rt_data.debug_gradients_done != 1)
     error(
         "Trying to do iact transport when "
@@ -150,11 +145,6 @@ __attribute__((always_inline)) INLINE static void runner_iact_rt_flux_common(
           "Trying to do iact transport when "
           "finalise injection count is %d",
           pj->rt_data.debug_injection_done);
-
-    if (pj->rt_data.debug_calls_iact_gradient == 0)
-      error(
-          "Called iact transport on particle "
-          "with iact gradient count 0");
 
     if (pj->rt_data.debug_gradients_done != 1)
       error(

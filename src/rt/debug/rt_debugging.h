@@ -234,26 +234,4 @@ rt_debugging_check_injection_spart(struct spart *restrict s,
   if (props->debug_do_all_parts_have_stars_checks)
     s->rt_data.debug_injection_check += 1;
 }
-
-/**
- * @brief Mark that a particle has been called during the gradient calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_gradient_call(struct part *restrict p) {
-
-  p->rt_data.debug_calls_iact_gradient += 1;
-}
-
-/**
- * @brief Mark that a particle has been called during the transport calls
- *
- * @param p Particle
- */
-__attribute__((always_inline)) INLINE static void
-rt_debugging_count_transport_call(struct part *restrict p) {
-
-  p->rt_data.debug_calls_iact_transport += 1;
-}
 #endif /* SWIFT_RT_DEBUGGING_DEBUG_H */
