@@ -18,7 +18,7 @@ fi
 # Run SWIFT with RT
 ../../swift \
     --hydro --threads=4 --stars --external-gravity \
-    --feedback --radiation \
+    --feedback --radiation --fpe \
     stromgrenSphere-2D.yml 2>&1 | tee output.log
 
 # Plot the photon propagation checks.

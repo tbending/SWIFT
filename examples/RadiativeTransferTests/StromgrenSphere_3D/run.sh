@@ -6,7 +6,7 @@ set -o pipefail
 
 if [ ! -e glassCube_64.hdf5 ]
 then
-    echo "Fetching initial glass file for Strömgen Sphere 2D example ..."
+    echo "Fetching initial glass file for Strömgen Sphere 3D example ..."
     ./getGlass.sh
 fi
 
@@ -18,7 +18,7 @@ fi
 # Run SWIFT with RT
 ../../swift \
     --hydro --threads=4 --stars --external-gravity \
-    --feedback --radiation \
+    --feedback --radiation --fpe \
     stromgrenSphere-3D.yml 2>&1 | tee output.log
 
 # Plot the photon propagation checks.

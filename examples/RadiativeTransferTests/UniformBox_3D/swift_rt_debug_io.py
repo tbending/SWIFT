@@ -41,8 +41,6 @@ class RTGasData(object):
         self.coords = None
         self.h = None
 
-        self.RTCallsIactGradient = None
-        self.RTCallsIactTransport = None
         self.RTCallsIactGradientInteraction = None
         self.RTCallsIactTransportInteraction = None
 
@@ -196,8 +194,6 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
         newsnap.gas.coords = Gas["Coordinates"][:][inds]
         newsnap.gas.h = Gas["SmoothingLengths"][:][inds]
 
-        newsnap.gas.RTCallsIactGradient = Gas["RTDebugCallsIactGradient"][:][inds]
-        newsnap.gas.RTCallsIactTransport = Gas["RTDebugCallsIactTransport"][:][inds]
         newsnap.gas.RTCallsIactGradientInteraction = Gas[
             "RTDebugCallsIactGradientInteractions"
         ][:][inds]
@@ -236,5 +232,8 @@ def get_snap_data(prefix="output", skip_snap_zero=False, skip_last_snap=False):
 
     for snap in snapdata:
         rundata.has_stars = rundata.has_stars or snap.has_stars
+
+    if len(snapdata) == 0:
+        print("Didn't read in snapshot data. Do you only have 2 snapshots in total and skipping the first and the last?")
 
     return snapdata, rundata

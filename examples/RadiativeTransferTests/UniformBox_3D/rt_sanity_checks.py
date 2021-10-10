@@ -44,8 +44,8 @@ from swift_rt_debug_io import get_snap_data
 
 
 # some behaviour options
-skip_snap_zero = True  # skip snap_0000.hdf5
-skip_last_snap = True  # skip snap_0max.hdf5
+skip_snap_zero = False  # skip snap_0000.hdf5
+skip_last_snap = False  # skip snap_0max.hdf5
 print_diffs = True  # print differences you find
 break_on_diff = False  # quit when you find a difference
 
@@ -98,7 +98,7 @@ def check_hydro_sanity(snapdata):
         fishy = np.logical_and(mask, called)
         if fishy.any():
             # has particle been active in the meantime?
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
+            print("- checking hydro sanity pt2.1; snapshot", snap.snapnr)
             if np.count_nonzero(mask) == npart:
                 print("--- WARNING: zero particles finished injection")
             else:
@@ -121,7 +121,7 @@ def check_hydro_sanity(snapdata):
         mask = gas.GradientsDone != 1
         fishy = np.logical_and(mask, called)
         if fishy.any():
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
+            print("- checking hydro sanity pt2.2; snapshot", snap.snapnr)
             if np.count_nonzero(mask) == npart:
                 print("---WARNING: zero particles finished gradient")
             else:
@@ -144,7 +144,7 @@ def check_hydro_sanity(snapdata):
         mask = gas.TransportDone != 1
         fishy = np.logical_and(mask, called)
         if fishy.any():
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
+            print("- checking hydro sanity pt2.3; snapshot", snap.snapnr)
             if np.count_nonzero(mask) == npart:
                 print("--- WARNING: zero particles finished transport")
             else:
@@ -167,7 +167,7 @@ def check_hydro_sanity(snapdata):
         mask = gas.ThermochemistryDone != 1
         fishy = np.logical_and(mask, called)
         if fishy.any():
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
+            print("- checking hydro sanity pt2.4; snapshot", snap.snapnr)
             if np.count_nonzero(mask) == npart:
                 print("--- WARNING: zero particles finished thermochemistry")
             else:
@@ -189,31 +189,18 @@ def check_hydro_sanity(snapdata):
         # at least the number of calls to transport interactions
         # in RT interactions
         # --------------------------------------------------------------
-        if (
-            gas.RTCallsIactTransportInteraction < gas.RTCallsIactGradientInteraction
-        ).any():
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
+        fishy = gas.RTCallsIactTransportInteraction < gas.RTCallsIactGradientInteraction
+        if fishy.any():
+            print("- checking hydro sanity pt2.5; snapshot", snap.snapnr)
             print(
                 "--- Found RT transport calls iact < gradient calls iact:",
-                np.count_nonzero(
-                    gas.RTCallsIactTransport < gas.RTCallsIactGradientInteraction
-                ),
+                np.count_nonzero(fishy), 
                 "/",
                 npart,
             )
-            if break_on_diff:
-                quit()
-
-        if (gas.RTCallsIactTransport < gas.RTCallsIactGradient).any():
-            print("- checking hydro sanity pt2; snapshot", snap.snapnr)
-            print(
-                "--- Found RT transport calls < gradient calls:",
-                np.count_nonzero(
-                    gas.RTCallsIactTransport < gas.RTCallsIactGradientInteraction
-                ),
-                "/",
-                npart,
-            )
+            if print_diffs:
+                print("RTCallsIactTransportInteraction", gas.RTCallsIactTransportInteraction[fishy])
+                print("RTCallsIactGradientInteraction", gas.RTCallsIactGradientInteraction[fishy])
             if break_on_diff:
                 quit()
 
