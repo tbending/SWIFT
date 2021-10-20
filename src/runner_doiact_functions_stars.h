@@ -81,12 +81,8 @@ void DOSELF1_STARS(struct runner *r, struct cell *c, int timer) {
     if (!spart_is_active(si, e)) continue;
 
     /* Skip inactive particles */
-<<<<<<< HEAD
-    if (!feedback_is_active(si, e)) continue;
-=======
     int si_active_feedback = feedback_is_active(si, e);
     if (!si_active_feedback && !with_rt) continue;
->>>>>>> fdceea2e311e4caf1fa3896b00ab4c4f8cce6858
 
     const float hi = si->h;
     const float hig2 = hi * hi * kernel_gamma2;
@@ -213,12 +209,8 @@ void DO_NONSYM_PAIR1_STARS_NAIVE(struct runner *r, struct cell *restrict ci,
     if (!spart_is_active(si, e)) continue;
 
     /* Skip inactive particles */
-<<<<<<< HEAD
-    if (!feedback_is_active(si, e)) continue;
-=======
     int si_active_feedback = feedback_is_active(si, e);
     if (!si_active_feedback && !with_rt) continue;
->>>>>>> fdceea2e311e4caf1fa3896b00ab4c4f8cce6858
 
     const float hi = si->h;
     const float hig2 = hi * hi * kernel_gamma2;
@@ -372,12 +364,8 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
       if (!spart_is_active(spi, e)) continue;
 
       /* Skip inactive particles */
-<<<<<<< HEAD
-      if (!feedback_is_active(spi, e)) continue;
-=======
       const int spi_active_feedback = feedback_is_active(spi, e);
       if (!spi_active_feedback && !with_rt) continue;
->>>>>>> fdceea2e311e4caf1fa3896b00ab4c4f8cce6858
 
       /* Compute distance from the other cell. */
       const double px[3] = {spi->x[0], spi->x[1], spi->x[2]};
@@ -522,12 +510,8 @@ void DO_SYM_PAIR1_STARS(struct runner *r, struct cell *ci, struct cell *cj,
       if (!spart_is_active(spj, e)) continue;
 
       /* Skip inactive particles */
-<<<<<<< HEAD
-      if (!feedback_is_active(spj, e)) continue;
-=======
       int spj_active_feedback = feedback_is_active(spj, e);
       if (!spj_active_feedback && !with_rt) continue;
->>>>>>> fdceea2e311e4caf1fa3896b00ab4c4f8cce6858
 
       /* Compute distance from the other cell. */
       const double px[3] = {spj->x[0], spj->x[1], spj->x[2]};
