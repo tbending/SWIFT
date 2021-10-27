@@ -36,9 +36,9 @@
 #include "barrier.h"
 #include "clocks.h"
 #include "collectgroup.h"
-#include "dump.h"
 #include "lightcone.h"
 #include "lightcone_array.h"
+#include "ic_info.h"
 #include "mesh_gravity.h"
 #include "output_options.h"
 #include "parser.h"
@@ -166,6 +166,10 @@ struct engine {
 
   /* Dimensionless factor for the RMS time-step condition. */
   double max_RMS_displacement_factor;
+
+  /* When computing the max RMS dt, should only the gas particles
+   * be considered as the baryon component? */
+  int max_RMS_dt_use_only_gas;
 
   /* Time of the simulation beginning */
   double time_begin;
@@ -333,6 +337,9 @@ struct engine {
   int snapshot_use_delta_from_edge;
   double snapshot_delta_from_edge;
   int snapshot_output_count;
+
+  /* Metadata from the ICs */
+  struct ic_info *ics_metadata;
 
   /* Structure finding information */
   double a_first_stf_output;
@@ -538,6 +545,12 @@ struct engine {
   /* The globally agreed runtime, in hours. */
   float runtime;
 
+  /* The locally accumulated deadtime. */
+  double local_deadtime;
+
+  /* The globally accumulated deadtime. */
+  double global_deadtime;
+
   /* Time-integration mesh kick to apply to the particle velocities for
    * snapshots */
   float dt_kick_grav_mesh_for_io;
@@ -621,7 +634,8 @@ void engine_init(
     const struct chemistry_global_data *chemistry,
     struct extra_io_properties *io_extra_props,
     struct fof_props *fof_properties, struct los_props *los_properties,
-    struct lightcone_array_props *lightcone_array_properties);
+    struct lightcone_array_props *lightcone_array_properties,
+    struct ic_info *ics_metadata);
 void engine_config(int restart, int fof, struct engine *e,
                    struct swift_params *params, int nr_nodes, int nodeID,
                    int nr_task_threads, int nr_pool_threads, int with_aff,

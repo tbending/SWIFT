@@ -311,11 +311,12 @@ void engine_repartition_trigger(struct engine *e) {
       memuse_use(&size, &resident, &shared, &text, &data, &library, &dirty);
 
       /* Gather it together with the CPU times used by the tasks in the last
-       * step. */
-      double timemem[3] = {e->usertime_last_step, e->systime_last_step,
-                           (double)resident};
-      double timemems[e->nr_nodes * 3];
-      MPI_Gather(&timemem, 3, MPI_DOUBLE, timemems, 3, MPI_DOUBLE, 0,
+       * step (and the deadtime fraction, for output). */
+      double timemem[4] = {
+          e->usertime_last_step, e->systime_last_step, (double)resident,
+          e->local_deadtime / (e->nr_threads * e->wallclock_time)};
+      double timemems[e->nr_nodes * 4];
+      MPI_Gather(&timemem, 4, MPI_DOUBLE, timemems, 4, MPI_DOUBLE, 0,
                  MPI_COMM_WORLD);
       if (e->nodeID == 0) {
 
@@ -338,7 +339,7 @@ void engine_repartition_trigger(struct engine *e) {
 
         double msum = timemems[2];
 
-        for (int k = 3; k < e->nr_nodes * 3; k += 3) {
+        for (int k = 4; k < e->nr_nodes * 4; k += 4) {
           if (timemems[k] > umaxtime) umaxtime = timemems[k];
           if (timemems[k] < umintime) umintime = timemems[k];
 
@@ -404,7 +405,7 @@ void engine_repartition_trigger(struct engine *e) {
           timelog = fopen("rank_cpu_balance.log", "w");
           if (timelog == NULL)
             error("Could not create file 'rank_cpu_balance.log'.");
-          fprintf(timelog, "# step rank user sys sum\n");
+          fprintf(timelog, "# step rank user sys sum deadfrac\n");
 
           memlog = fopen("rank_memory_balance.log", "w");
           if (memlog == NULL)
@@ -421,12 +422,13 @@ void engine_repartition_trigger(struct engine *e) {
             error("Could not open file 'rank_memory_balance.log' for writing.");
         }
 
-        for (int k = 0; k < e->nr_nodes * 3; k += 3) {
+        for (int k = 0; k < e->nr_nodes * 4; k += 4) {
 
-          fprintf(timelog, "%d %d %f %f %f\n", e->step, k / 3, timemems[k],
-                  timemems[k + 1], timemems[k] + timemems[k + 1]);
+          fprintf(timelog, "%d %d %f %f %f %f\n", e->step, k / 4, timemems[k],
+                  timemems[k + 1], timemems[k] + timemems[k + 1],
+                  timemems[k + 3]);
 
-          fprintf(memlog, "%d %d %ld\n", e->step, k / 3, (long)timemems[k + 2]);
+          fprintf(memlog, "%d %d %ld\n", e->step, k / 4, (long)timemems[k + 2]);
         }
 
         fprintf(timelog, "# %d mean times: %f %f %f\n", e->step, umean, smean,
@@ -1165,7 +1167,7 @@ int engine_estimate_nr_tasks(const struct engine *e) {
 #endif
 
   float ntasks = n1 * ntop + n2 * (ncells - ntop);
-  if (ncells > 0) tasks_per_cell = ceil(ntasks / ncells);
+  if (ncells > 0) tasks_per_cell = ceilf(ntasks / ncells);
 
   if (tasks_per_cell < 1.0f) tasks_per_cell = 1.0f;
   if (e->verbose)
@@ -1666,6 +1668,11 @@ void engine_launch(struct engine *e, const char *call) {
   space_reset_task_counters(e->s);
 #endif
 
+  /* reset the active time counters for the runners */
+  for (int i = 0; i < e->nr_threads; ++i) {
+    runner_reset_active_time(&e->runners[i]);
+  }
+
   /* Prepare the scheduler. */
   atomic_inc(&e->sched.waiting);
 
@@ -1686,6 +1693,14 @@ void engine_launch(struct engine *e, const char *call) {
 
   /* Store the wallclock time */
   e->sched.total_ticks += getticks() - tic;
+
+  /* accumulate active counts for all runners */
+  ticks active_time = 0;
+  for (int i = 0; i < e->nr_threads; ++i) {
+    active_time += runner_get_active_time(&e->runners[i]);
+  }
+  e->sched.deadtime.active_ticks += active_time;
+  e->sched.deadtime.waiting_ticks += getticks() - tic;
 
   if (e->verbose)
     message("(%s) took %.3f %s.", call, clocks_from_ticks(getticks() - tic),
@@ -1744,6 +1759,10 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
 
   struct clocks_time time1, time2;
   clocks_gettime(&time1);
+
+  /* reset the deadtime information in the scheduler */
+  e->sched.deadtime.active_ticks = 0;
+  e->sched.deadtime.waiting_ticks = 0;
 
   /* Update the softening lengths */
   if (e->policy & engine_policy_self_gravity)
@@ -1943,6 +1962,11 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
   space_check_swallow(e->s);
 #endif
 
+  /* Compute the local accumulated deadtime. */
+  const ticks deadticks = (e->nr_threads * e->sched.deadtime.waiting_ticks) -
+                          e->sched.deadtime.active_ticks;
+  e->local_deadtime = clocks_from_ticks(deadticks);
+
   /* Recover the (integer) end of the next time-step */
   engine_collect_end_of_step(e, 1);
 
@@ -2085,6 +2109,10 @@ void engine_step(struct engine *e) {
   struct clocks_time time1, time2;
   clocks_gettime(&time1);
 
+  /* reset the deadtime information in the scheduler */
+  e->sched.deadtime.active_ticks = 0;
+  e->sched.deadtime.waiting_ticks = 0;
+
 #if defined(SWIFT_MPIUSE_REPORTS) && defined(WITH_MPI)
   /* We may want to compare times across ranks, so make sure all steps start
    * at the same time, just different ticks. */
@@ -2094,16 +2122,18 @@ void engine_step(struct engine *e) {
 
   if (e->nodeID == 0) {
 
+    const double dead_time = e->global_deadtime / (e->nr_nodes * e->nr_threads);
+
     const ticks tic_files = getticks();
 
     /* Print some information to the screen */
     printf(
         "  %6d %14e %12.7f %12.7f %14e %4d %4d %12lld %12lld %12lld "
-        "%12lld %12lld %21.3f %6d\n",
+        "%12lld %12lld %21.3f %6d %21.3f\n",
         e->step, e->time, e->cosmology->a, e->cosmology->z, e->time_step,
         e->min_active_bin, e->max_active_bin, e->updates, e->g_updates,
         e->s_updates, e->sink_updates, e->b_updates, e->wallclock_time,
-        e->step_props);
+        e->step_props, dead_time);
 #ifdef SWIFT_DEBUG_CHECKS
     fflush(stdout);
 #endif
@@ -2126,11 +2156,11 @@ void engine_step(struct engine *e) {
       fprintf(
           e->file_timesteps,
           "  %6d %14e %12.7f %12.7f %14e %4d %4d %12lld %12lld %12lld %12lld "
-          "%12lld %21.3f %6d\n",
+          "%12lld %21.3f %6d %21.3f\n",
           e->step, e->time, e->cosmology->a, e->cosmology->z, e->time_step,
           e->min_active_bin, e->max_active_bin, e->updates, e->g_updates,
           e->s_updates, e->sink_updates, e->b_updates, e->wallclock_time,
-          e->step_props);
+          e->step_props, dead_time);
 #ifdef SWIFT_DEBUG_CHECKS
     fflush(e->file_timesteps);
 #endif
@@ -2430,6 +2460,11 @@ void engine_step(struct engine *e) {
   if (e->policy & engine_policy_rt)
     rt_debugging_checks_end_of_step(e, e->verbose);
 #endif
+
+  /* Compute the local accumulated deadtime. */
+  const ticks deadticks = (e->nr_threads * e->sched.deadtime.waiting_ticks) -
+                          e->sched.deadtime.active_ticks;
+  e->local_deadtime = clocks_from_ticks(deadticks);
 
   /* Collect information about the next time-step */
   engine_collect_end_of_step(e, 1);
@@ -2749,6 +2784,7 @@ void engine_unpin(void) {
  * @param fof_properties The #fof_props of this run.
  * @param los_properties the #los_props of this run.
  * @param lightcone_array_properties the #lightcone_array_props of this run.
+ * @param ics_metadata metadata read from the simulation ICs
  */
 void engine_init(
     struct engine *e, struct space *s, struct swift_params *params,
@@ -2769,7 +2805,8 @@ void engine_init(
     const struct chemistry_global_data *chemistry,
     struct extra_io_properties *io_extra_props,
     struct fof_props *fof_properties, struct los_props *los_properties,
-    struct lightcone_array_props *lightcone_array_properties) {
+    struct lightcone_array_props *lightcone_array_properties,
+    struct ic_info *ics_metadata) {
 
   struct clocks_time tic, toc;
   if (engine_rank == 0) clocks_gettime(&tic);
@@ -2852,6 +2889,8 @@ void engine_init(
   e->dt_max_RMS_displacement = FLT_MAX;
   e->max_RMS_displacement_factor = parser_get_opt_param_double(
       params, "TimeIntegration:max_dt_RMS_factor", 0.25);
+  e->max_RMS_dt_use_only_gas = parser_get_opt_param_int(
+      params, "TimeIntegration:dt_RMS_use_gas_only", 0);
   e->dt_kick_grav_mesh_for_io = 0.f;
   e->a_first_statistics =
       parser_get_opt_param_double(params, "Statistics:scale_factor_first", 0.1);
@@ -2887,6 +2926,7 @@ void engine_init(
   e->stf_this_timestep = 0;
   e->los_properties = los_properties;
   e->lightcone_array_properties = lightcone_array_properties;
+  e->ics_metadata = ics_metadata;
 #ifdef WITH_MPI
   e->usertime_last_step = 0.0;
   e->systime_last_step = 0.0;
@@ -3149,9 +3189,12 @@ void engine_recompute_displacement_constraint(struct engine *e) {
     /* Baryon case */
     if (N_b > 0.f) {
 
-      /* Minimal mass for the baryons */
-      const float min_mass_b =
-          min4(min_mass[0], min_mass[3], min_mass[4], min_mass[5]);
+      /* Minimal mass for the bayons */
+      float min_mass_b;
+      if (e->max_RMS_dt_use_only_gas)
+        min_mass_b = min_mass[0];
+      else
+        min_mass_b = min4(min_mass[0], min_mass[3], min_mass[4], min_mass[5]);
 
       /* Inter-particle sepration for the baryons */
       const float d_b = cbrtf(min_mass_b / (Ob * rho_crit0));
@@ -3254,6 +3297,8 @@ void engine_clean(struct engine *e, const int fof, const int restart) {
 
   output_options_clean(e->output_options);
 
+  ic_info_clean(e->ics_metadata);
+
   swift_free("links", e->links);
 #if defined(WITH_CSDS)
   if (e->policy & engine_policy_csds) {
@@ -3318,6 +3363,7 @@ void engine_clean(struct engine *e, const int fof, const int restart) {
 #endif
     free((void *)e->los_properties);
     free((void *)e->lightcone_array_properties);
+    free((void *)e->ics_metadata);
 #ifdef WITH_MPI
     free((void *)e->reparttype);
 #endif
@@ -3379,6 +3425,7 @@ void engine_struct_dump(struct engine *e, FILE *stream) {
 #endif
   los_struct_dump(e->los_properties, stream);
   lightcone_array_struct_dump(e->lightcone_array_properties, stream);
+  ic_info_struct_dump(e->ics_metadata, stream);
   parser_struct_dump(e->parameter_file, stream);
   output_options_struct_dump(e->output_options, stream);
 
@@ -3535,6 +3582,11 @@ void engine_struct_restore(struct engine *e, FILE *stream) {
       (struct lightcone_array_props *)malloc(sizeof(struct lightcone_array_props));
   lightcone_array_struct_restore(lightcone_array_properties, stream);
   e->lightcone_array_properties = lightcone_array_properties;
+
+  struct ic_info *ics_metadata =
+    (struct ic_info *)malloc(sizeof(struct ic_info));
+  ic_info_struct_restore(ics_metadata, stream);
+  e->ics_metadata = ics_metadata;
 
   struct swift_params *parameter_file =
       (struct swift_params *)malloc(sizeof(struct swift_params));
