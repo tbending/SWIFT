@@ -20,6 +20,9 @@
 #ifndef SWIFT_RT_PROPERTIES_SPHM1RT_H
 #define SWIFT_RT_PROPERTIES_SPHM1RT_H
 
+
+#include "rt_parameters.h"
+
 /**
  * @file src/rt/SPHM1RT/rt_properties.h
  * @brief Main header file for the 'none' radiative transfer scheme properties.
@@ -31,9 +34,10 @@
  */
 struct rt_props {
 
-  /* Are we running with hydro or star controlled injection?
-   * This is added to avoid #ifdef macros as far as possible */
-  int hydro_controlled_injection;
+  /* CFL condition */
+  float CFL_condition;
+
+
 };
 
 /**
@@ -64,11 +68,7 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
     const struct unit_system* us, struct swift_params* params,
     struct cosmology* cosmo) {
 
-#ifdef RT_HYDRO_CONTROLLED_INJECTION
-  rtp->hydro_controlled_injection = 1;
-#else
-  rtp->hydro_controlled_injection = 0;
-#endif
+
 
   /* After initialisation, print params to screen */
   rt_props_print(rtp);

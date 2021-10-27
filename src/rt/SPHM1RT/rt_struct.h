@@ -27,7 +27,70 @@
  */
 
 /* Additional RT data in hydro particle struct */
-struct rt_part_data {};
+struct rt_part_data {
+  /* conserved state vector */
+  struct {
+    float energy;
+    float flux[3];
+  } conserved[RT_NGROUPS];
+
+  /* conserved state vector at the last full step. */
+  struct {
+    float energy;
+    float flux[3];
+  } cfull[RT_NGROUPS];
+
+
+  /* Store viscosity information in a separate struct. */
+  struct {
+
+    /*! Particle radiation flux divergence */
+    float divf;
+
+    /*! Particle radiation flux divergence from previous step */
+    float divf_previous_step;
+
+    /* parameter to control dissipation */
+    float alpha;
+
+  } viscosity[RT_NGROUPS];
+
+  /* Store artificial diffusion information in a separate struct. */
+  struct {
+
+    /*! gradient of radiation energy density per gas density */
+    float graduradc[3];
+
+    /* parameter to control dissipation */
+    float alpha;
+
+  } diffusion[RT_NGROUPS];
+
+
+
+  /* Store radiation diffusion information in a separate struct. */
+  struct {
+
+    /*! initial mean opacity */
+    float chi;
+
+    /*! reduced speed of light */
+    float cred;
+
+  } params;
+
+
+  /* Store hydro information in a separate struct. */
+  struct {
+
+    /*! "Grad h" term */
+    float f;
+
+  } force;
+
+
+};
+
 
 /* Additional RT data in star particle struct */
 struct rt_spart_data {};

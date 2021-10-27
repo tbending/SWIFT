@@ -21,6 +21,7 @@
 #define SWIFT_RT_SPHM1RT_H
 
 #include "rt_properties.h"
+#include "rt_struct.h"
 
 #include <float.h>
 
@@ -36,7 +37,47 @@
  * are both called individually.
  */
 __attribute__((always_inline)) INLINE static void rt_init_part(
-    struct part* restrict p) {}
+    struct part* restrict p) {
+
+  struct radiation_part_data* rpd = &p->rt_data;
+
+  float fluxmag, fox;
+
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    rpd->cfull[g].energy = rpd->conserved[g].energy;
+    /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec */
+    fradmag = sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] 
+            + rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
+            rpd->conserved[g].flux[2] * rpd->conserved[g].flux[2] + FLT_MIN);
+    fox = max(1.f, fabsf(fradmag / (rpd->conserved[g].energy + FLT_MIN) / (rpd->diffusionrad.cred + FLT_MIN)))
+    rpd->cfull[g].flux[0] = rpd->conserved[g].flux[0]/fox;
+    rpd->cfull[g].flux[1] = rpd->conserved[g].flux[1]/fox;
+    rpd->cfull[g].flux[2] = rpd->conserved[g].flux[2]/fox;
+  }
+
+  /* To avoid radiation reaching other dimension and violating conservation */
+  for (int g = 0; g < RT_NGROUPS; g++) {  
+    if (hydro_dimension < 1.001f){
+        rpd->cfull[g].flux[1] = 0.0f;   
+    }
+    if (hydro_dimension < 2.001f){
+        rpd->cfull[g].flux[2] = 0.0f; 
+    }
+  }
+
+  for (int g = 0; g < RT_NGROUPS; g++) {  
+    rpd->viscosity[g].divf = 0.0f;  
+    rpd->diffusion[g].graduradc[0] = 0.0f;
+    rpd->diffusion[g].graduradc[1] = 0.0f;
+    rpd->diffusion[g].graduradc[2] = 0.0f;
+  }
+
+  rt_init_part(p);
+
+
+}
+
+
 
 /**
  * @brief Reset of the RT hydro particle data not related to the density.
@@ -52,7 +93,20 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
  * @brief First initialisation of the RT hydro particle data.
  */
 __attribute__((always_inline)) INLINE static void rt_first_init_part(
-    struct part* restrict p) {}
+    struct part* restrict p, const struct rt_props* restrict rt_props) {
+
+  rpd->viscosity.alpha = 1.0f;
+  rpd->diffusion.alpha = 1.0f;
+
+  /* We can get parameters for diffusion (force loop) */
+  rpd->params.chi = rt_props->chi;
+
+  rpd->params.cred = rt_props->cred;
+
+  rpd->force.f = 1.0f;
+
+
+}
 
 /**
  * @brief Initialisation of the RT density loop related star particle data.
@@ -61,6 +115,8 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
  */
 __attribute__((always_inline)) INLINE static void rt_init_spart(
     struct spart* restrict sp) {}
+    
+
 
 /**
  * @brief Reset of the RT star particle data not related to the density.

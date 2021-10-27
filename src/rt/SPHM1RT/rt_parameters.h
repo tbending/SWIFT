@@ -29,6 +29,12 @@
 
 extern struct rt_parameters rt_params;
 
-struct rt_parameters {};
+/**
+ * Some global RT related parameters.
+ */
+struct rt_parameters {
+  /* reduced speed of light in code unit */
+  float cred;
+};
 
 #endif /* SWIFT_SPHM1RT_RT_PARAMETERS_H */
