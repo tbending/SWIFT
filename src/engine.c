@@ -72,8 +72,8 @@
 #include "gravity.h"
 #include "gravity_cache.h"
 #include "hydro.h"
-#include "lightcone_array.h"
 #include "lightcone.h"
+#include "lightcone_array.h"
 #include "line_of_sight.h"
 #include "map.h"
 #include "memuse.h"
@@ -2476,11 +2476,11 @@ void engine_step(struct engine *e) {
   e->b_updates_since_rebuild += e->collect_group1.b_updated;
 
   /* Check if we updated all of the particles on this step */
-  if((e->collect_group1.updated == e->total_nr_parts) &&
-     (e->collect_group1.g_updated == e->total_nr_gparts) &&
-     (e->collect_group1.s_updated == e->total_nr_sparts) &&
-     (e->collect_group1.sink_updated == e->total_nr_sinks) &&
-     (e->collect_group1.b_updated == e->total_nr_bparts))
+  if ((e->collect_group1.updated == e->total_nr_parts) &&
+      (e->collect_group1.g_updated == e->total_nr_gparts) &&
+      (e->collect_group1.s_updated == e->total_nr_sparts) &&
+      (e->collect_group1.sink_updated == e->total_nr_sinks) &&
+      (e->collect_group1.b_updated == e->total_nr_bparts))
     e->ti_earliest_undrifted = e->ti_current;
 
 #ifdef SWIFT_DEBUG_CHECKS
@@ -2497,11 +2497,11 @@ void engine_step(struct engine *e) {
             e->collect_group1.csds_file_size_gb);
 #endif
 
-  /********************************************************/
-  /* OK, we are done with the regular stuff. Time for i/o */
-  /********************************************************/
+    /********************************************************/
+    /* OK, we are done with the regular stuff. Time for i/o */
+    /********************************************************/
 
-#ifdef WITH_LIGHTCONE 
+#ifdef WITH_LIGHTCONE
   /* Flush lightcone buffers if necessary */
   const int flush = e->flush_lightcone_maps;
   lightcone_array_flush(e->lightcone_array_properties, &(e->threadpool),
@@ -3579,12 +3579,13 @@ void engine_struct_restore(struct engine *e, FILE *stream) {
   e->los_properties = los_properties;
 
   struct lightcone_array_props *lightcone_array_properties =
-      (struct lightcone_array_props *)malloc(sizeof(struct lightcone_array_props));
+      (struct lightcone_array_props *)malloc(
+          sizeof(struct lightcone_array_props));
   lightcone_array_struct_restore(lightcone_array_properties, stream);
   e->lightcone_array_properties = lightcone_array_properties;
 
   struct ic_info *ics_metadata =
-    (struct ic_info *)malloc(sizeof(struct ic_info));
+      (struct ic_info *)malloc(sizeof(struct ic_info));
   ic_info_struct_restore(ics_metadata, stream);
   e->ics_metadata = ics_metadata;
 

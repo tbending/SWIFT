@@ -37,23 +37,19 @@ struct lightcone_props;
 struct gpart;
 
 /* Type to store pointer to function for updating a healpix map */
-typedef double (*map_update_function_t)(const struct engine *e,
-                                        const struct lightcone_props *lightcone_props,
-                                        const struct gpart *gp, const double a_cross,
-                                        const double x_cross[3]);
+typedef double (*map_update_function_t)(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
 
 /* Type to store pointer to function for providing baseline map value */
 typedef double (*map_baseline_function_t)(
-    const struct cosmology *c,
-    const struct lightcone_props *lightcone_props,
+    const struct cosmology *c, const struct lightcone_props *lightcone_props,
     const struct lightcone_map *map);
-
 
 /* Type to store pointer to function to check which types contribute to a map */
 typedef int (*map_contrib_function_t)(int ptype);
 
-
-enum lightcone_map_smoothing{map_unsmoothed, map_smoothed};
+enum lightcone_map_smoothing { map_unsmoothed, map_smoothed };
 
 /**
  * @brief Struct to store information on one type of lightcone map
@@ -70,154 +66,148 @@ struct lightcone_map_type {
 };
 
 /*
-  Function used for defining maps which only include gas (e.g. EAGLE x-ray outputs)
+  Function used for defining maps which only include gas (e.g. EAGLE x-ray
+  outputs)
 */
 int lightcone_map_gas_only(int ptype);
 
-/* 
+/*
    Healpix map of total mass
 */
 int lightcone_map_total_mass_type_contributes(int ptype);
 
-double lightcone_map_total_mass_get_value(const struct engine *e,
-                                          const struct lightcone_props *lightcone_props,
-                                          const struct gpart *gp, const double a_cross,
-                                          const double x_cross[3]);
+double lightcone_map_total_mass_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
 
-double lightcone_map_total_mass_baseline_value(const struct cosmology *c,
-                                               const struct lightcone_props *lightcone_props,
-                                               const struct lightcone_map *map);
+double lightcone_map_total_mass_baseline_value(
+    const struct cosmology *c, const struct lightcone_props *lightcone_props,
+    const struct lightcone_map *map);
 
-/* 
+/*
    Healpix map of gas mass
 */
 int lightcone_map_gas_mass_type_contributes(int ptype);
 
-double lightcone_map_gas_mass_get_value(const struct engine *e,
-                                        const struct lightcone_props *lightcone_props,
-                                        const struct gpart *gp, const double a_cross,
-                                        const double x_cross[3]);
-/* 
+double lightcone_map_gas_mass_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
+/*
    Healpix map of dark matter mass
 */
 int lightcone_map_dark_matter_mass_type_contributes(int ptype);
 
-double lightcone_map_dark_matter_mass_get_value(const struct engine *e,
-                                                const struct lightcone_props *lightcone_props,
-                                                const struct gpart *gp, const double a_cross,
-                                                const double x_cross[3]);
-/* 
+double lightcone_map_dark_matter_mass_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
+/*
    Healpix map of stellar mass
 */
 int lightcone_map_stellar_mass_type_contributes(int ptype);
 
-double lightcone_map_stellar_mass_get_value(const struct engine *e,
-                                            const struct lightcone_props *lightcone_props,
-                                            const struct gpart *gp, const double a_cross,
-                                            const double x_cross[3]);
-/* 
+double lightcone_map_stellar_mass_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
+/*
    Healpix map of black hole mass
 */
 int lightcone_map_black_hole_mass_type_contributes(int ptype);
 
-double lightcone_map_black_hole_mass_get_value(const struct engine *e,
-                                               const struct lightcone_props *lightcone_props,
-                                               const struct gpart *gp, const double a_cross,
-                                               const double x_cross[3]);
+double lightcone_map_black_hole_mass_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
 /*
    Healpix map of star formation rate
 */
 int lightcone_map_sfr_type_contributes(int ptype);
 
-double lightcone_map_sfr_get_value(const struct engine *e,
-                                   const struct lightcone_props *lightcone_props,
-                                   const struct gpart *gp, const double a_cross,
-                                   const double x_cross[3]);
-
+double lightcone_map_sfr_get_value(
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]);
 
 /* This associates map names to the appropriate update function and unit info */
 static const struct lightcone_map_type lightcone_map_types[] = {
-  {
-    .name = "TotalMass",
-    .update_map = lightcone_map_total_mass_get_value,
-    .ptype_contributes = lightcone_map_total_mass_type_contributes,
-    .baseline_func = lightcone_map_total_mass_baseline_value,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "SmoothedGasMass",
-    .update_map = lightcone_map_gas_mass_get_value,
-    .ptype_contributes = lightcone_map_gas_mass_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_smoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "UnsmoothedGasMass",
-    .update_map = lightcone_map_gas_mass_get_value,
-    .ptype_contributes = lightcone_map_gas_mass_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "DarkMatterMass",
-    .update_map = lightcone_map_dark_matter_mass_get_value,
-    .ptype_contributes = lightcone_map_dark_matter_mass_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "StellarMass",
-    .update_map = lightcone_map_stellar_mass_get_value,
-    .ptype_contributes = lightcone_map_stellar_mass_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "BlackHoleMass",
-    .update_map = lightcone_map_black_hole_mass_get_value,
-    .ptype_contributes = lightcone_map_black_hole_mass_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_MASS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    .name = "StarFormationRate",
-    .update_map = lightcone_map_sfr_get_value,
-    .ptype_contributes = lightcone_map_sfr_type_contributes,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_SFR,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
-  {
-    /* NULL functions indicate end of array */
-    .name = "",
-    .update_map = NULL,
-    .ptype_contributes = NULL,
-    .baseline_func = NULL,
-    .units = UNIT_CONV_NO_UNITS,
-    .smoothing = map_unsmoothed,
-    .compression = compression_write_lossless,
-    .buffer_scale_factor = 1.0,
-  },
+    {
+        .name = "TotalMass",
+        .update_map = lightcone_map_total_mass_get_value,
+        .ptype_contributes = lightcone_map_total_mass_type_contributes,
+        .baseline_func = lightcone_map_total_mass_baseline_value,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "SmoothedGasMass",
+        .update_map = lightcone_map_gas_mass_get_value,
+        .ptype_contributes = lightcone_map_gas_mass_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_smoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "UnsmoothedGasMass",
+        .update_map = lightcone_map_gas_mass_get_value,
+        .ptype_contributes = lightcone_map_gas_mass_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "DarkMatterMass",
+        .update_map = lightcone_map_dark_matter_mass_get_value,
+        .ptype_contributes = lightcone_map_dark_matter_mass_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "StellarMass",
+        .update_map = lightcone_map_stellar_mass_get_value,
+        .ptype_contributes = lightcone_map_stellar_mass_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "BlackHoleMass",
+        .update_map = lightcone_map_black_hole_mass_get_value,
+        .ptype_contributes = lightcone_map_black_hole_mass_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_MASS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        .name = "StarFormationRate",
+        .update_map = lightcone_map_sfr_get_value,
+        .ptype_contributes = lightcone_map_sfr_type_contributes,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_SFR,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
+    {
+        /* NULL functions indicate end of array */
+        .name = "",
+        .update_map = NULL,
+        .ptype_contributes = NULL,
+        .baseline_func = NULL,
+        .units = UNIT_CONV_NO_UNITS,
+        .smoothing = map_unsmoothed,
+        .compression = compression_write_lossless,
+        .buffer_scale_factor = 1.0,
+    },
 };
 
 #endif

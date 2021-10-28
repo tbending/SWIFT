@@ -52,7 +52,7 @@ struct engine;
  * Struct to describe an output field in the lightcone
  */
 struct lightcone_io_field {
-  
+
   /* Name */
   char name[FIELD_BUFFER_SIZE];
 
@@ -61,7 +61,7 @@ struct lightcone_io_field {
 
   /* Dimension (1D, 3D, ...) */
   int dimension;
-  
+
   /* Offset to this field in the data struct  */
   size_t offset;
 
@@ -78,23 +78,20 @@ struct lightcone_io_field {
   struct lightcone_io_field *next;
 };
 
-
 /*
  * Struct to store a linked list of lightcone_io_props
  */
 struct lightcone_io_field_list {
-  
+
   /* Pointer to the first field */
   struct lightcone_io_field *first;
 
   /* Pointer to the last field */
   struct lightcone_io_field *last;
-  
+
   /* Number of fields */
   int num_fields;
-
 };
-
 
 /**
  * @brief Gas particle data for lightcone output
@@ -128,12 +125,11 @@ struct lightcone_gas_data {
 #endif
 };
 
-int lightcone_store_gas(const struct engine *e,
-                        struct lightcone_props *props,
+int lightcone_store_gas(const struct engine *e, struct lightcone_props *props,
                         const struct gpart *gp, const struct part *p,
                         const struct xpart *xp, const double a_cross,
-                        const double x_cross[3], struct lightcone_gas_data *data);
-
+                        const double x_cross[3],
+                        struct lightcone_gas_data *data);
 
 /**
  * @brief Dark matter particle data for lightcone output
@@ -149,8 +145,8 @@ struct lightcone_dark_matter_data {
 int lightcone_store_dark_matter(const struct engine *e,
                                 struct lightcone_props *props,
                                 const struct gpart *gp, const double a_cross,
-                                const double x_cross[3], struct lightcone_dark_matter_data *data);
-
+                                const double x_cross[3],
+                                struct lightcone_dark_matter_data *data);
 
 /**
  * @brief Star particle data for lightcone output
@@ -180,12 +176,10 @@ struct lightcone_stars_data {
 #endif
 };
 
-int lightcone_store_stars(const struct engine *e,
-                          struct lightcone_props *props,
+int lightcone_store_stars(const struct engine *e, struct lightcone_props *props,
                           const struct gpart *gp, const struct spart *sp,
                           const double a_cross, const double x_cross[3],
                           struct lightcone_stars_data *data);
-
 
 /**
  * @brief Black hole particle data for lightcone output
@@ -221,7 +215,6 @@ int lightcone_store_black_hole(const struct engine *e,
                                const double a_cross, const double x_cross[3],
                                struct lightcone_black_hole_data *data);
 
-
 /**
  * @brief Neutrino particle data for lightcone output
  */
@@ -239,29 +232,27 @@ int lightcone_store_neutrino(const struct engine *e,
                              const double x_cross[3],
                              struct lightcone_neutrino_data *data);
 
-
 void lightcone_write_particles(struct lightcone_props *props,
                                const struct unit_system *internal_units,
                                const struct unit_system *snapshot_units,
                                int ptype, hid_t file_id);
 
-
 inline static size_t lightcone_io_struct_size(int ptype) {
-  switch(ptype) {
-  case swift_type_dark_matter:
-  case swift_type_dark_matter_background:
-    return sizeof(struct lightcone_dark_matter_data);
-  case swift_type_gas:
-    return sizeof(struct lightcone_gas_data);
-  case swift_type_stars:
-    return sizeof(struct lightcone_stars_data);
-  case swift_type_black_hole:
-    return sizeof(struct lightcone_black_hole_data);
-  case swift_type_neutrino:
-    return sizeof(struct lightcone_neutrino_data);
-  default:
-    error("Unhandled particle type");
-    return 0;
+  switch (ptype) {
+    case swift_type_dark_matter:
+    case swift_type_dark_matter_background:
+      return sizeof(struct lightcone_dark_matter_data);
+    case swift_type_gas:
+      return sizeof(struct lightcone_gas_data);
+    case swift_type_stars:
+      return sizeof(struct lightcone_stars_data);
+    case swift_type_black_hole:
+      return sizeof(struct lightcone_black_hole_data);
+    case swift_type_neutrino:
+      return sizeof(struct lightcone_neutrino_data);
+    default:
+      error("Unhandled particle type");
+      return 0;
   }
 }
 
@@ -274,12 +265,17 @@ void lightcone_io_field_list_append(struct lightcone_io_field_list *list,
                                     float scale_factor_exponent,
                                     char *compression);
 
-void lightcone_io_append_gas_output_fields(struct lightcone_io_field_list *list);
-void lightcone_io_append_dark_matter_output_fields(struct lightcone_io_field_list *list);
-void lightcone_io_append_dark_matter_background_output_fields(struct lightcone_io_field_list *list);
-void lightcone_io_append_stars_output_fields(struct lightcone_io_field_list *list);
-void lightcone_io_append_black_hole_output_fields(struct lightcone_io_field_list *list);
-void lightcone_io_append_neutrino_output_fields(struct lightcone_io_field_list *list);
-
+void lightcone_io_append_gas_output_fields(
+    struct lightcone_io_field_list *list);
+void lightcone_io_append_dark_matter_output_fields(
+    struct lightcone_io_field_list *list);
+void lightcone_io_append_dark_matter_background_output_fields(
+    struct lightcone_io_field_list *list);
+void lightcone_io_append_stars_output_fields(
+    struct lightcone_io_field_list *list);
+void lightcone_io_append_black_hole_output_fields(
+    struct lightcone_io_field_list *list);
+void lightcone_io_append_neutrino_output_fields(
+    struct lightcone_io_field_list *list);
 
 #endif

@@ -237,7 +237,6 @@ void mesh_patches_to_sorted_array(const struct pm_mesh_patch *local_patches,
   if (count != size) error("Error flattening the mesh patches!");
 }
 
-
 /**
  * @brief Convert the array of local patches to a slab-distributed 3D mesh
  *

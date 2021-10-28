@@ -21,14 +21,14 @@
 #include "../config.h"
 
 /* Standard headers */
-#include <stdlib.h>
 #include <limits.h>
+#include <stdlib.h>
 
 /* Local headers */
 #include "error.h"
 
 /**
- * @brief Given an array of structs of size element_size, send 
+ * @brief Given an array of structs of size element_size, send
  * nr_send[i] elements to each node i. Allocates the receive
  * buffer recvbuf to the appropriate size and returns its size
  * in nr_recv_tot.
@@ -39,9 +39,8 @@
  * @param recvbuf The output buffer
  *
  */
-void exchange_structs(size_t *nr_send, void *sendbuf,
-                      size_t *nr_recv, void *recvbuf,
-                      size_t element_size) {
+void exchange_structs(size_t *nr_send, void *sendbuf, size_t *nr_recv,
+                      void *recvbuf, size_t element_size) {
 
 #ifdef WITH_MPI
 
@@ -69,7 +68,8 @@ void exchange_structs(size_t *nr_send, void *sendbuf,
 
   /* Make type to communicate the struct */
   MPI_Datatype value_mpi_type;
-  if (MPI_Type_contiguous(element_size, MPI_BYTE, &value_mpi_type) != MPI_SUCCESS ||
+  if (MPI_Type_contiguous(element_size, MPI_BYTE, &value_mpi_type) !=
+          MPI_SUCCESS ||
       MPI_Type_commit(&value_mpi_type) != MPI_SUCCESS) {
     error("Failed to create MPI type for struct to exchange.");
   }
@@ -83,10 +83,11 @@ void exchange_structs(size_t *nr_send, void *sendbuf,
     if (nr_send[i] > 0) {
 
       /* TODO: handle very large messages */
-      if(nr_send[i] > INT_MAX) error("exchange_structs() fails if nr_send > INT_MAX!");
+      if (nr_send[i] > INT_MAX)
+        error("exchange_structs() fails if nr_send > INT_MAX!");
 
-      char *buf = (char *) sendbuf;
-      MPI_Isend(&(buf[send_offset[i]*element_size]), (int)nr_send[i],
+      char *buf = (char *)sendbuf;
+      MPI_Isend(&(buf[send_offset[i] * element_size]), (int)nr_send[i],
                 value_mpi_type, i, 0, MPI_COMM_WORLD, &(request[i]));
     } else {
       request[i] = MPI_REQUEST_NULL;
@@ -98,12 +99,12 @@ void exchange_structs(size_t *nr_send, void *sendbuf,
     if (nr_recv[i] > 0) {
 
       /* TODO: handle very large messages */
-      if(nr_recv[i] > INT_MAX) error("exchange_structs() fails if nr_recv > INT_MAX!");
+      if (nr_recv[i] > INT_MAX)
+        error("exchange_structs() fails if nr_recv > INT_MAX!");
 
-      char *buf = (char *) recvbuf;
-      MPI_Irecv(&(buf[recv_offset[i]*element_size]), (int)nr_recv[i],
-                value_mpi_type, i, 0, MPI_COMM_WORLD,
-                &(request[i + nr_nodes]));
+      char *buf = (char *)recvbuf;
+      MPI_Irecv(&(buf[recv_offset[i] * element_size]), (int)nr_recv[i],
+                value_mpi_type, i, 0, MPI_COMM_WORLD, &(request[i + nr_nodes]));
     } else {
       request[i + nr_nodes] = MPI_REQUEST_NULL;
     }

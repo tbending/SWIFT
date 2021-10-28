@@ -31,8 +31,8 @@
 #include "entropy_floor.h"
 #include "hydro.h"
 #include "hydro_properties.h"
-#include "lightcone_replications.h"
 #include "lightcone_crossing.h"
+#include "lightcone_replications.h"
 #include "part.h"
 #include "sink.h"
 #include "stars.h"
@@ -107,18 +107,20 @@ __attribute__((always_inline)) INLINE static void drift_gpart(
 #ifdef WITH_LIGHTCONE
   /* Check for lightcone crossing */
   switch (gp->type) {
-  case swift_type_dark_matter:
-  case swift_type_dark_matter_background:
-  case swift_type_neutrino:
-    /* This particle has no *part counterpart, so check for lightcone crossing here */
-    lightcone_check_particle_crosses(e, replication_list, x, v_full, gp, dt_drift, ti_old, ti_current, cell_loc);
-    break;
-  default:
-    /* Particle has a counterpart or is of a type not supported in lightcones */
-    break;
-    }
+    case swift_type_dark_matter:
+    case swift_type_dark_matter_background:
+    case swift_type_neutrino:
+      /* This particle has no *part counterpart, so check for lightcone crossing
+       * here */
+      lightcone_check_particle_crosses(e, replication_list, x, v_full, gp,
+                                       dt_drift, ti_old, ti_current, cell_loc);
+      break;
+    default:
+      /* Particle has a counterpart or is of a type not supported in lightcones
+       */
+      break;
+  }
 #endif
-
 }
 
 /**
@@ -139,9 +141,8 @@ __attribute__((always_inline)) INLINE static void drift_gpart(
 __attribute__((always_inline)) INLINE static void drift_part(
     struct part *restrict p, struct xpart *restrict xp, double dt_drift,
     double dt_kick_hydro, double dt_kick_grav, double dt_therm,
-    integertime_t ti_old, integertime_t ti_current,
-    const struct engine *e, struct replication_list *replication_list,
-    const double cell_loc[3]) {
+    integertime_t ti_old, integertime_t ti_current, const struct engine *e,
+    struct replication_list *replication_list, const double cell_loc[3]) {
 
   const struct cosmology *cosmo = e->cosmology;
   const struct hydro_props *hydro_props = e->hydro_properties;
@@ -217,9 +218,9 @@ __attribute__((always_inline)) INLINE static void drift_part(
 
 #ifdef WITH_LIGHTCONE
   /* Check if the particle crossed the lightcone */
-  if(p->gpart)
-    lightcone_check_particle_crosses(e, replication_list, x, v_full, p->gpart, dt_drift,
-                                     ti_old, ti_current, cell_loc);
+  if (p->gpart)
+    lightcone_check_particle_crosses(e, replication_list, x, v_full, p->gpart,
+                                     dt_drift, ti_old, ti_current, cell_loc);
 #endif
 }
 
@@ -285,7 +286,7 @@ __attribute__((always_inline)) INLINE static void drift_spart(
 
 #ifdef WITH_LIGHTCONE
   /* Check for lightcone crossing */
-  if(sp->gpart)
+  if (sp->gpart)
     lightcone_check_particle_crosses(e, replication_list, x, v_full, sp->gpart,
                                      dt_drift, ti_old, ti_current, cell_loc);
 #endif
@@ -352,7 +353,7 @@ __attribute__((always_inline)) INLINE static void drift_bpart(
 
 #ifdef WITH_LIGHTCONE
   /* Check for lightcone crossing */
-  if(bp->gpart)
+  if (bp->gpart)
     lightcone_check_particle_crosses(e, replication_list, x, v_full, bp->gpart,
                                      dt_drift, ti_old, ti_current, cell_loc);
 #endif

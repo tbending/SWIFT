@@ -27,9 +27,9 @@
 
 /* Local headers. */
 #include "active.h"
+#include "lightcone_array.h"
 #include "star_formation_logger.h"
 #include "timeline.h"
-#include "lightcone_array.h"
 
 /**
  * @brief Data collected from the cells at the end of a time-step
@@ -511,8 +511,10 @@ void engine_collect_end_of_step(struct engine *e, int apply) {
   /* Need to use a consistent check of the hours since we started. */
   data.runtime = clocks_get_hours_since_start();
 
-  /* Get flag to determine if lightcone maps buffers should be flushed on this step */
-  data.flush_lightcone_maps = lightcone_array_trigger_map_update(e->lightcone_array_properties);
+  /* Get flag to determine if lightcone maps buffers should be flushed on this
+   * step */
+  data.flush_lightcone_maps =
+      lightcone_array_trigger_map_update(e->lightcone_array_properties);
 
   data.deadtime = e->local_deadtime;
 

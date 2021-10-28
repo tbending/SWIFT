@@ -210,8 +210,8 @@ void collectgroup1_init(
     integertime_t ti_sinks_beg_max, integertime_t ti_black_holes_end_min,
     integertime_t ti_black_holes_beg_max, int forcerebuild,
     long long total_nr_cells, long long total_nr_tasks, float tasks_per_cell,
-    const struct star_formation_history sfh, float runtime, int flush_lightcone_maps,
-    double deadtime, float csds_file_size_gb) {
+    const struct star_formation_history sfh, float runtime,
+    int flush_lightcone_maps, double deadtime, float csds_file_size_gb) {
 
   grp1->updated = updated;
   grp1->g_updated = g_updated;
@@ -325,7 +325,7 @@ void collectgroup1_reduce(struct collectgroup1 *grp1) {
   grp1->sfh = mpigrp12.sfh;
   grp1->runtime = mpigrp12.runtime;
   grp1->flush_lightcone_maps = mpigrp12.flush_lightcone_maps;
-    
+
   grp1->deadtime = mpigrp12.deadtime;
 #ifdef WITH_CSDS
   grp1->csds_file_size_gb = mpigrp12.csds_file_size_gb;
@@ -402,7 +402,7 @@ static void doreduce1(struct mpicollectgroup1 *mpigrp11,
   mpigrp11->runtime = max(mpigrp11->runtime, mpigrp12->runtime);
 
   /* Lightcone maps are all updated if any need to be updated */
-  if(mpigrp11->flush_lightcone_maps || mpigrp12->flush_lightcone_maps)
+  if (mpigrp11->flush_lightcone_maps || mpigrp12->flush_lightcone_maps)
     mpigrp11->flush_lightcone_maps = 1;
 
   /* Sum the deadtime. */

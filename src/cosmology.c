@@ -602,9 +602,9 @@ void cosmology_init_tables(struct cosmology *c) {
                      SWIFT_STRUCT_ALIGNMENT,
                      cosmology_table_length * sizeof(double)) != 0)
     error("Failed to allocate cosmology interpolation table");
-  if (swift_memalign("cosmo.table", (void **)&c->comoving_distance_inverse_interp_table,
-                     SWIFT_STRUCT_ALIGNMENT,
-                     cosmology_table_length * sizeof(double)) != 0)
+  if (swift_memalign(
+          "cosmo.table", (void **)&c->comoving_distance_inverse_interp_table,
+          SWIFT_STRUCT_ALIGNMENT, cosmology_table_length * sizeof(double)) != 0)
     error("Failed to allocate cosmology interpolation table");
 
   /* Prepare a table of scale factors for the integral bounds */
@@ -753,10 +753,10 @@ void cosmology_init_tables(struct cosmology *c) {
   const double r_begin = cosmology_get_comoving_distance(c, a_begin);
   const double r_end = cosmology_get_comoving_distance(c, a_end);
   const double delta_r = (r_begin - r_end) / cosmology_table_length;
-  
+
   i_a = 0;
   for (int i_r = 0; i_r < cosmology_table_length; i_r++) {
-    
+
     /* Current comoving distance from a_begin */
     double r_interp = delta_r * (i_r + 1);
 
@@ -770,7 +770,8 @@ void cosmology_init_tables(struct cosmology *c) {
     double scale = 0;
     if (i_a != cosmology_table_length) {
       scale = r_interp - c->comoving_distance_interp_table[i_a - 1];
-      scale /= c->comoving_distance_interp_table[i_a] - c->comoving_distance_interp_table[i_a - 1];
+      scale /= c->comoving_distance_interp_table[i_a] -
+               c->comoving_distance_interp_table[i_a - 1];
     }
 
     scale += i_a;
@@ -779,7 +780,6 @@ void cosmology_init_tables(struct cosmology *c) {
     double log_a = c->log_a_begin + scale * (c->log_a_end - c->log_a_begin) /
                                         cosmology_table_length;
     c->comoving_distance_inverse_interp_table[i_r] = exp(log_a) - c->a_begin;
-
   }
 
   /* Free the workspace and temp array */
@@ -1250,7 +1250,6 @@ double cosmology_get_delta_time(const struct cosmology *c,
   return t2 - t1;
 }
 
-
 /**
  * @brief Compute the comoving distance to the specified scale factor
  *
@@ -1275,7 +1274,6 @@ double cosmology_get_comoving_distance(const struct cosmology *c,
   return c->comoving_distance_interp_table_offset - dist;
 }
 
-
 /**
  * @brief Compute scale factor from a comoving distance (in internal units).
  *
@@ -1283,18 +1281,17 @@ double cosmology_get_comoving_distance(const struct cosmology *c,
  * @param r The comoving distance
  * @return The scale factor.
  */
-double cosmology_scale_factor_at_comoving_distance(const struct cosmology *c, double r) {
+double cosmology_scale_factor_at_comoving_distance(const struct cosmology *c,
+                                                   double r) {
 
   /* Get comoving distance from a_begin to a corresponding to input r */
   const double r_interp = c->comoving_distance_interp_table_offset - r;
 
   const double a =
-    interp_table(c->comoving_distance_inverse_interp_table, r_interp,
-                 0.0, c->comoving_distance_start_to_end);
+      interp_table(c->comoving_distance_inverse_interp_table, r_interp, 0.0,
+                   c->comoving_distance_start_to_end);
   return a + c->a_begin;
-
 }
-
 
 /**
  * @brief Compute neutrino density parameter Omega_nu at the given scale-factor

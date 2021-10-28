@@ -24,8 +24,8 @@
 #include "../config.h"
 
 /* Local headers */
-#include "inline.h"
 #include "error.h"
+#include "inline.h"
 
 #define PROJECTED_KERNEL_NTAB 1000
 
@@ -37,7 +37,6 @@ struct projected_kernel_table {
   double *value;
 };
 
-
 /**
  * @brief Computes 2D projection of the 3D kernel function.
  *
@@ -47,21 +46,20 @@ struct projected_kernel_table {
  * @param u The ratio of the (2D) distance to the smoothing length
  */
 __attribute__((always_inline)) INLINE static double projected_kernel_eval(
-      struct projected_kernel_table *tab, double u) {
+    struct projected_kernel_table *tab, double u) {
 
   /* Check u is in range */
-  if(u >= tab->u_max)return 0.0;
-  if(u < 0.0)error("Negative u in projected kernel!");
+  if (u >= tab->u_max) return 0.0;
+  if (u < 0.0) error("Negative u in projected kernel!");
 
   /* Determine which interval we're in */
-  int i = u*tab->inv_du;
+  int i = u * tab->inv_du;
 
   /* Find where we are in the interval */
-  double f = (u - i*tab->du) * tab->inv_du;
+  double f = (u - i * tab->du) * tab->inv_du;
 
   /* Linear interpolation */
-  return (1.0-f)*tab->value[i] + f*tab->value[i+1];
-
+  return (1.0 - f) * tab->value[i] + f * tab->value[i + 1];
 }
 
 void projected_kernel_init(struct projected_kernel_table *tab);

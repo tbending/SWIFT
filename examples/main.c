@@ -239,8 +239,8 @@ int main(int argc, char *argv[]) {
           "Run Friends-of-Friends algorithm to perform black hole seeding.",
           NULL, 0, 0),
 
-      OPT_BOOLEAN(0, "lightcone", &with_lightcone, "Generate lightcone outputs.",
-                  NULL, 0, 0),
+      OPT_BOOLEAN(0, "lightcone", &with_lightcone,
+                  "Generate lightcone outputs.", NULL, 0, 0),
       OPT_BOOLEAN('x', "velociraptor", &with_structure_finding,
                   "Run with structure finding.", NULL, 0, 0),
       OPT_BOOLEAN(0, "line-of-sight", &with_line_of_sight,
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
 #ifndef WITH_LIGHTCONE
     error("Running with lightcone output but compiled without it!");
 #endif
-    if(!with_cosmology)
+    if (!with_cosmology)
       error("Error: cannot make lightcones without --cosmology.");
   }
 
@@ -1129,8 +1129,8 @@ int main(int argc, char *argv[]) {
 
     /* Initialise the extra i/o */
     bzero(&extra_io_props, sizeof(struct extra_io_properties));
-    extra_io_init(params, &us, &prog_const, &cosmo, &extra_io_props);     
-    
+    extra_io_init(params, &us, &prog_const, &cosmo, &extra_io_props);
+
     /* Initialise the FOF properties */
     bzero(&fof_properties, sizeof(struct fof_props));
 #ifdef WITH_FOF
@@ -1796,10 +1796,9 @@ int main(int argc, char *argv[]) {
                           e.cosmology, e.internal_units, e.snapshot_units,
                           /*flush_map_updates=*/1, /*flush_particles=*/1,
                           /*end_file=*/1, /*dump_all_shells=*/1);
-    lightcone_array_write_index(e.lightcone_array_properties,
-                                e.internal_units, e.snapshot_units);
+    lightcone_array_write_index(e.lightcone_array_properties, e.internal_units,
+                                e.snapshot_units);
 #endif
-
   }
 
   /* Remove the stop file if used. Do this anyway, we could have missed the

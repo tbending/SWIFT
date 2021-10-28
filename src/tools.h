@@ -67,11 +67,11 @@ char *trim_both(char *s);
 
 void safe_checkdir(const char *dir, int create);
 
-#define check_snprintf(s, n, format, ... )                              \
-  do {                                                                  \
-    int _len = snprintf(s, n, format, __VA_ARGS__);                     \
-    if((_len < 0) || (_len >= n))                                       \
-      error("truncation of string with format %s", format);             \
-  }while(0)
+#define check_snprintf(s, n, format, ...)                   \
+  do {                                                      \
+    int _len = snprintf(s, n, format, __VA_ARGS__);         \
+    if ((_len < 0) || (_len >= n))                          \
+      error("truncation of string with format %s", format); \
+  } while (0)
 
 #endif /* SWIFT_TOOL_H */

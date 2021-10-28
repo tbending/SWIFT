@@ -344,17 +344,16 @@ __attribute__((always_inline)) INLINE static void kernel_eval_double(
   const float *const coeffs = &kernel_coeffs[ind * (kernel_degree + 1)];
 
   /* First two terms of the polynomial ... */
-  double w = ((double) coeffs[0]) * x + ((double) coeffs[1]);
+  double w = ((double)coeffs[0]) * x + ((double)coeffs[1]);
 
   /* ... and the rest of them */
-  for (int k = 2; k <= kernel_degree; k++) w = x * w + ((double) coeffs[k]);
+  for (int k = 2; k <= kernel_degree; k++) w = x * w + ((double)coeffs[k]);
 
   w = max(w, 0.);
 
   /* Return everything */
-  *W = w * ((double) kernel_constant) * ((double) kernel_gamma_inv_dim);
+  *W = w * ((double)kernel_constant) * ((double)kernel_gamma_inv_dim);
 }
-
 
 /**
  * @brief Computes the kernel function derivative.

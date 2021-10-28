@@ -241,11 +241,11 @@ void neutrino_check_cosmology(const struct space *s,
  */
 int lightcone_map_neutrino_mass_type_contributes(int ptype) {
 
-  switch(ptype) {
-  case swift_type_neutrino:
-    return 1;
-  default:
-    return 0;
+  switch (ptype) {
+    case swift_type_neutrino:
+      return 1;
+    default:
+      return 0;
   }
 }
 
@@ -260,21 +260,20 @@ int lightcone_map_neutrino_mass_type_contributes(int ptype) {
  * @param lightcone_props properties of the lightcone to update
  * @param gp the #gpart to add to the map
  * @param a_cross expansion factor at which the particle crosses the lightcone
- * @param x_cross comoving coordinates at which the particle crosses the lightcone
+ * @param x_cross comoving coordinates at which the particle crosses the
+ * lightcone
  */
 double lightcone_map_neutrino_mass_get_value(
-    const struct engine *e,
-    const struct lightcone_props *lightcone_props,
-    const struct gpart *gp, const double a_cross,
-    const double x_cross[3]) {
+    const struct engine *e, const struct lightcone_props *lightcone_props,
+    const struct gpart *gp, const double a_cross, const double x_cross[3]) {
 
   switch (gp->type) {
-  case swift_type_neutrino: {
-    return gp->mass;
-  } break;
-  default:
-    error("lightcone map function called on wrong particle type");
-    return -1.0;  /* Prevent 'missing return' error */
+    case swift_type_neutrino: {
+      return gp->mass;
+    } break;
+    default:
+      error("lightcone map function called on wrong particle type");
+      return -1.0; /* Prevent 'missing return' error */
   }
 }
 
@@ -288,8 +287,7 @@ double lightcone_map_neutrino_mass_get_value(
  * @param map The lightcone map
  */
 double lightcone_map_neutrino_baseline_value(
-    const struct cosmology *c,
-    const struct lightcone_props *lightcone_props,
+    const struct cosmology *c, const struct lightcone_props *lightcone_props,
     const struct lightcone_map *map) {
 
   /* Fetch the area of healpix pixels */

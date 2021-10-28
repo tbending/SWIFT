@@ -21,7 +21,6 @@ struct particle_buffer {
   char name[PARTICLE_BUFFER_NAME_LENGTH];
 };
 
-
 void particle_buffer_init(struct particle_buffer *buffer, size_t element_size,
                           size_t elements_per_block, char *name);
 

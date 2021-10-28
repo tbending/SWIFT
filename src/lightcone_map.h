@@ -27,8 +27,8 @@
 #define LIGHTCONE_MAP_CHECK_TOTAL
 
 /* Standard headers */
-#include <math.h>
 #include <limits.h>
+#include <math.h>
 
 /* Config parameters. */
 #include "../config.h"
@@ -39,8 +39,8 @@
 #endif
 
 /* Local headers */
-#include "lightcone_map_types.h"
 #include "io_compression.h"
+#include "lightcone_map_types.h"
 #include "units.h"
 
 /**
@@ -56,7 +56,7 @@ struct lightcone_map {
 
   /*! Number of pixels stored on this node */
   size_t local_nr_pix;
-  
+
   /*! Offset of the first pixel stored on this rank */
   size_t local_pix_offset;
 
@@ -82,14 +82,13 @@ struct lightcone_map {
   /*! Total quantity accumulated to this map, for consistency check */
   double total;
 #endif
-
 };
 
-
-void lightcone_map_init(struct lightcone_map *map, const int nside, const size_t total_nr_pix,
-                        const size_t pix_per_rank, const size_t local_nr_pix,
-                        const size_t local_pix_offset, const double r_min, const double r_max,
-                        struct lightcone_map_type type);
+void lightcone_map_init(struct lightcone_map *map, const int nside,
+                        const size_t total_nr_pix, const size_t pix_per_rank,
+                        const size_t local_nr_pix,
+                        const size_t local_pix_offset, const double r_min,
+                        const double r_max, struct lightcone_map_type type);
 
 void lightcone_map_clean(struct lightcone_map *map);
 
@@ -97,16 +96,19 @@ void lightcone_map_struct_dump(const struct lightcone_map *map, FILE *stream);
 
 void lightcone_map_struct_restore(struct lightcone_map *map, FILE *stream);
 
-void lightcone_map_allocate_pixels(struct lightcone_map *map, const int zero_pixels);
+void lightcone_map_allocate_pixels(struct lightcone_map *map,
+                                   const int zero_pixels);
 
 void lightcone_map_free_pixels(struct lightcone_map *map);
 
 #ifdef HAVE_HDF5
-void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id, const char *name,
+void lightcone_map_write(struct lightcone_map *map, const hid_t loc_id,
+                         const char *name,
                          const struct unit_system *internal_units,
                          const struct unit_system *snapshot_units,
                          const int collective, const int maps_gzip_level,
-                         const int chunk_size, enum lossy_compression_schemes compression);
+                         const int chunk_size,
+                         enum lossy_compression_schemes compression);
 #endif
 
 #endif /* #ifndef SWIFT_LIGHTCONE_MAP_H */

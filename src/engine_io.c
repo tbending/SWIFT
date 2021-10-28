@@ -81,7 +81,7 @@ void engine_dump_restarts(struct engine *e, int drifted_all, int force) {
       /* Drift all particles first (may have just been done). */
       if (!drifted_all) engine_drift_all(e, /*drift_mpole=*/1);
 
-#ifdef WITH_LIGHTCONE 
+#ifdef WITH_LIGHTCONE
       /* Flush lightcone buffers before dumping restarts */
       lightcone_array_flush(e->lightcone_array_properties, &(e->threadpool),
                             e->cosmology, e->internal_units, e->snapshot_units,

@@ -20,16 +20,15 @@
 #ifndef SWIFT_LIGHTCONE_H
 #define SWIFT_LIGHTCONE_H
 
-
 /* Config parameters. */
 #include "../config.h"
 
 /* Local headers */
 #include "healpix_smoothing.h"
 #include "lightcone_map_types.h"
+#include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
 #include "lightcone_shell.h"
-#include "lightcone_particle_io.h"
 #include "parser.h"
 #include "part_type.h"
 #include "particle_buffer.h"
@@ -68,7 +67,8 @@ struct lightcone_props {
   /*! Maximum a to search for lightcone crossing for each type  */
   double a_max_search_for_type[swift_type_count];
 
-  /*! Whether we need to do lightcone crossing checks for each type at this step */
+  /*! Whether we need to do lightcone crossing checks for each type at this step
+   */
   int check_type_for_crossing[swift_type_count];
 
   /*! Enable selective output of high redshift gas */
@@ -82,17 +82,20 @@ struct lightcone_props {
 
   /*! At z>min_z_for_gas_filtering require gas T>min_temp_for_high_z_gas */
   double min_temp_for_filtered_gas;
-  
-  /*! At z>min_z_for_gas_filtering require gas nh>min_nh_for_filtered_gas*(1+z)^4 */
+
+  /*! At z>min_z_for_gas_filtering require gas
+   * nh>min_nh_for_filtered_gas*(1+z)^4 */
   double min_nh_for_filtered_gas;
 
   /*! Exclude recently heated gas from xray and sz maps */
   double xray_maps_recent_AGN_injection_exclusion_time;
 
-  /*! Don't exclude gas with temperature less than this factor times AGN_delta_T */
+  /*! Don't exclude gas with temperature less than this factor times AGN_delta_T
+   */
   double xray_maps_recent_AGN_min_temp_factor;
 
-  /*! Don't exclude gas with temperature more than this factor times AGN_delta_T */
+  /*! Don't exclude gas with temperature more than this factor times AGN_delta_T
+   */
   double xray_maps_recent_AGN_max_temp_factor;
 
   /*! Output base name */
@@ -109,17 +112,18 @@ struct lightcone_props {
 
   /*! Range in expansion factor covered by particle outputs and healpix maps */
   double a_min, a_max;
-  
+
   /*! Corresponding range in distance squared for a_max and a_min */
   double r2_min, r2_max;
-  
+
   /*! Size of chunks in particle buffer */
   int buffer_chunk_size;
 
   /*! Size of chunks in HDF5 output files */
   int hdf5_chunk_size;
 
-  /* Maximum amount of data (in megabytes) to send from any one rank when updating healpix maps */
+  /* Maximum amount of data (in megabytes) to send from any one rank when
+   * updating healpix maps */
   double max_map_update_send_size_mb;
 
   /*! Whether to apply lossy compression */
@@ -160,7 +164,7 @@ struct lightcone_props {
 
   /*! Buffers to store particles on the lightcone */
   struct particle_buffer buffer[swift_type_count];
-  
+
   /*! Will write particles to disk if buffer exceeds this size */
   int max_particles_buffered;
 
@@ -208,13 +212,10 @@ struct lightcone_props {
 
   /*! Output fields */
   struct lightcone_io_field_list particle_fields[swift_type_count];
-
 };
 
-
-void lightcone_init(struct lightcone_props *props,
-                    const int index, const struct space *s,
-                    const struct cosmology *cosmo,
+void lightcone_init(struct lightcone_props *props, const int index,
+                    const struct space *s, const struct cosmology *cosmo,
                     struct swift_params *params,
                     const struct unit_system *internal_units,
                     const struct phys_const *physical_constants,
@@ -244,22 +245,21 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
                                  const struct engine *e, const struct gpart *gp,
                                  const double a_cross, const double x_cross[3]);
 
-void lightcone_flush_map_updates(struct lightcone_props *props, struct threadpool *tp);
+void lightcone_flush_map_updates(struct lightcone_props *props,
+                                 struct threadpool *tp);
 
 void lightcone_dump_completed_shells(struct lightcone_props *props,
                                      struct threadpool *tp,
-                                     const struct cosmology *c, 
+                                     const struct cosmology *c,
                                      const struct unit_system *internal_units,
                                      const struct unit_system *snapshot_units,
-                                     const int dump_all,
-                                     const int need_flush);
+                                     const int dump_all, const int need_flush);
 
 int lightcone_trigger_map_update(struct lightcone_props *props);
 
 void lightcone_memory_use(struct lightcone_props *props,
                           size_t *particle_buffer_bytes,
-                          size_t *map_buffer_bytes,
-                          size_t *pixel_data_bytes);
+                          size_t *map_buffer_bytes, size_t *pixel_data_bytes);
 
 void lightcone_write_index(struct lightcone_props *props,
                            const struct unit_system *internal_units,

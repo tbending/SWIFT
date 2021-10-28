@@ -46,22 +46,20 @@ struct lightcone_array_props {
 
   /*! Number of lightcones */
   int nr_lightcones;
-  
+
   /*! Lightcone properties */
   struct lightcone_props *lightcone;
 
-  /*! Whether we need to do lightcone crossing checks for each type at this step */
+  /*! Whether we need to do lightcone crossing checks for each type at this step
+   */
   int check_type_for_crossing[swift_type_count];
 
   /*! Whether to generate memory usage reports */
   int verbose;
-
 };
 
-
 void lightcone_array_init(struct lightcone_array_props *props,
-                          const struct space *s,
-                          const struct cosmology *cosmo,
+                          const struct space *s, const struct cosmology *cosmo,
                           struct swift_params *params,
                           const struct unit_system *internal_units,
                           const struct phys_const *physical_constants,
@@ -69,9 +67,11 @@ void lightcone_array_init(struct lightcone_array_props *props,
 
 void lightcone_array_clean(struct lightcone_array_props *props);
 
-void lightcone_array_struct_dump(const struct lightcone_array_props *props, FILE *stream);
+void lightcone_array_struct_dump(const struct lightcone_array_props *props,
+                                 FILE *stream);
 
-void lightcone_array_struct_restore(struct lightcone_array_props *props, FILE *stream);
+void lightcone_array_struct_restore(struct lightcone_array_props *props,
+                                    FILE *stream);
 
 void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
                                       const struct cosmology *cosmo,
@@ -81,22 +81,21 @@ void lightcone_array_prepare_for_step(struct lightcone_array_props *props,
 int lightcone_array_trigger_map_update(struct lightcone_array_props *props);
 
 void lightcone_array_flush(struct lightcone_array_props *props,
-                           struct threadpool *tp,
-                           const struct cosmology *cosmo,
+                           struct threadpool *tp, const struct cosmology *cosmo,
                            const struct unit_system *internal_units,
                            const struct unit_system *snapshot_units,
                            int flush_map_updates, int flush_particles,
                            int end_file, int dump_all_shells);
 
-struct replication_list *lightcone_array_refine_replications(struct lightcone_array_props *props,
-                                                             const struct cell *cell);
+struct replication_list *lightcone_array_refine_replications(
+    struct lightcone_array_props *props, const struct cell *cell);
 
 void lightcone_array_free_replications(struct lightcone_array_props *props,
                                        struct replication_list *lists);
 
 void lightcone_array_write_index(struct lightcone_array_props *props,
                                  const struct unit_system *internal_units,
-                                 const struct unit_system *snapshot_units); 
+                                 const struct unit_system *snapshot_units);
 
 void lightcone_array_report_memory_use(struct lightcone_array_props *props);
 

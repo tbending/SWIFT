@@ -133,7 +133,7 @@ void neutrino_check_cosmology(const struct space *s,
                               struct swift_params *params,
                               const struct neutrino_props *neutrino_props,
                               const int rank, const int verbose);
-double lightcone_map_neutrino_baseline_value(const struct cosmology *c,
-                                             const struct lightcone_props *lightcone_props,
-                                             const struct lightcone_map * map);
+double lightcone_map_neutrino_baseline_value(
+    const struct cosmology *c, const struct lightcone_props *lightcone_props,
+    const struct lightcone_map *map);
 #endif /* SWIFT_DEFAULT_NEUTRINO_H */

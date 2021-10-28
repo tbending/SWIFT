@@ -39,7 +39,6 @@
 #include "star_formation.h"
 #include "tracers.h"
 
-
 #ifdef WITH_LIGHTCONE
 /**
  * @brief Compute refined lightcone replication list for a cell
@@ -50,17 +49,20 @@
  * @param c The #cell
  * @param replication_list_in The input replication_list struct
  */
-static struct replication_list *refine_replications(const struct engine *e,
-                                                    const struct cell *c,
-                                                    struct replication_list *replication_list_in) {
+static struct replication_list *refine_replications(
+    const struct engine *e, const struct cell *c,
+    struct replication_list *replication_list_in) {
   struct replication_list *replication_list;
-  if(e->lightcone_array_properties->nr_lightcones > 0) {
-    if(replication_list_in) {
-      /* We're not at the top of the hierarchy, so use the replication lists passed in */
+  if (e->lightcone_array_properties->nr_lightcones > 0) {
+    if (replication_list_in) {
+      /* We're not at the top of the hierarchy, so use the replication lists
+       * passed in */
       replication_list = replication_list_in;
     } else {
-      /* Current call is top of the recursive hierarchy, so compute refined replication lists */
-      replication_list = lightcone_array_refine_replications(e->lightcone_array_properties, c);
+      /* Current call is top of the recursive hierarchy, so compute refined
+       * replication lists */
+      replication_list =
+          lightcone_array_refine_replications(e->lightcone_array_properties, c);
     }
   } else {
     replication_list = NULL;
@@ -68,7 +70,6 @@ static struct replication_list *refine_replications(const struct engine *e,
   return replication_list;
 }
 #endif
-
 
 /**
  * @brief Recursively drifts the #part in a cell hierarchy.
@@ -117,7 +118,7 @@ void cell_drift_part(struct cell *c, const struct engine *e, int force,
   }
 
   /* Ok, we have some particles somewhere in the hierarchy to drift
-     
+
      IMPORTANT: after this point we must not return without freeing the
      replication lists if we allocated them.
   */
@@ -301,9 +302,11 @@ void cell_drift_part(struct cell *c, const struct engine *e, int force,
   }
 
 #ifdef WITH_LIGHTCONE
-  /* If we're at the top of the recursive hierarchy, clean up the refined replication lists */
-  if(e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
-    lightcone_array_free_replications(e->lightcone_array_properties, replication_list);
+  /* If we're at the top of the recursive hierarchy, clean up the refined
+   * replication lists */
+  if (e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
+    lightcone_array_free_replications(e->lightcone_array_properties,
+                                      replication_list);
 #endif
 
   /* Clear the drift flags. */
@@ -354,7 +357,7 @@ void cell_drift_gpart(struct cell *c, const struct engine *e, int force,
 
   /* Ok, we have some particles somewhere in the hierarchy to drift.
      If making lightcones, get the refined replication list for this cell.
-  
+
      IMPORTANT: after this point we must not return without freeing the
      replication lists if we allocated them.
   */
@@ -468,9 +471,11 @@ void cell_drift_gpart(struct cell *c, const struct engine *e, int force,
   }
 
 #ifdef WITH_LIGHTCONE
-  /* If we're at the top of the recursive hierarchy, clean up the refined replication lists */
-  if(e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
-    lightcone_array_free_replications(e->lightcone_array_properties, replication_list);
+  /* If we're at the top of the recursive hierarchy, clean up the refined
+   * replication lists */
+  if (e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
+    lightcone_array_free_replications(e->lightcone_array_properties,
+                                      replication_list);
 #endif
 
   /* Clear the drift flags. */
@@ -523,7 +528,7 @@ void cell_drift_spart(struct cell *c, const struct engine *e, int force,
   }
 
   /* Ok, we have some particles somewhere in the hierarchy to drift
-     
+
      IMPORTANT: after this point we must not return without freeing the
      replication lists if we allocated them.
   */
@@ -580,8 +585,8 @@ void cell_drift_spart(struct cell *c, const struct engine *e, int force,
       if (spart_is_inhibited(sp, e)) continue;
 
       /* Drift... */
-      drift_spart(sp, dt_drift, ti_old_spart, ti_current,
-                  e, replication_list, c->loc);
+      drift_spart(sp, dt_drift, ti_old_spart, ti_current, e, replication_list,
+                  c->loc);
 
 #ifdef SWIFT_DEBUG_CHECKS
       /* Make sure the particle does not drift by more than a box length. */
@@ -670,9 +675,11 @@ void cell_drift_spart(struct cell *c, const struct engine *e, int force,
   }
 
 #ifdef WITH_LIGHTCONE
-  /* If we're at the top of the recursive hierarchy, clean up the refined replication lists */
-  if(e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
-    lightcone_array_free_replications(e->lightcone_array_properties, replication_list);
+  /* If we're at the top of the recursive hierarchy, clean up the refined
+   * replication lists */
+  if (e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
+    lightcone_array_free_replications(e->lightcone_array_properties,
+                                      replication_list);
 #endif
 
   /* Clear the drift flags. */
@@ -784,8 +791,8 @@ void cell_drift_bpart(struct cell *c, const struct engine *e, int force,
       if (bpart_is_inhibited(bp, e)) continue;
 
       /* Drift... */
-      drift_bpart(bp, dt_drift, ti_old_bpart, ti_current,
-                  e, replication_list, c->loc);
+      drift_bpart(bp, dt_drift, ti_old_bpart, ti_current, e, replication_list,
+                  c->loc);
 
 #ifdef SWIFT_DEBUG_CHECKS
       /* Make sure the particle does not drift by more than a box length. */
@@ -865,9 +872,11 @@ void cell_drift_bpart(struct cell *c, const struct engine *e, int force,
   }
 
 #ifdef WITH_LIGHTCONE
-  /* If we're at the top of the recursive hierarchy, clean up the refined replication lists */
-  if(e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
-    lightcone_array_free_replications(e->lightcone_array_properties, replication_list);
+  /* If we're at the top of the recursive hierarchy, clean up the refined
+   * replication lists */
+  if (e->lightcone_array_properties->nr_lightcones > 0 && !replication_list_in)
+    lightcone_array_free_replications(e->lightcone_array_properties,
+                                      replication_list);
 #endif
 
   /* Clear the drift flags. */

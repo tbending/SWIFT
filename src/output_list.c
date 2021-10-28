@@ -116,7 +116,8 @@ void output_list_read_file(struct output_list *output_list,
     type = OUTPUT_LIST_SCALE_FACTOR;
     output_list->select_output_on = 1;
     output_list->alternative_labels_on = 1;
-  } else if (strcasecmp(line, "# Comoving Distance, Select Output, Label") == 0) {
+  } else if (strcasecmp(line, "# Comoving Distance, Select Output, Label") ==
+             0) {
     type = OUTPUT_LIST_COMOVING_DISTANCE;
     output_list->select_output_on = 1;
     output_list->alternative_labels_on = 1;
@@ -124,12 +125,13 @@ void output_list_read_file(struct output_list *output_list,
     error("Unable to interpret the header (%s) in file '%s'", line, filename);
   }
 
-  if (!cosmo && (type == OUTPUT_LIST_SCALE_FACTOR || type == OUTPUT_LIST_REDSHIFT
-                 || type == OUTPUT_LIST_COMOVING_DISTANCE))
+  if (!cosmo &&
+      (type == OUTPUT_LIST_SCALE_FACTOR || type == OUTPUT_LIST_REDSHIFT ||
+       type == OUTPUT_LIST_COMOVING_DISTANCE))
     error(
-          "Unable to compute a redshift or a scale factor without cosmology. "
-          "Please change the header in '%s'",
-          filename);
+        "Unable to compute a redshift or a scale factor without cosmology. "
+        "Please change the header in '%s'",
+        filename);
 
   if (!output_list->select_output_on && output_list->alternative_labels_on)
     error(
@@ -227,7 +229,8 @@ void output_list_read_file(struct output_list *output_list,
 
     if ((type == OUTPUT_LIST_COMOVING_DISTANCE) &&
         (output_list->times[i] <= output_list->times[i - 1]))
-      error("Output list not having monotonically decreasing comoving distance.");
+      error(
+          "Output list not having monotonically decreasing comoving distance.");
   }
 
   /* set current indice to 0 */

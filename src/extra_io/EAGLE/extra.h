@@ -619,8 +619,8 @@ INLINE static float do_xray_interpolation(
    * and z dimensions */
   int He_index, log_nH_cgs_index, log_T_index, z_index;
   float d_He, d_log_nH_cgs, d_log_T, d_z;
-  get_index_1d_irregular(xrays->He_bins, xray_emission_N_helium, log10_He_fraction,
-                         &He_index, &d_He);
+  get_index_1d_irregular(xrays->He_bins, xray_emission_N_helium,
+                         log10_He_fraction, &He_index, &d_He);
 
   get_index_1d(xrays->Densities, xray_emission_N_density, log_nH_cgs,
                &log_nH_cgs_index, &d_log_nH_cgs);

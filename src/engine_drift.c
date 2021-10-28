@@ -27,7 +27,6 @@
 
 /* This object's header. */
 #include "engine.h"
-
 #include "lightcone_array.h"
 
 /**
@@ -440,13 +439,11 @@ void engine_drift_all(struct engine *e, const int drift_mpoles) {
 #ifdef WITH_LIGHTCONE
   /* Drifting all of the particles can cause many particles to cross
      the lightcone, so flush buffers now to reduce peak memory use . */
-  lightcone_array_flush(e->lightcone_array_properties,
-                        &e->threadpool, e->cosmology,
-                        e->internal_units, e->snapshot_units,
-                        /*flush_map_updates=*/ 1, /*flush_particles=*/ 1,
-                        /*end_file=*/ 0, /*dump_all_shells=*/ 0);
+  lightcone_array_flush(e->lightcone_array_properties, &e->threadpool,
+                        e->cosmology, e->internal_units, e->snapshot_units,
+                        /*flush_map_updates=*/1, /*flush_particles=*/1,
+                        /*end_file=*/0, /*dump_all_shells=*/0);
 #endif
-
 }
 
 /**
