@@ -156,7 +156,7 @@ AM_SOURCES += fof.c fof_catalogue_io.c
 AM_SOURCES += hashmap.c pressure_floor.c
 AM_SOURCES += mesh_gravity.c mesh_gravity_mpi.c mesh_gravity_patch.c mesh_gravity_sort.c
 AM_SOURCES += runner_neutrino.c
-AM_SOURCES += neutrino/Default/fermi_dirac.c neutrino/Default/neutrino.c
+AM_SOURCES += neutrino/Default/fermi_dirac.c neutrino/Default/neutrino.c neutrino/Default/neutrino_response.c 
 AM_SOURCES += rt_parameters.c
 AM_SOURCES += lightcone.c lightcone_particle_io.c lightcone_replications.c particle_buffer.c
 AM_SOURCES += lightcone_array.c lightcone_map.c lightcone_map_types.c exchange_structs.c
@@ -294,6 +294,7 @@ nobase_noinst_HEADERS += rt/GEAR/rt_parameters.h
 nobase_noinst_HEADERS += rt/GEAR/rt_properties.h 
 nobase_noinst_HEADERS += rt/GEAR/rt_riemann_GLF.h 
 nobase_noinst_HEADERS += rt/GEAR/rt_riemann_HLL.h 
+nobase_noinst_HEADERS += rt/GEAR/rt_riemann_HLL_eigenvalues.h 
 # nobase_noinst_HEADERS += rt/GEAR/rt_slope_limiters_cell.h
 nobase_noinst_HEADERS += rt/GEAR/rt_slope_limiters_face.h 
 nobase_noinst_HEADERS += rt/GEAR/rt_stellar_emission_rate.h 
@@ -409,6 +410,7 @@ nobase_noinst_HEADERS += sink.h sink_io.h sink_properties.h
 nobase_noinst_HEADERS += neutrino.h neutrino_properties.h neutrino_io.h
 nobase_noinst_HEADERS += neutrino/Default/neutrino.h neutrino/Default/relativity.h neutrino/Default/fermi_dirac.h
 nobase_noinst_HEADERS += neutrino/Default/neutrino_properties.h neutrino/Default/neutrino_io.h
+nobase_noinst_HEADERS += neutrino/Default/neutrino_response.h
 
 # Sources and special flags for the gravity library
 libgrav_la_SOURCES = runner_doiact_grav.c

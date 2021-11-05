@@ -45,6 +45,7 @@
 
 #ifdef HAVE_LIBNUMA
 #include <numa.h>
+#include <numaif.h>
 #endif
 
 /* This object's header. */
@@ -1916,10 +1917,8 @@ void engine_init_particles(struct engine *e, int flag_entropy_ICs,
   TIMER_TOC2(timer_runners);
 
   /* Initialise additional RT data now that time bins are set */
-  if ((e->policy & engine_policy_rt) &&
-      !e->rt_props->hydro_controlled_injection) {
-    space_convert_rt_quantities(e->s, e->verbose);
-  }
+  if (e->policy & engine_policy_rt)
+    space_convert_rt_quantities_after_zeroth_step(e->s, e->verbose);
 
   /* Since the time-steps may have changed because of the limiter's
    * action, we need to communicate the new time-step sizes */
@@ -2744,6 +2743,58 @@ void engine_unpin(void) {
 }
 
 /**
+ * @brief Define a NUMA memory placement policy of interleave across the
+ * available NUMA nodes rather than having memory in the local node, which
+ * means we have a lot of memory associated with the main thread NUMA node, so
+ * we don't make good use of the overall memory bandwidth between nodes.
+ *
+ * @param rank the MPI rank, if relevant.
+ * @param verbose whether to make a report about the selected NUMA nodes.
+ */
+void engine_numa_policies(int rank, int verbose) {
+
+#if defined(HAVE_LIBNUMA) && defined(_GNU_SOURCE)
+
+  /* Get our affinity mask (on entry), that defines what NUMA nodes we should
+   * use. */
+  cpu_set_t *entry_affinity = engine_entry_affinity();
+
+  /* Now convert the affinity mask into NUMA nodemask. */
+  struct bitmask *nodemask = numa_allocate_nodemask();
+  int nnuma = numa_num_configured_nodes();
+
+  for (unsigned long i = 0; i < CPU_SETSIZE; i++) {
+
+    /* If in the affinity mask we set NUMA node of CPU bit. */
+    if (CPU_ISSET(i, entry_affinity)) {
+      int numanode = numa_node_of_cpu(i);
+      numa_bitmask_setbit(nodemask, numanode);
+    }
+  }
+
+  if (verbose) {
+    char report[1024];
+    int len = sprintf(report, "NUMA nodes in use: [");
+    for (int i = 0; i < nnuma; i++) {
+      if (numa_bitmask_isbitset(nodemask, i)) {
+        len += sprintf(&report[len], "%d ", i);
+      } else {
+        len += sprintf(&report[len], ". ");
+      }
+    }
+    sprintf(&report[len], "]");
+    printf("[%04d] %s\n", rank, report);
+    fflush(stdout);
+  }
+
+  /* And set. */
+  set_mempolicy(MPOL_INTERLEAVE, nodemask->maskp, nodemask->size + 1);
+  numa_free_nodemask(nodemask);
+
+#endif
+}
+
+/**
  * @brief init an engine struct with the necessary properties for the
  *        simulation.
  *
@@ -2797,8 +2848,9 @@ void engine_init(
     const struct entropy_floor_properties *entropy_floor,
     struct gravity_props *gravity, struct stars_props *stars,
     const struct black_holes_props *black_holes, const struct sink_props *sinks,
-    const struct neutrino_props *neutrinos, struct feedback_props *feedback,
-    struct rt_props *rt, struct pm_mesh *mesh,
+    const struct neutrino_props *neutrinos,
+    struct neutrino_response *neutrino_response,
+    struct feedback_props *feedback, struct rt_props *rt, struct pm_mesh *mesh,
     const struct external_potential *potential,
     struct cooling_function_data *cooling_func,
     const struct star_formation *starform,
@@ -2912,6 +2964,7 @@ void engine_init(
   e->black_holes_properties = black_holes;
   e->sink_properties = sinks;
   e->neutrino_properties = neutrinos;
+  e->neutrino_response = neutrino_response;
   e->mesh = mesh;
   e->external_potential = potential;
   e->cooling_func = cooling_func;
@@ -3418,6 +3471,7 @@ void engine_struct_dump(struct engine *e, FILE *stream) {
   black_holes_struct_dump(e->black_holes_properties, stream);
   sink_struct_dump(e->sink_properties, stream);
   neutrino_struct_dump(e->neutrino_properties, stream);
+  neutrino_response_struct_dump(e->neutrino_response, stream);
   chemistry_struct_dump(e->chemistry, stream);
   extra_io_struct_dump(e->io_extra_props, stream);
 #ifdef WITH_FOF
@@ -3554,6 +3608,11 @@ void engine_struct_restore(struct engine *e, FILE *stream) {
       (struct neutrino_props *)malloc(sizeof(struct neutrino_props));
   neutrino_struct_restore(neutrino_properties, stream);
   e->neutrino_properties = neutrino_properties;
+
+  struct neutrino_response *neutrino_response =
+      (struct neutrino_response *)malloc(sizeof(struct neutrino_response));
+  neutrino_response_struct_restore(neutrino_response, stream);
+  e->neutrino_response = neutrino_response;
 
   struct chemistry_global_data *chemistry =
       (struct chemistry_global_data *)malloc(
