@@ -1260,8 +1260,8 @@ double cosmology_get_comoving_distance(const struct cosmology *c,
                                        const double a) {
 
 #ifdef SWIFT_DEBUG_CHECKS
-  if (a < a_start) error("a must be >= a_start");
-  if (a > a_end) error("a must be <= a_end");
+  if (a < c->a_begin) error("a must be >= a_begin");
+  if (a > c->a_end) error("a must be <= a_end");
 #endif
 
   const double log_a = log(a);
