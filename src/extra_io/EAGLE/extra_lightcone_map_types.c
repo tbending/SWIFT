@@ -427,8 +427,10 @@ double lightcone_map_compton_y_get_value(
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
       /* This angular diameter distance is only correct for flat cosmologies */
-      if (e->cosmology->Omega_k != 0.0)
+#ifdef SWIFT_DEBUG_CHECKS
+      if (fabs(e->cosmology->Omega_k) > 0.001)
         error("only implemented for flat cosmology");
+#endif
 
       double pixel_size_2 = lightcone_props->pixel_area_steradians;
       double y_for_map =
@@ -494,8 +496,10 @@ double lightcone_map_doppler_b_get_value(
       double angular_diameter_distance = sqrt(angular_diameter_distance_2);
 
       /* This angular diameter distance is only correct for flat cosmologies */
-      if (e->cosmology->Omega_k != 0.0)
+#ifdef SWIFT_DEBUG_CHECKS
+      if (fabs(e->cosmology->Omega_k) > 0.001)
         error("only implemented for flat cosmology");
+#endif
 
       double radial_velocity =
           (p->v[0] * x_cross[0] * a_cross + p->v[1] * x_cross[1] * a_cross +
@@ -562,8 +566,10 @@ double lightcone_map_dispersion_meassure_get_value(
       double angular_diameter_distance_2 = x_squared + y_squared + z_squared;
 
       /* This angular diameter distance is only correct for flat cosmologies */
-      if (e->cosmology->Omega_k != 0.0)
+#ifdef SWIFT_DEBUG_CHECKS
+      if (fabs(e->cosmology->Omega_k) > 0.001)
         error("only implemented for flat cosmology");
+#endif
 
       double pixel_size_2 = lightcone_props->pixel_area_steradians;
       double dm_for_map =
