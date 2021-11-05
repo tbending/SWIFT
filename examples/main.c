@@ -1477,10 +1477,10 @@ int main(int argc, char *argv[]) {
                 &reparttype, &us, &prog_const, &cosmo, &hydro_properties,
                 &entropy_floor, &gravity_properties, &stars_properties,
                 &black_holes_properties, &sink_properties, &neutrino_properties,
-                &neutrino_response, &feedback_properties, &rt_properties, &mesh, &potential,
-                &cooling_func, &starform, &chemistry, &extra_io_props,
-                &fof_properties, &los_properties, &lightcone_array_properties,
-                &ics_metadata);
+                &neutrino_response, &feedback_properties, &rt_properties, &mesh,
+                &potential, &cooling_func, &starform, &chemistry,
+                &extra_io_props, &fof_properties, &los_properties,
+                &lightcone_array_properties, &ics_metadata);
     engine_config(/*restart=*/0, /*fof=*/0, &e, params, nr_nodes, myrank,
                   nr_threads, nr_pool_threads, with_aff, talking, restart_file);
 
