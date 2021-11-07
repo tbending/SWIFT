@@ -47,8 +47,12 @@ extern "C" {
   }
 
   void healpix_smoothing_clean(struct healpix_smoothing_info *smooth_info) {
+#ifdef HAVE_HEALPIX_CXX
     projected_kernel_clean(&smooth_info->kernel);
     delete smooth_info;
+#else
+    error("Code was compiled without Healpix C++ library");
+#endif
   }
 
   size_t healpix_smoothing_get_npix(struct healpix_smoothing_info *smooth_info) {
