@@ -177,6 +177,9 @@ AC_ARG_ENABLE([mpi],
 )
 good_mpi="yes"
 if test "$enable_mpi" = "yes"; then
+    AC_LANG_PUSH([C++])
+    AX_MPI([CXX="$MPICXX" AC_DEFINE(HAVE_MPI_CXX, 1, [Define if you have the MPI library.]) ])
+    AC_LANG_POP([C++])
     AX_MPI([CC="$MPICC" AC_DEFINE(HAVE_MPI, 1, [Define if you have the MPI library.]) ])
     MPI_LIBRARY="Unknown MPI"
 

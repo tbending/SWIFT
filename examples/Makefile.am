@@ -76,10 +76,16 @@ swift_mpi_SOURCES = main.c
 swift_mpi_CFLAGS = $(MYFLAGS) $(AM_CFLAGS) $(MPI_FLAGS) -DENGINE_POLICY="engine_policy_keep $(ENGINE_POLICY_SETAFFINITY)"
 swift_mpi_LDADD =  ../src/.libs/libswiftsim_mpi.a ../argparse/.libs/libargparse.a $(MPI_LIBS) $(EXTRA_LIBS) $(LD_CSDS)
 
+# Dummy C++ source to cause C++ linking.
+nodist_EXTRA_swift_mpi_SOURCES = dummy.cxx
+
 # Sources for fof
 fof_SOURCES = main_fof.c
 fof_CFLAGS = $(MYFLAGS) $(AM_CFLAGS) -DENGINE_POLICY="engine_policy_keep $(ENGINE_POLICY_SETAFFINITY)"
 fof_LDADD =  ../src/.libs/libswiftsim.a ../argparse/.libs/libargparse.a $(EXTRA_LIBS) $(LD_CSDS)
+
+# Dummy C++ source to cause C++ linking.
+nodist_EXTRA_fof_SOURCES = dummy.cxx
 
 # Sources for fof_mpi, do we need an affinity policy for MPI?
 fof_mpi_SOURCES = main_fof.c
