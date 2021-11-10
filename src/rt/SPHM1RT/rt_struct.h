@@ -28,17 +28,22 @@
 
 /* Additional RT data in hydro particle struct */
 struct rt_part_data {
+
+  /*! time step of the gas particle */
+  float dt;
+
   /* conserved state vector */
+  /* (in the sense of energy/mass; assuming mass is equal) */
   struct {
     float energy;
     float flux[3];
   } conserved[RT_NGROUPS];
 
-  /* conserved state vector at the last full step. */
+  /* rate of change of the conserved state vector */
   struct {
     float energy;
     float flux[3];
-  } cfull[RT_NGROUPS];
+  } cdt[RT_NGROUPS];
 
 
   /* Store viscosity information in a separate struct. */
@@ -68,11 +73,11 @@ struct rt_part_data {
 
 
 
-  /* Store radiation diffusion information in a separate struct. */
+  /* Store radiation parameter in a separate struct. */
   struct {
 
     /*! initial mean opacity */
-    float chi;
+    float chi[RT_NGROUPS];
 
     /*! reduced speed of light */
     float cred;

@@ -20,6 +20,8 @@
 #ifndef SWIFT_RT_IO_SPHM1RT_H
 #define SWIFT_RT_IO_SPHM1RT_H
 
+#define RT_LABELS_SIZE 10
+
 /*#include "io_properties.h" */
 
 /**

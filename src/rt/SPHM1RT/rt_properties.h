@@ -30,13 +30,18 @@
  */
 
 /**
- * @brief Properties of the 'none' radiative transfer model
+ * @brief Properties of the 'SPHM1RT' radiative transfer model
  */
 struct rt_props {
 
   /* CFL condition */
   float CFL_condition;
 
+  /* reduced speed of light in code unit */
+  float cred;
+
+  /*! initial mean opacity */
+  float chi[RT_NGROUPS];
 
   /* Are we running with hydro or star controlled injection?
    * This is added to avoid #ifdef macros as far as possible */
@@ -81,8 +86,21 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   rtp->convert_parts_after_zeroth_step = 0;
   rtp->convert_stars_after_zeroth_step = 0;
 
+  /* get reduced speed of light in code unit */
+  const float cred = parser_get_param_float(params, "SPHM1RT:cred");
+  rtp->cred = cred;
+
+  /* get CFL condition */
+  const float CFL = parser_get_param_float(params, "SPHM1RT:CFL_condition");
+  rtp->CFL_condition = CFL;
+
   /* After initialisation, print params to screen */
   rt_props_print(rtp);
+
+  /* Print a final message. */
+  if (engine_rank == 0) {
+    message("Radiative transfer initialized");
+  }
 }
 
 /**
