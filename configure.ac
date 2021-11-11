@@ -831,8 +831,9 @@ AC_SUBST([HEALPIX_CXX_LIBS])
 AC_SUBST([HEALPIX_CXX_INCS])
 AM_CONDITIONAL([HAVEHEALPIX_CXX],[test -n "$HEALPIX_CXX_LIBS"])
 
-# Check for HEALPix. AC_SUBSTs CHEALPIX_LIBS and CHEALPIX_CFLAGS and #defines HAVE_CHEALPIX
+# Check for HEALPix. AC_SUBSTs CHEALPIX_LIBS and CHEALPIX_CFLAGS and #defines HAVE_CHEALPIX.
 GV_FIND_LIBRARY([chealpix], [CHEALPIX], [chealpix], [chealpix], [ang2vec])
+have_chealpix=${USE_CHEALPIX}
 
 # Check for pthreads.
 AX_PTHREAD([LIBS="$PTHREAD_LIBS $LIBS" CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
@@ -2782,6 +2783,7 @@ AC_MSG_RESULT([
     - ARM               : $have_arm_fftw
    GSL enabled          : $have_gsl
    HEALPix C++ enabled  : $have_healpix_cxx
+   HEALPix C enabled    : $have_chealpix
    libNUMA enabled      : $have_numa
    GRACKLE enabled      : $have_grackle
    Special allocators   : $have_special_allocator
