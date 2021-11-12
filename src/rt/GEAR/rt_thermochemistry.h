@@ -26,11 +26,19 @@
  */
 
 /**
+ * @brief initialize particle quantities relevant for the thermochemistry.
+ *
+ * @param p particle to work on
+ * @param rtp RT properties struct
+ */
+__attribute__((always_inline)) INLINE static void rt_tchem_first_init_part(
+  struct part* restrict p, const struct rt_props *rtp){}
+
+/**
  * @brief Main function for the thermochemistry step.
  *
  * @param p Particle to work on.
  */
-
 __attribute__((always_inline)) INLINE static void rt_do_thermochemistry(
     struct part *restrict p) {
 

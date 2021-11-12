@@ -55,6 +55,19 @@ struct rt_props {
   /* CFL condition */
   float CFL_condition;
 
+  /* do we set initial ionization mass fractions manually? */
+  int overwrite_initial_ionization_mass_fractions;
+  int set_equilibrium_initial_ionization_mass_fractions;
+  
+  /* initial mass fractions for ionization species */
+  float mass_fraction_HI_init;
+  float mass_fraction_HII_init;
+  float mass_fraction_HeI_init;
+  float mass_fraction_HeII_init;
+  float mass_fraction_HeIII_init;
+  float number_density_electrons_init; /* todo: do we need this? */
+
+
 #ifdef SWIFT_RT_DEBUG_CHECKS
   /* Do extended tests where we assume that all parts
    * have spart neighbours? */
@@ -136,6 +149,11 @@ __attribute__((always_inline)) INLINE static void rt_props_print(
     strcat(messagestring, "]");
     message("%s", messagestring);
   }
+
+  if (rtp->set_equilibrium_initial_ionization_mass_fractions)
+    message("Setting initial mass fractions for " "ionizing species assuming ionization equilibrium");
+  if (rtp->overwrite_initial_ionization_mass_fractions)
+    message("Using initial ionization mass fractions specified in parameter file");
 }
 
 /**
@@ -189,7 +207,7 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   }
 
   /* Are we using constant emission rates? */
-  rtp->use_const_emission_rates = parser_get_opt_param_float(
+  rtp->use_const_emission_rates = parser_get_opt_param_int(
       params, "GEARRT:use_const_emission_rates", /* default = */ 0);
 
   if (rtp->use_const_emission_rates) {
@@ -215,6 +233,38 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   /* get CFL condition */
   const float CFL = parser_get_param_float(params, "GEARRT:CFL_condition");
   rtp->CFL_condition = CFL;
+
+  /* Get thermochemistry set-up */
+  /* -------------------------- */
+  rtp->set_equilibrium_initial_ionization_mass_fractions = parser_get_opt_param_int(
+      params, "GEARRT:set_equilibrium_initial_ionization_mass_fractions", /* default = */ 0);
+  rtp->overwrite_initial_ionization_mass_fractions = parser_get_opt_param_int(
+      params, "GEARRT:overwrite_initial_ionization_mass_fractions", /* default = */ 0);
+  if (rtp->overwrite_initial_ionization_mass_fractions) {
+    /* Read in mass fractions */
+    /* TODO: reduce species count later based on number of groups */
+    rtp->mass_fraction_HI_init = parser_get_param_float(params, "GEARRT:mass_fraction_HI");
+    rtp->mass_fraction_HII_init = parser_get_param_float(params, "GEARRT:mass_fraction_HII");
+    rtp->mass_fraction_HeI_init = parser_get_param_float(params, "GEARRT:mass_fraction_HeI");
+    rtp->mass_fraction_HeII_init = parser_get_param_float(params, "GEARRT:mass_fraction_HeII");
+    rtp->mass_fraction_HeIII_init = parser_get_param_float(params, "GEARRT:mass_fraction_HeIII");
+
+    /* TODO: temporary check neglecting metals. Make sure we sum up to 1. */
+    const float mass_fraction_sum = rtp->mass_fraction_HI_init + rtp->mass_fraction_HII_init + 
+                rtp->mass_fraction_HeI_init + rtp->mass_fraction_HeII_init + rtp->mass_fraction_HeIII_init;
+    if (fabsf(mass_fraction_sum - 1.f) > 1e-4)
+      error("Ionizing species mass fraction sums up to %.6f, I expect 1.0", mass_fraction_sum);
+  } else {
+    /* Initialize properties to deliberately bogus values */
+    rtp->mass_fraction_HI_init = -1.f;
+    rtp->mass_fraction_HII_init = -1.f;
+    rtp->mass_fraction_HeI_init = -1.f;
+    rtp->mass_fraction_HeII_init = -1.f;
+    rtp->mass_fraction_HeIII_init = -1.f;
+  }
+
+  if (rtp->set_equilibrium_initial_ionization_mass_fractions && rtp->overwrite_initial_ionization_mass_fractions)
+    error("Can't use equilibrium initial ionization mass fractions simultaneously with manually set mass fractions. Pick one.");
 
 #ifdef SWIFT_RT_DEBUG_CHECKS
   rtp->debug_radiation_emitted_tot = 0ULL;

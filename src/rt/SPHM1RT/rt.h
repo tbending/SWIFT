@@ -50,9 +50,11 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
 
 /**
  * @brief First initialisation of the RT hydro particle data.
+ * @param p particle to work on
+ * @param rtp RT properties struct
  */
 __attribute__((always_inline)) INLINE static void rt_first_init_part(
-    struct part* restrict p) {}
+    struct part* restrict p, const struct rt_props *rtp) {}
 
 /**
  * @brief Initialisation of the RT density loop related star particle data.

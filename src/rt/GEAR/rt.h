@@ -86,13 +86,16 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
  * @brief First initialisation of the RT hydro particle data.
  *
  * @param p particle to work on
+ * @param rtp RT properties struct
  */
 __attribute__((always_inline)) INLINE static void rt_first_init_part(
-    struct part* restrict p) {
+    struct part* restrict p, const struct rt_props *rtp) {
 
   /* Don't reset conserved quantities here! ICs will be overwritten */
   rt_init_part(p);
   rt_reset_part(p);
+  rt_tchem_first_init_part(p, rtp);
+
   for (int g = 0; g < RT_NGROUPS; g++) {
     p->rt_data.density[g].energy = 0.f;
     p->rt_data.density[g].flux[0] = 0.f;
