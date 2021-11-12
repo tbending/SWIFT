@@ -363,6 +363,7 @@ struct healpix_smoothing_mapper_data {
 
   /*! Healpix smoothing parameters */
   struct healpix_smoothing_info *smoothing_info;
+  struct chealpix_smoothing_info *csmoothing_info;
 
   /*! Pointer to the send buffer for communication */
   union lightcone_map_buffer_entry *sendbuf;
@@ -458,8 +459,13 @@ static void count_elements_to_send_mapper(void *map_data, int num_elements,
 
       /* Determine which MPI ranks this contribution needs to go to */
       size_t first_pixel, last_pixel;
-      healpix_smoothing_get_pixel_range(mapper_data->smoothing_info, theta, phi,
-                                        radius, &first_pixel, &last_pixel);
+      if(mapper_data->smoothing_info) {
+        healpix_smoothing_get_pixel_range(mapper_data->smoothing_info, theta, phi,
+                                          radius, &first_pixel, &last_pixel);
+      } else {
+        chealpix_smoothing_get_pixel_range(mapper_data->csmoothing_info, theta, phi,
+                                           radius, &first_pixel, &last_pixel);
+      }
       first_dest[i] =
           pixel_to_rank(comm_size, shell->pix_per_rank, first_pixel);
       last_dest[i] = pixel_to_rank(comm_size, shell->pix_per_rank, last_pixel);
@@ -571,9 +577,14 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
   struct lightcone_shell *shell = mapper_data->shell;
   struct lightcone_particle_type *part_type = mapper_data->part_type;
   struct healpix_smoothing_info *smoothing_info = mapper_data->smoothing_info;
+  struct chealpix_smoothing_info *csmoothing_info = mapper_data->csmoothing_info;
 
   /* Get maximum radius of any pixel in the map */
-  double max_pixrad = healpix_smoothing_get_max_pixrad(smoothing_info);
+  double max_pixrad;
+  if(smoothing_info)
+    max_pixrad = healpix_smoothing_get_max_pixrad(smoothing_info);
+  else
+    max_pixrad = chealpix_smoothing_get_max_pixrad(csmoothing_info);
 
   /* Find the array of updates to apply to the healpix maps */
   union lightcone_map_buffer_entry *update_data =
@@ -602,7 +613,11 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
          Small particles are added to the maps directly regardless of
          whether the map is smoothed. Find the pixel index.
       */
-      size_t global_pix = healpix_smoothing_ang2pix(smoothing_info, theta, phi);
+      size_t global_pix;
+      if(smoothing_info)
+        global_pix = healpix_smoothing_ang2pix(smoothing_info, theta, phi);
+      else
+        global_pix = chealpix_smoothing_ang2pix(csmoothing_info, theta, phi);
 
       /* Check the pixel is stored on this MPI rank */
       if ((global_pix >= local_pix_offset) &&
@@ -633,44 +648,86 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 
         /* Find neighbour pixels */
         size_t nr_ngb;
-        struct healpix_neighbour_info *ngb;
-        healpix_smoothing_find_neighbours(smoothing_info, theta, phi, radius,
-                                          &nr_ngb, &ngb);
+        if(smoothing_info) {
 
-        /* Loop over neighbour pixels */
-        for (size_t ngb_nr = 0; ngb_nr < nr_ngb; ngb_nr += 1) {
+          struct healpix_neighbour_info *ngb;
+          healpix_smoothing_find_neighbours(smoothing_info, theta, phi, radius,
+                                            &nr_ngb, &ngb);
 
-          const size_t global_pix = ngb[ngb_nr].global_pix;
+          /* Loop over neighbour pixels */
+          for (size_t ngb_nr = 0; ngb_nr < nr_ngb; ngb_nr += 1) {
 
-          /* Check if this pixel is stored locally */
-          if ((global_pix >= local_pix_offset) &&
-              (global_pix < local_pix_offset + local_nr_pix)) {
+            const size_t global_pix = ngb[ngb_nr].global_pix;
 
-            /* Find local index of the pixel to update */
-            const size_t local_pix = global_pix - local_pix_offset;
+            /* Check if this pixel is stored locally */
+            if ((global_pix >= local_pix_offset) &&
+                (global_pix < local_pix_offset + local_nr_pix)) {
 
-            /* Update the smoothed healpix maps */
-            const double weight = ngb[ngb_nr].weight;
-            for (int j = 0; j < part_type->nr_smoothed_maps; j += 1) {
-              const int map_index = part_type->map_index[j];
-              const double buffered_value = value[j].f;
-              const double fac_inv =
+              /* Find local index of the pixel to update */
+              const size_t local_pix = global_pix - local_pix_offset;
+
+              /* Update the smoothed healpix maps */
+              const double weight = ngb[ngb_nr].weight;
+              for (int j = 0; j < part_type->nr_smoothed_maps; j += 1) {
+                const int map_index = part_type->map_index[j];
+                const double buffered_value = value[j].f;
+                const double fac_inv =
                   shell->map[map_index].buffer_scale_factor_inv;
-              const double value_to_add = buffered_value * fac_inv;
-              atomic_add_d(&shell->map[map_index].data[local_pix],
-                           value_to_add * weight);
+                const double value_to_add = buffered_value * fac_inv;
+                atomic_add_d(&shell->map[map_index].data[local_pix],
+                             value_to_add * weight);
+              }
             }
           }
+          /* Free the array of neighbouring pixels */
+          free(ngb);
+
+        } else {
+
+          struct chealpix_neighbour_info *ngb;
+          chealpix_smoothing_find_neighbours(csmoothing_info, theta, phi, radius,
+                                             &nr_ngb, &ngb);
+
+          /* Loop over neighbour pixels */
+          for (size_t ngb_nr = 0; ngb_nr < nr_ngb; ngb_nr += 1) {
+
+            const size_t global_pix = ngb[ngb_nr].global_pix;
+
+            /* Check if this pixel is stored locally */
+            if ((global_pix >= local_pix_offset) &&
+                (global_pix < local_pix_offset + local_nr_pix)) {
+
+              /* Find local index of the pixel to update */
+              const size_t local_pix = global_pix - local_pix_offset;
+
+              /* Update the smoothed healpix maps */
+              const double weight = ngb[ngb_nr].weight;
+              for (int j = 0; j < part_type->nr_smoothed_maps; j += 1) {
+                const int map_index = part_type->map_index[j];
+                const double buffered_value = value[j].f;
+                const double fac_inv =
+                  shell->map[map_index].buffer_scale_factor_inv;
+                const double value_to_add = buffered_value * fac_inv;
+                atomic_add_d(&shell->map[map_index].data[local_pix],
+                             value_to_add * weight);
+              }
+            }
+          }
+          /* Free the array of neighbouring pixels */
+          free(ngb);
+
         }
-        /* Free the array of neighbouring pixels */
-        free(ngb);
+
       } /* if part_type->nr_smoothed_maps > 0 */
 
       /* Then do any un-smoothed maps */
       if (part_type->nr_unsmoothed_maps > 0) {
 
-        size_t global_pix =
-            healpix_smoothing_ang2pix(smoothing_info, theta, phi);
+        size_t global_pix;
+        if(smoothing_info)
+          global_pix = healpix_smoothing_ang2pix(smoothing_info, theta, phi);
+        else
+          global_pix = chealpix_smoothing_ang2pix(csmoothing_info, theta, phi);
 
         /* Check the pixel is stored on this MPI rank */
         if ((global_pix >= local_pix_offset) &&
@@ -723,8 +780,10 @@ void healpix_smoothing_mapper(void *map_data, int num_elements,
 void lightcone_shell_flush_map_updates_for_type(
     struct lightcone_shell *shell, struct threadpool *tp,
     struct lightcone_particle_type *part_type,
-    struct healpix_smoothing_info *smoothing_info, int ptype,
-    const double max_map_update_send_size_mb, int verbose) {
+    struct healpix_smoothing_info *smoothing_info,
+    struct chealpix_smoothing_info *csmoothing_info,    
+    int ptype, const double max_map_update_send_size_mb, int verbose) {
+
   int comm_rank = 0, comm_size = 1;
 #ifdef WITH_MPI
   MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
@@ -736,6 +795,7 @@ void lightcone_shell_flush_map_updates_for_type(
   mapper_data.shell = shell;
   mapper_data.part_type = &part_type[ptype];
   mapper_data.smoothing_info = smoothing_info;
+  mapper_data.csmoothing_info = csmoothing_info;
   mapper_data.comm_rank = comm_rank;
   mapper_data.comm_size = comm_size;
   mapper_data.sendbuf = NULL;
@@ -934,6 +994,7 @@ void lightcone_shell_flush_map_updates(
     struct lightcone_shell *shell, struct threadpool *tp,
     struct lightcone_particle_type *part_type,
     struct healpix_smoothing_info *smoothing_info,
+    struct chealpix_smoothing_info *csmoothing_info,
     const double max_map_update_send_size_mb, int verbose) {
 
   if (shell->state != shell_current)
@@ -942,8 +1003,8 @@ void lightcone_shell_flush_map_updates(
   for (int ptype = 0; ptype < swift_type_count; ptype += 1) {
     if ((shell->nr_maps > 0) && (part_type[ptype].nr_maps > 0)) {
       lightcone_shell_flush_map_updates_for_type(
-          shell, tp, part_type, smoothing_info, ptype,
-          max_map_update_send_size_mb, verbose);
+          shell, tp, part_type, smoothing_info, csmoothing_info,
+          ptype, max_map_update_send_size_mb, verbose);
     }
   }
 }

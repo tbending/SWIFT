@@ -30,6 +30,7 @@
 #include "cosmology.h"
 #include "error.h"
 #include "healpix_smoothing.h"
+#include "chealpix_smoothing.h"
 #include "lightcone_map.h"
 #include "lightcone_map_types.h"
 #include "particle_buffer.h"
@@ -176,6 +177,7 @@ void lightcone_shell_flush_map_updates(
     struct lightcone_shell *shell, struct threadpool *tp,
     struct lightcone_particle_type *part_type,
     struct healpix_smoothing_info *smoothing_info,
+    struct chealpix_smoothing_info *csmoothing_info,
     const double max_map_update_send_size_mb, int verbose);
 
 #endif /* SWIFT_LIGHTCONE_SHELL_H */

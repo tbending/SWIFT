@@ -45,7 +45,7 @@ void chealpix_smoothing_init(struct chealpix_smoothing_info *smooth_info,
   if(npix > LONG_MAX)error("Number of HEALPix pixels does not fit in a long");
   smooth_info->nside = nside;
   smooth_info->max_pixrad = max_pixrad(nside);
-  smooth_info->kernel_gamma = gamma;
+  smooth_info->kernel_gamma_value = gamma;
   projected_kernel_init(&smooth_info->kernel);
 #else
   error("Code was compiled without Healpix C library");
@@ -111,7 +111,7 @@ void chealpix_smoothing_get_pixel_range(struct chealpix_smoothing_info *smooth_i
 
   /* Input radius is the angle corresponding to the smoothing length,
      so we need to find all pixels within kernel_gamma*radius */
-  const double search_radius = radius*smooth_info->kernel_gamma;
+  const double search_radius = radius*smooth_info->kernel_gamma_value;
 
   /* Small particles get added to a single pixel */
   if(search_radius < smooth_info->max_pixrad) {
@@ -147,7 +147,7 @@ void chealpix_smoothing_find_neighbours(struct chealpix_smoothing_info *smooth_i
 
   /* Input radius is the angle corresponding to the smoothing length,
      so we need to find all pixels within kernel_gamma*radius */
-  const double search_radius = radius*smooth_info->kernel_gamma;
+  const double search_radius = radius*smooth_info->kernel_gamma_value;
     
   /* Find all pixels with centres within the angular radius */
   int nr_ranges;

@@ -332,6 +332,7 @@ void lightcone_struct_restore(struct lightcone_props *props, FILE *stream) {
 
   /* Re-initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
+  chealpix_smoothing_init(&props->csmoothing_info, props->nside, kernel_gamma);
 
   /* Re-allocate particle data buffers */
   lightcone_allocate_buffers(props);
@@ -567,6 +568,7 @@ void lightcone_init(struct lightcone_props *props, const int index,
 
   /* Initialise C++ smoothing code */
   props->smoothing_info = healpix_smoothing_init(props->nside, kernel_gamma);
+  chealpix_smoothing_init(&props->csmoothing_info, props->nside, kernel_gamma);
 
   /* Update lightcone pixel data if more than this number of updates are
    * buffered */
@@ -637,7 +639,13 @@ void lightcone_init(struct lightcone_props *props, const int index,
   }
 
   /* Set up the array of lightcone shells for this lightcone */
-  size_t total_nr_pix = healpix_smoothing_get_npix(props->smoothing_info);
+  size_t total_nr_pix;
+  if(props->index % 2 == 0) {
+    total_nr_pix = healpix_smoothing_get_npix(props->smoothing_info);
+  } else {
+    total_nr_pix = chealpix_smoothing_get_npix(&props->csmoothing_info);    
+  }
+
   props->shell = lightcone_shell_array_init(
       cosmo, props->radius_file, props->nr_maps, props->map_type, props->nside,
       total_nr_pix, props->part_type, props->buffer_chunk_size,
@@ -931,10 +939,17 @@ void lightcone_flush_map_updates(struct lightcone_props *props,
 
   /* Apply updates to all current shells */
   for (int shell_nr = 0; shell_nr < props->nr_shells; shell_nr += 1) {
-    if (props->shell[shell_nr].state == shell_current)
-      lightcone_shell_flush_map_updates(
-          &props->shell[shell_nr], tp, props->part_type, props->smoothing_info,
-          props->max_map_update_send_size_mb, props->verbose);
+    if (props->shell[shell_nr].state == shell_current) {
+      if(props->index % 2 == 0) {
+        lightcone_shell_flush_map_updates(
+            &props->shell[shell_nr], tp, props->part_type, props->smoothing_info,
+            NULL, props->max_map_update_send_size_mb, props->verbose);
+      } else {
+        lightcone_shell_flush_map_updates(
+            &props->shell[shell_nr], tp, props->part_type, NULL,
+            &props->csmoothing_info, props->max_map_update_send_size_mb, props->verbose);
+      }
+    }
   }
 
   /* Report runtime */
@@ -1000,11 +1015,19 @@ void lightcone_dump_completed_shells(struct lightcone_props *props,
         num_shells_written += 1;
 
         /* Apply any buffered updates for this shell, if we didn't already */
-        if (need_flush)
-          lightcone_shell_flush_map_updates(
-              &props->shell[shell_nr], tp, props->part_type,
-              props->smoothing_info, props->max_map_update_send_size_mb,
-              props->verbose);
+        if (need_flush) {
+          if(props->index % 2 == 0) {
+            lightcone_shell_flush_map_updates(
+                &props->shell[shell_nr], tp, props->part_type,
+                props->smoothing_info, NULL, props->max_map_update_send_size_mb,
+                props->verbose);
+          } else {
+            lightcone_shell_flush_map_updates(
+                &props->shell[shell_nr], tp, props->part_type,
+                NULL, &props->csmoothing_info, props->max_map_update_send_size_mb,
+                props->verbose);            
+          }
+        }
 
         /* Set the baseline value for the maps */
         for (int map_nr = 0; map_nr < nr_maps; map_nr += 1)
@@ -1153,6 +1176,7 @@ void lightcone_clean(struct lightcone_props *props) {
 
   /* Tidy up C++ healpix smoothing code */
   healpix_smoothing_clean(props->smoothing_info);
+  chealpix_smoothing_clean(&props->csmoothing_info);
 
   /* Free lists of output quantities */
   for (int ptype = 0; ptype < swift_type_count; ptype += 1)
@@ -1489,7 +1513,11 @@ void lightcone_buffer_map_update(struct lightcone_props *props,
 
   /* Get angular coordinates of the particle */
   double theta, phi;
-  healpix_smoothing_vec2ang(props->smoothing_info, x_cross, &theta, &phi);
+  if(props->index % 2 == 0) {
+    healpix_smoothing_vec2ang(props->smoothing_info, x_cross, &theta, &phi);
+  } else {
+    chealpix_smoothing_vec2ang(&props->csmoothing_info, x_cross, &theta, &phi);
+  }
 
   /* Get angular size of the particle */
   double radius;

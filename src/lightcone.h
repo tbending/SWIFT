@@ -25,6 +25,7 @@
 
 /* Local headers */
 #include "healpix_smoothing.h"
+#include "chealpix_smoothing.h"
 #include "lightcone_map_types.h"
 #include "lightcone_particle_io.h"
 #include "lightcone_replications.h"
@@ -209,6 +210,9 @@ struct lightcone_props {
 
   /*! Healpix smoothing information */
   struct healpix_smoothing_info *smoothing_info;
+
+  /*! Healpix C smoothing information */
+  struct chealpix_smoothing_info csmoothing_info;
 
   /*! Output fields */
   struct lightcone_io_field_list particle_fields[swift_type_count];

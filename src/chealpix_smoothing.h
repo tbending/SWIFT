@@ -7,7 +7,7 @@
 struct chealpix_smoothing_info {
   int nside;
   double max_pixrad;
-  double kernel_gamma;
+  double kernel_gamma_value;
   struct projected_kernel_table kernel;
 };
 
