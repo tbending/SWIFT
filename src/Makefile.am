@@ -69,7 +69,7 @@ include_HEADERS += chemistry_csds.h star_formation_csds.h
 include_HEADERS += mesh_gravity.h mesh_gravity_mpi.h mesh_gravity_patch.h mesh_gravity_sort.h row_major_id.h
 include_HEADERS += lightcone.h lightcone_particle_io.h lightcone_replications.h lightcone_crossing.h
 include_HEADERS += lightcone_array.h lightcone_map.h lightcone_map_types.h particle_buffer.h exchange_structs.h
-include_HEADERS += healpix_smoothing.h projected_kernel.h lightcone_shell.h
+include_HEADERS += healpix_smoothing.h chealpix_smoothing.h projected_kernel.h lightcone_shell.h
 include_HEADERS += hdf5_object_to_blob.h ic_info.h healpix_util.h
 
 # source files for EAGLE extra I/O
@@ -160,7 +160,7 @@ AM_SOURCES += neutrino/Default/fermi_dirac.c neutrino/Default/neutrino.c neutrin
 AM_SOURCES += rt_parameters.c
 AM_SOURCES += lightcone.c lightcone_particle_io.c lightcone_replications.c particle_buffer.c
 AM_SOURCES += lightcone_array.c lightcone_map.c lightcone_map_types.c exchange_structs.c
-AM_SOURCES += healpix_smoothing.cxx projected_kernel.c lightcone_shell.c
+AM_SOURCES += healpix_smoothing.cxx chealpix_smoothing.c projected_kernel.c lightcone_shell.c
 AM_SOURCES += hdf5_object_to_blob.c ic_info.c healpix_util.c
 AM_SOURCES += $(EAGLE_EXTRA_IO_SOURCES)
 AM_SOURCES += $(QLA_COOLING_SOURCES) $(QLA_EAGLE_COOLING_SOURCES) 
