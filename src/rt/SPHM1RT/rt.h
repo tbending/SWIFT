@@ -195,12 +195,6 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
 
 
   for (int g = 0; g < RT_NGROUPS; g++) {
-    //if (g==1) {
-    //  printf("rpd->conserved[g].energy=%.4e\n",rpd->conserved[g].energy); 
-    //  printf("rpd->conserved[g].flux[0]=%.4e\n",rpd->conserved[g].flux[0]);
-    //  printf("rpd->params.cred=%.4e\n",rpd->params.cred);
-    //  getchar();
-    //}
     /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec */
     fradmag = sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] 
             + rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
@@ -209,12 +203,6 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
     rpd->conserved[g].flux[0] = rpd->conserved[g].flux[0]/fox;
     rpd->conserved[g].flux[1] = rpd->conserved[g].flux[1]/fox;
     rpd->conserved[g].flux[2] = rpd->conserved[g].flux[2]/fox;
-    //if (g==1) {
-    //  printf("after fox=%.4e\n",fox); 
-    //  printf("after rpd->conserved[g].energy=%.4e\n",rpd->conserved[g].energy); 
-    //  printf("after rpd->conserved[g].flux[0]=%.4e\n",rpd->conserved[g].flux[0]);
-    //  getchar();
-    //}
   }
 
 
@@ -499,12 +487,6 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
     rpd->diffusion[g].alpha = alpha_diss;
     rpd->viscosity[g].alpha = alpha_f_diss;
 
-    //if (g==1) {
-    //  printf("divf=%.4e\n",divf);
-    //  printf("rpd->diffusion[g].alpha=%.4e\n",rpd->diffusion[g].alpha); 
-    //  printf("rpd->viscosity[g].alpha=%.4e\n",rpd->viscosity[g].alpha);
-    //  getchar();
-    //}
   }
 
 }
@@ -524,13 +506,6 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     rpd->conserved[g].flux[0] += rpd->cdt[g].flux[0] * dt;
     rpd->conserved[g].flux[1] += rpd->cdt[g].flux[1] * dt;
     rpd->conserved[g].flux[2] += rpd->cdt[g].flux[2] * dt;
-    //if (g==1) {
-    //  printf("rpd->cdt[g].energy=%.4e\n",rpd->cdt[g].energy); 
-    //  printf("rpd->cdt[g].flux[0]=%.4e\n",rpd->cdt[g].flux[0]);
-    //  printf("rpd->cdt[g].flux[1]=%.4e\n",rpd->cdt[g].flux[1]);
-    //  printf("rpd->cdt[g].flux[2]=%.4e\n",rpd->cdt[g].flux[2]);
-    //  getchar();
-    //}
   }
 
 

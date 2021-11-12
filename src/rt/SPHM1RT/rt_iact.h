@@ -408,20 +408,6 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         radiation_divergence_SPH(fradi, fradj, mi, mj, pi->force.f, pj->force.f, rhoi, rhoj,
         wi_dr, wj_dr, dx, r, diffmode, &divfipar, &divfjpar);
 
-        //if (g==1) {
-        //  printf("rpi->conserved[g].energy=%.4e\n",rpi->conserved[g].energy); 
-        //  printf("rpj->conserved[g].energy=%.4e\n",rpj->conserved[g].energy); 
-        //  printf("rpi->conserved[g].flux[0]=%.4e\n",rpi->conserved[g].flux[0]);
-        //  printf("rpj->conserved[g].flux[0]=%.4e\n",rpj->conserved[g].flux[0]);
-        //  printf("uradi=%.4e\n",uradi);
-        //  printf("uradj=%.4e\n",uradj);
-        //  printf("fradi[0]=%.4e\n",fradi[0]);
-        //  printf("fradj[0]=%.4e\n",fradj[0]);
-        //  printf("divfipar=%.4e\n",divfipar); 
-        //  printf("divfjpar=%.4e\n",divfjpar);
-        //  getchar();
-        //}
-
         /* Calculate the radiation flux term */
 
         funiti[0] = fradi[0] / (fradmagi + FLT_MIN);
