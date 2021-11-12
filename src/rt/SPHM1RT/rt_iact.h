@@ -175,12 +175,12 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_loop_functi
         /*******************************/
         divfi = 0.0f;
         divfj = 0.0f;
-        fradi[0] = fradmfi[g+0];
-        fradi[1] = fradmfi[g+1];
-        fradi[2] = fradmfi[g+2];
-        fradj[0] = fradmfj[g+0];
-        fradj[1] = fradmfj[g+1];
-        fradj[2] = fradmfj[g+2];
+        fradi[0] = fradmfi[3*g+0];
+        fradi[1] = fradmfi[3*g+1];
+        fradi[2] = fradmfi[3*g+2];
+        fradj[0] = fradmfj[3*g+0];
+        fradj[1] = fradmfj[3*g+1];
+        fradj[2] = fradmfj[3*g+2];
         radiation_divergence_SPH(fradi, fradj, mi, mj, rpi->force.f, rpj->force.f,
         rhoi, rhoj, wi_dr, wj_dr, dx, r, diffmode, &divfi, &divfj);
         rpi->viscosity[g].divf += divfi;
@@ -358,12 +358,12 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         uradj = uradmfj[g]; 
         uradi0 = uradi * credi / cred0;
         uradj0 = uradj * credj / cred0;
-        fradi[0] = fradmfi[g+0];
-        fradi[1] = fradmfi[g+1];
-        fradi[2] = fradmfi[g+2];
-        fradj[0] = fradmfj[g+0];
-        fradj[1] = fradmfj[g+1];
-        fradj[2] = fradmfj[g+2];
+        fradi[0] = fradmfi[3*g+0];
+        fradi[1] = fradmfi[3*g+1];
+        fradi[2] = fradmfi[3*g+2];
+        fradj[0] = fradmfj[3*g+0];
+        fradj[1] = fradmfj[3*g+1];
+        fradj[2] = fradmfj[3*g+2];
         graduci[0] = rpi->diffusion[g].graduradc[0];
         graduci[1] = rpi->diffusion[g].graduradc[1];
         graduci[2] = rpi->diffusion[g].graduradc[2];
@@ -379,6 +379,24 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         divfi = rpi->viscosity[g].divf;
         divfj = rpj->viscosity[g].divf;
 
+
+#if defined(HYDRO_DIMENSION_1D)
+        fradi[1] = 0.0f;
+        fradi[2] = 0.0f;
+        fradj[1] = 0.0f;
+        fradj[2] = 0.0f;
+#elif defined(HYDRO_DIMENSION_2D)   
+        fradi[2] = 0.0f;
+        fradj[2] = 0.0f;
+#endif
+
+        fradmagi =
+            sqrtf(fradi[0] * fradi[0] + fradi[1] * fradi[1] +
+                  fradi[2] * fradi[2] + FLT_MIN);
+        fradmagj =
+            sqrtf(fradj[0] * fradj[0] + fradj[1] * fradj[1] +
+                  fradj[2] * fradj[2] + FLT_MIN);
+
         /*******************************/
         /* CALCULATIONS OF TWO MOMENT EQUATIONS */
         /*******************************/
@@ -390,27 +408,21 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         radiation_divergence_SPH(fradi, fradj, mi, mj, pi->force.f, pj->force.f, rhoi, rhoj,
         wi_dr, wj_dr, dx, r, diffmode, &divfipar, &divfjpar);
 
+        //if (g==1) {
+        //  printf("rpi->conserved[g].energy=%.4e\n",rpi->conserved[g].energy); 
+        //  printf("rpj->conserved[g].energy=%.4e\n",rpj->conserved[g].energy); 
+        //  printf("rpi->conserved[g].flux[0]=%.4e\n",rpi->conserved[g].flux[0]);
+        //  printf("rpj->conserved[g].flux[0]=%.4e\n",rpj->conserved[g].flux[0]);
+        //  printf("uradi=%.4e\n",uradi);
+        //  printf("uradj=%.4e\n",uradj);
+        //  printf("fradi[0]=%.4e\n",fradi[0]);
+        //  printf("fradj[0]=%.4e\n",fradj[0]);
+        //  printf("divfipar=%.4e\n",divfipar); 
+        //  printf("divfjpar=%.4e\n",divfjpar);
+        //  getchar();
+        //}
+
         /* Calculate the radiation flux term */
-#if defined(HYDRO_DIMENSION_1D)
-        fradmagi =
-            sqrtf(fradi[0] * fradi[0] + FLT_MIN);
-        fradmagj =
-            sqrtf(fradj[0] * fradj[0] + FLT_MIN);
-#elif defined(HYDRO_DIMENSION_2D)   
-        fradmagi =
-            sqrtf(fradi[0] * fradi[0] + fradi[1] * fradi[1]
-            + FLT_MIN);
-        fradmagj =
-            sqrtf(fradj[0] * fradj[0] + fradj[1] * fradj[1]
-            + FLT_MIN);
-#else
-        fradmagi =
-            sqrtf(fradi[0] * fradi[0] + fradi[1] * fradi[1] +
-                  fradi[2] * fradi[2] + FLT_MIN);
-        fradmagj =
-            sqrtf(fradj[0] * fradj[0] + fradj[1] * fradj[1] +
-                  fradj[2] * fradj[2] + FLT_MIN);
-#endif
 
         funiti[0] = fradi[0] / (fradmagi + FLT_MIN);
         funiti[1] = fradi[1] / (fradmagi + FLT_MIN);
@@ -419,15 +431,7 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         funitj[1] = fradj[1] / (fradmagj + FLT_MIN);
         funitj[2] = fradj[2] / (fradmagj + FLT_MIN);
 
-#if defined(HYDRO_DIMENSION_1D)
-        funiti[1] = 0.0f;
-        funiti[2] = 0.0f;
-        funitj[1] = 0.0f;
-        funitj[2] = 0.0f;
-#elif defined(HYDRO_DIMENSION_2D)   
-        funiti[2] = 0.0f;
-        funitj[2] = 0.0f;
-#endif 
+
 
         /* Eddington factor (or optical thickness estimator?) */
         foxi = max(expf(-rpi->params.chi[g] * rhoi * hi) , fradmagi / (credi + FLT_MIN) / (uradi + FLT_MIN));
@@ -468,7 +472,8 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         diff_dfrad_term_j[0] = 0.0f;
         diff_dfrad_term_j[1] = 0.0f;
         diff_dfrad_term_j[2] = 0.0f;
-        radiation_gradient_aniso_SPH(uradi0, uradj0, mi, mj, pi->force.f, pj->force.f, rhoi, rhoj, wi_dr, wj_dr, F_tensori, F_tensorj, 
+        radiation_gradient_aniso_SPH(uradi0, uradj0, mi, mj, pi->force.f, pj->force.f, 
+        rhoi, rhoj, wi_dr, wj_dr, F_tensori, F_tensorj, 
         dx, r, diffmodeaniso, diff_dfrad_term_i, diff_dfrad_term_j);
         diff_dfrad_term_i[0] *= - cred0 * cred0 / mj;
         diff_dfrad_term_i[1] *= - cred0 * cred0 / mj;
@@ -477,11 +482,10 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         diff_dfrad_term_j[1] *= - cred0 * cred0 / mi;
         diff_dfrad_term_j[2] *= - cred0 * cred0 / mi;
 
+
         /*******************************/
         /* HERE COME THE CALCULATIONS OF ARTIFICIAL DISSIPATION */
         /*******************************/
-
-
         fraduniti[0] = fradi[0] / (fradmagi + FLT_MIN);
         fraduniti[1] = fradi[1] / (fradmagi + FLT_MIN);
         fraduniti[2] = fradi[2] / (fradmagi + FLT_MIN);
@@ -517,7 +521,6 @@ __attribute__((always_inline)) INLINE static void radiation_force_loop_function(
         }
 
         /* compute the anisotropic diffusion */
-
         hid_inv_temp = pow_dimension_plus_one(hi_inv); /* 1/h^(d+1) */
         wi_dr_temp = hid_inv_temp * wi_dx;
         hjd_inv_temp = pow_dimension_plus_one(hj_inv); /* 1/h^(d+1) */

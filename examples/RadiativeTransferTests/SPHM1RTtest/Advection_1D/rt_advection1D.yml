@@ -1,0 +1,53 @@
+MetaData:
+  run_name: "RT_advection-1D"
+
+# Define the system of units to use internally. 
+InternalUnitSystem:
+  UnitMass_in_cgs:     1.
+  UnitLength_in_cgs:   1.
+  UnitVelocity_in_cgs: 1.
+  UnitCurrent_in_cgs:  1.
+  UnitTemp_in_cgs:     1.
+
+# Parameters governing the time integration
+TimeIntegration:
+  time_begin: 0.    # The starting time of the simulation (in internal units).
+  time_end:   4.e-1  # The end time of the simulation (in internal units).
+  dt_min:     1.e-8 # The minimal time-step size of the simulation (in internal units).
+  dt_max:     1.e-02  # The maximal time-step size of the simulation (in internal units).
+
+# Parameters governing the snapshots
+Snapshots:
+  basename:            output # Common part of the name of output files
+  time_first:          0.    # Time of the first output (in internal units)
+  delta_time:          4.e-2
+
+# Parameters governing the conserved quantities statistics
+Statistics:
+  time_first:          0.
+  delta_time:          4.e-2 # Time between statistics output
+
+# Parameters for the hydrodynamics scheme
+SPH:
+  resolution_eta:        1.2348   # Target smoothing length in units of the mean inter-particle separation (1.2348 == 48Ngbs with the cubic spline kernel).
+  CFL_condition:         0.6      # Courant-Friedrich-Levy condition for time integration.
+  minimal_temperature:   10.      # Kelvin
+
+# Parameters related to the initial conditions
+InitialConditions:
+  file_name:  ./advection_1D.hdf5  # The file to read
+  periodic:   1                     # peridoc ICs
+
+# Properties of the stars
+Stars:
+  overwrite_birth_time: 1
+  birth_time:           -1   # Give the star in the ICs a decent birth time
+
+Scheduler:
+  max_top_level_cells: 32
+
+Restarts:
+  delta_hours:        72        # (Optional) decimal hours between dumps of restart files.
+
+SPHM1RT:
+    cred: 2.99792458e10              # reduce the speed of light in the code unit

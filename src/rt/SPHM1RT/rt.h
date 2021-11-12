@@ -183,17 +183,6 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
 
   float fradmag, fox;
 
-  for (int g = 0; g < RT_NGROUPS; g++) {
-    /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec */
-    fradmag = sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] 
-            + rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
-            rpd->conserved[g].flux[2] * rpd->conserved[g].flux[2] + FLT_MIN);
-    fox = max(1.f, fabsf(fradmag / (rpd->conserved[g].energy + FLT_MIN) / (rpd->params.cred + FLT_MIN)));
-    rpd->conserved[g].flux[0] = rpd->conserved[g].flux[0]/fox;
-    rpd->conserved[g].flux[1] = rpd->conserved[g].flux[1]/fox;
-    rpd->conserved[g].flux[2] = rpd->conserved[g].flux[2]/fox;
-  }
-
   /* To avoid radiation reaching other dimension and violating conservation */
   for (int g = 0; g < RT_NGROUPS; g++) {  
     if (hydro_dimension < 1.001f){
@@ -203,6 +192,32 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
         rpd->conserved[g].flux[2] = 0.0f; 
     }
   }
+
+
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    //if (g==1) {
+    //  printf("rpd->conserved[g].energy=%.4e\n",rpd->conserved[g].energy); 
+    //  printf("rpd->conserved[g].flux[0]=%.4e\n",rpd->conserved[g].flux[0]);
+    //  printf("rpd->params.cred=%.4e\n",rpd->params.cred);
+    //  getchar();
+    //}
+    /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec */
+    fradmag = sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] 
+            + rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
+            rpd->conserved[g].flux[2] * rpd->conserved[g].flux[2] + FLT_MIN);
+    fox = max(1.f, fabsf(fradmag / (rpd->conserved[g].energy + FLT_MIN) / (rpd->params.cred + FLT_MIN)));
+    rpd->conserved[g].flux[0] = rpd->conserved[g].flux[0]/fox;
+    rpd->conserved[g].flux[1] = rpd->conserved[g].flux[1]/fox;
+    rpd->conserved[g].flux[2] = rpd->conserved[g].flux[2]/fox;
+    //if (g==1) {
+    //  printf("after fox=%.4e\n",fox); 
+    //  printf("after rpd->conserved[g].energy=%.4e\n",rpd->conserved[g].energy); 
+    //  printf("after rpd->conserved[g].flux[0]=%.4e\n",rpd->conserved[g].flux[0]);
+    //  getchar();
+    //}
+  }
+
+
 
   for (int g = 0; g < RT_NGROUPS; g++) { 
     rpd->viscosity[g].divf = 0.0f;  
@@ -256,13 +271,11 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 
   struct rt_part_data* rpd = &p->rt_data;
 
-  rt_init_part(p);
-  rt_reset_part(p);
-
   for (int g = 0; g < RT_NGROUPS; g++) {   
     rpd->viscosity[g].alpha = 1.0f;
     rpd->diffusion[g].alpha = 1.0f;
     rpd->params.chi[g] = rt_props->chi[g];
+    rpd->viscosity[g].divf_previous_step = FLT_MIN;
   }
 
   /* We can get parameters for diffusion (force loop) */
@@ -271,6 +284,12 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 
   rpd->force.f = 1.0f;
 
+  rpd->dt = 1.0f;
+
+
+
+  rt_init_part(p);
+  rt_reset_part(p);
 
 }
 
@@ -480,6 +499,12 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
     rpd->diffusion[g].alpha = alpha_diss;
     rpd->viscosity[g].alpha = alpha_f_diss;
 
+    //if (g==1) {
+    //  printf("divf=%.4e\n",divf);
+    //  printf("rpd->diffusion[g].alpha=%.4e\n",rpd->diffusion[g].alpha); 
+    //  printf("rpd->viscosity[g].alpha=%.4e\n",rpd->viscosity[g].alpha);
+    //  getchar();
+    //}
   }
 
 }
@@ -499,6 +524,13 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     rpd->conserved[g].flux[0] += rpd->cdt[g].flux[0] * dt;
     rpd->conserved[g].flux[1] += rpd->cdt[g].flux[1] * dt;
     rpd->conserved[g].flux[2] += rpd->cdt[g].flux[2] * dt;
+    //if (g==1) {
+    //  printf("rpd->cdt[g].energy=%.4e\n",rpd->cdt[g].energy); 
+    //  printf("rpd->cdt[g].flux[0]=%.4e\n",rpd->cdt[g].flux[0]);
+    //  printf("rpd->cdt[g].flux[1]=%.4e\n",rpd->cdt[g].flux[1]);
+    //  printf("rpd->cdt[g].flux[2]=%.4e\n",rpd->cdt[g].flux[2]);
+    //  getchar();
+    //}
   }
 
 
@@ -507,19 +539,34 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
 
   for (int g = 0; g < RT_NGROUPS; g++) {
     dfrac = -rpd->params.chi[g] * p->rho * rpd->params.cred;
-    rpd->conserved[g].flux[0] *= expf(dfrac * rpd->dt); 
-    rpd->conserved[g].flux[1] *= expf(dfrac * rpd->dt); 
-    rpd->conserved[g].flux[2] *= expf(dfrac * rpd->dt); 
+    rpd->conserved[g].flux[0] *= expf(dfrac * dt); 
+    rpd->conserved[g].flux[1] *= expf(dfrac * dt); 
+    rpd->conserved[g].flux[2] *= expf(dfrac * dt); 
 
     /* update urad */
     /* limiter to avoid negative urad */
     /* negative urad will make the dissipation (diffusion) unstable) */
     if (rpd->conserved[g].energy < 0.0f) {
-      rpd->conserved[g].energy = 0.0f;
+      rpd->conserved[g].energy = FLT_MIN;
+      rpd->conserved[g].flux[0] = FLT_MIN;
+      rpd->conserved[g].flux[1] = FLT_MIN;
+      rpd->conserved[g].flux[2] = FLT_MIN;
     }
 
     /* save next time step */
     rpd->viscosity[g].divf_previous_step = rpd->viscosity[g].divf;
+  }
+
+  rpd->dt = dt;
+
+  /* To avoid radiation reaching other dimension and violating conservation */
+  for (int g = 0; g < RT_NGROUPS; g++) {  
+    if (hydro_dimension < 1.001f){
+        rpd->conserved[g].flux[1] = 0.0f;   
+    }
+    if (hydro_dimension < 2.001f){
+        rpd->conserved[g].flux[2] = 0.0f; 
+    }
   }
 
 

@@ -52,7 +52,7 @@ INLINE static int rt_read_particles(const struct part* parts,
                             parts, rt_data.conserved[phg].energy);
     sprintf(fieldname, "PhotonFluxesGroup%d", phg + 1);
     list[count++] = io_make_input_field(fieldname, FLOAT, 3, OPTIONAL,
-                                        UNIT_CONV_RADIATION_FLUX, parts,
+                                        UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS, parts,
                                         rt_data.conserved[phg].flux);
   }
 
@@ -109,13 +109,13 @@ INLINE static int rt_write_particles(const struct part* parts,
   int num_elements = 2;
 
   list[0] = io_make_output_field_convert_part(
-      "PhotonEnergies", FLOAT, RT_NGROUPS, UNIT_CONV_ENERGY, 0, parts,
+      "PhotonEnergies", FLOAT, RT_NGROUPS, UNIT_CONV_ENERGY_PER_UNIT_MASS, 0, parts,
       /*xparts=*/NULL, rt_convert_conserved_photon_energies,
-      "Photon Energies (all groups)");
+      "Photon Energies per mass (all groups)");
   list[1] = io_make_output_field_convert_part(
-      "PhotonFluxes", FLOAT, 3 * RT_NGROUPS, UNIT_CONV_RADIATION_FLUX, 0, parts,
+      "PhotonFluxes", FLOAT, 3 * RT_NGROUPS, UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS, 0, parts,
       /*xparts=*/NULL, rt_convert_conserved_photon_fluxes,
-      "Photon Fluxes (all groups; x, y, and z coordinates)");
+      "Photon Fluxes per mass (all groups; x, y, and z coordinates)");
 
   return num_elements;
 }
@@ -153,6 +153,100 @@ INLINE static void rt_write_flavour(hid_t h_grp, hid_t h_grp_columns,
   /* Write photon group counts */
   /* ------------------------- */
   io_write_attribute_i(h_grp, "PhotonGroupNumber", RT_NGROUPS);
+
+
+  /* Write photon group names now */
+  /* ---------------------------- */
+
+  /* Generate Energy Group names */
+  char names_energy[RT_NGROUPS * RT_LABELS_SIZE];
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    char newEname[RT_LABELS_SIZE];
+    sprintf(newEname, "Group%d", g + 1);
+    strcpy(names_energy + g * RT_LABELS_SIZE, newEname);
+  }
+
+  /* Now write them down */
+  hid_t type = H5Tcopy(io_hdf5_type(FLOAT));
+  type = H5Tcopy(H5T_C_S1);
+  H5Tset_size(type, RT_LABELS_SIZE);
+
+  hsize_t dimsE[1] = {RT_NGROUPS};
+  hid_t spaceE = H5Screate_simple(1, dimsE, NULL);
+  hid_t dsetE = H5Dcreate(h_grp_columns, "PhotonEnergies", type, spaceE,
+                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dsetE, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, names_energy);
+  H5Dclose(dsetE);
+
+  /* Generate Fluxes Group Names */
+  char names_fluxes[3 * RT_NGROUPS * RT_LABELS_SIZE];
+  int i = 0;
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    char newFnameX[RT_LABELS_SIZE];
+    sprintf(newFnameX, "Group%dX", g + 1);
+    strcpy(names_fluxes + i * RT_LABELS_SIZE, newFnameX);
+    i++;
+    char newFnameY[RT_LABELS_SIZE];
+    sprintf(newFnameY, "Group%dY", g + 1);
+    strcpy(names_fluxes + i * RT_LABELS_SIZE, newFnameY);
+    i++;
+    char newFnameZ[RT_LABELS_SIZE];
+    sprintf(newFnameZ, "Group%dZ", g + 1);
+    strcpy(names_fluxes + i * RT_LABELS_SIZE, newFnameZ);
+    i++;
+  }
+
+  /* Now write them down */
+  hsize_t dimsF[1] = {3 * RT_NGROUPS};
+  hid_t spaceF = H5Screate_simple(1, dimsF, NULL);
+  hid_t dsetF = H5Dcreate(h_grp_columns, "PhotonFluxes", type, spaceF,
+                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dsetF, type, H5S_ALL, H5S_ALL, H5P_DEFAULT, names_fluxes);
+  H5Dclose(dsetF);
+
+  H5Tclose(type);
+
+  /* Write reduced speed of light */
+  /* ---------------------------- */
+  hid_t type2 = H5Tcopy(io_hdf5_type(FLOAT));
+
+  hsize_t dims2[1] = {1};
+  hid_t space2 = H5Screate_simple(1, dims2, NULL);
+  hid_t dset2 = H5Dcreate(h_grp, "ReducedLightspeed", type2, space2,
+                          H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  H5Dwrite(dset2, type2, H5S_ALL, H5S_ALL, H5P_DEFAULT,
+           &rtp->cred);
+
+  /* Write unit conversion factors for this data set */
+  char buffer2[FIELD_BUFFER_SIZE] = {0};
+  units_cgs_conversion_string(buffer2, snapshot_units, UNIT_CONV_VELOCITY,
+                              /*scale_factor_exponent=*/0);
+  float baseUnitsExp2[5];
+  units_get_base_unit_exponents_array(baseUnitsExp2, UNIT_CONV_VELOCITY);
+  io_write_attribute_f(dset2, "U_M exponent", baseUnitsExp2[UNIT_MASS]);
+  io_write_attribute_f(dset2, "U_L exponent", baseUnitsExp2[UNIT_LENGTH]);
+  io_write_attribute_f(dset2, "U_t exponent", baseUnitsExp2[UNIT_TIME]);
+  io_write_attribute_f(dset2, "U_I exponent", baseUnitsExp2[UNIT_CURRENT]);
+  io_write_attribute_f(dset2, "U_T exponent", baseUnitsExp2[UNIT_TEMPERATURE]);
+  io_write_attribute_f(dset2, "h-scale exponent", 0.f);
+  io_write_attribute_f(dset2, "a-scale exponent", 0.f);
+  io_write_attribute_s(dset2, "Expression for physical CGS units", buffer2);
+
+  /* Write the actual number this conversion factor corresponds to */
+  const double factor2 =
+      units_cgs_conversion_factor(snapshot_units, UNIT_CONV_VELOCITY);
+  io_write_attribute_d(
+      dset2,
+      "Conversion factor to CGS (not including cosmological corrections)",
+      factor2);
+  io_write_attribute_d(
+      dset2,
+      "Conversion factor to physical CGS (including cosmological corrections)",
+      factor2 * pow(e->cosmology->a, 0.f));
+
+  H5Dclose(dset2);
+  H5Tclose(type2);
+
 
 #endif /* HAVE_HDF5 */
 
