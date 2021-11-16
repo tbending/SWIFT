@@ -20,7 +20,6 @@
 #ifndef SWIFT_RT_PROPERTIES_SPHM1RT_H
 #define SWIFT_RT_PROPERTIES_SPHM1RT_H
 
-
 #include "rt_parameters.h"
 
 /**
@@ -81,8 +80,7 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
     const struct unit_system* us, struct swift_params* params,
     struct cosmology* cosmo) {
 
-
-  #define rt_props_default_cfl 0.1f
+#define rt_props_default_cfl 0.1f
 
   rtp->convert_parts_after_zeroth_step = 0;
   rtp->convert_stars_after_zeroth_step = 0;
@@ -92,18 +90,19 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   rtp->cred = cred;
 
   float chi[RT_NGROUPS];
-  int errorint = parser_get_opt_param_float_array(params, "SPHM1RT:chi", RT_NGROUPS, chi);
+  int errorint =
+      parser_get_opt_param_float_array(params, "SPHM1RT:chi", RT_NGROUPS, chi);
 
-  if (errorint==0){
+  if (errorint == 0) {
     printf("SPHM1RT: rtp->chi not found in params\n");
-    for (int g = 0; g < RT_NGROUPS; g++) {  
+    for (int g = 0; g < RT_NGROUPS; g++) {
       rtp->chi[g] = 0.0f;
     }
-  } 
-
+  }
 
   /* get CFL condition */
-  const float CFL = parser_get_opt_param_float(params, "SPHM1RT:CFL_condition", rt_props_default_cfl);
+  const float CFL = parser_get_opt_param_float(params, "SPHM1RT:CFL_condition",
+                                               rt_props_default_cfl);
   rtp->CFL_condition = CFL;
 
   /* After initialisation, print params to screen */

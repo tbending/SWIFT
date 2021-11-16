@@ -45,7 +45,6 @@ struct rt_part_data {
     float flux[3];
   } cdt[RT_NGROUPS];
 
-
   /* Store viscosity information in a separate struct. */
   struct {
 
@@ -71,8 +70,6 @@ struct rt_part_data {
 
   } diffusion[RT_NGROUPS];
 
-
-
   /* Store radiation parameter in a separate struct. */
   struct {
 
@@ -84,7 +81,6 @@ struct rt_part_data {
 
   } params;
 
-
   /* Store hydro information in a separate struct. */
   struct {
 
@@ -92,10 +88,7 @@ struct rt_part_data {
     float f;
 
   } force;
-
-
 };
-
 
 /* Additional RT data in star particle struct */
 struct rt_spart_data {};

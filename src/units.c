@@ -322,8 +322,6 @@ void units_get_base_unit_exponents_array(float baseUnitsExp[5],
       baseUnitsExp[UNIT_TIME] = -3.f;
       break;
 
-
-
     case UNIT_CONV_ENTROPY:
       baseUnitsExp[UNIT_MASS] = 2.f - hydro_gamma;
       baseUnitsExp[UNIT_LENGTH] = 3.f * hydro_gamma - 1.f;

@@ -31,8 +31,6 @@
  * SPHM1RT method described in Chan+21: 2102.08404
  */
 
-
-
 /**
  * @brief Returns the comoving radiation energy of a particle at the last
  * time the particle was kicked.
@@ -42,7 +40,7 @@
 __attribute__((always_inline)) INLINE static void
 radiation_get_comoving_radiation_energy_multifrequency(
     const struct part* restrict p, float energy[RT_NGROUPS]) {
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+  for (int g = 0; g < RT_NGROUPS; g++) {
     energy[g] = p->rt_data.conserved[g].energy;
   }
 }
@@ -55,12 +53,12 @@ radiation_get_comoving_radiation_energy_multifrequency(
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_physical_radiation_energy_multifrequency(
-    const struct part* restrict p, const struct cosmology *cosmo, float energy[RT_NGROUPS]) {
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+    const struct part* restrict p, const struct cosmology* cosmo,
+    float energy[RT_NGROUPS]) {
+  for (int g = 0; g < RT_NGROUPS; g++) {
     energy[g] = p->rt_data.conserved[g].energy;
   }
 }
-
 
 /**
  * @brief Sets the comoving radiation energy of a particle
@@ -70,13 +68,12 @@ radiation_get_physical_radiation_energy_multifrequency(
  * @param u The physical internal energy
  */
 __attribute__((always_inline)) INLINE static void
-radiation_set_comoving_radiation_energy_multifrequency(struct part *p,
-    const float energy[RT_NGROUPS]) {   
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+radiation_set_comoving_radiation_energy_multifrequency(
+    struct part* p, const float energy[RT_NGROUPS]) {
+  for (int g = 0; g < RT_NGROUPS; g++) {
     p->rt_data.conserved[g].energy = energy[g];
   }
 }
-
 
 /**
  * @brief Sets the physical radiation energy of a particle
@@ -86,13 +83,13 @@ radiation_set_comoving_radiation_energy_multifrequency(struct part *p,
  * @param u The physical internal energy
  */
 __attribute__((always_inline)) INLINE static void
-radiation_set_physical_radiation_energy_multifrequency(struct part *p,
-    const struct cosmology *cosmo, const float energy[RT_NGROUPS]) {
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+radiation_set_physical_radiation_energy_multifrequency(
+    struct part* p, const struct cosmology* cosmo,
+    const float energy[RT_NGROUPS]) {
+  for (int g = 0; g < RT_NGROUPS; g++) {
     p->rt_data.conserved[g].energy = energy[g];
-  }      
+  }
 }
-
 
 /**
  * @brief Returns the comoving radiation flux of a particle at the last
@@ -102,16 +99,14 @@ radiation_set_physical_radiation_energy_multifrequency(struct part *p,
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_comoving_radiation_flux_multifrequency(
-    const struct part *restrict p, float fradtemp[3 * RT_NGROUPS]) {
+    const struct part* restrict p, float fradtemp[3 * RT_NGROUPS]) {
 
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+  for (int g = 0; g < RT_NGROUPS; g++) {
     fradtemp[0 + g * 3] = p->rt_data.conserved[g].flux[0];
     fradtemp[1 + g * 3] = p->rt_data.conserved[g].flux[1];
     fradtemp[2 + g * 3] = p->rt_data.conserved[g].flux[2];
-  }     
-
+  }
 }
-
 
 /**
  * @brief Returns the physical radiation flux of a particle at the last
@@ -121,18 +116,15 @@ radiation_get_comoving_radiation_flux_multifrequency(
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_physical_radiation_flux_multifrequency(
-    const struct part *restrict p, 
-    const struct cosmology *cosmo,
+    const struct part* restrict p, const struct cosmology* cosmo,
     float fradtemp[3 * RT_NGROUPS]) {
 
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+  for (int g = 0; g < RT_NGROUPS; g++) {
     fradtemp[0 + g * 3] = p->rt_data.conserved[g].flux[0];
     fradtemp[1 + g * 3] = p->rt_data.conserved[g].flux[1];
     fradtemp[2 + g * 3] = p->rt_data.conserved[g].flux[2];
-  } 
-
+  }
 }
-
 
 /**
  * @brief Sets the comoving radiation flux of a particle
@@ -142,15 +134,14 @@ radiation_get_physical_radiation_flux_multifrequency(
  * @param u The physical internal energy
  */
 __attribute__((always_inline)) INLINE static void
-radiation_set_comoving_radiation_flux_multifrequency(struct part *p,
-                                   const float frad[3 * RT_NGROUPS]) {
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+radiation_set_comoving_radiation_flux_multifrequency(
+    struct part* p, const float frad[3 * RT_NGROUPS]) {
+  for (int g = 0; g < RT_NGROUPS; g++) {
     p->rt_data.conserved[g].flux[0] = frad[0 + g * 3];
     p->rt_data.conserved[g].flux[1] = frad[1 + g * 3];
     p->rt_data.conserved[g].flux[2] = frad[2 + g * 3];
-  } 
+  }
 }
-
 
 /**
  * @brief Sets the physical radiation flux of a particle
@@ -160,16 +151,15 @@ radiation_set_comoving_radiation_flux_multifrequency(struct part *p,
  * @param u The physical internal energy
  */
 __attribute__((always_inline)) INLINE static void
-radiation_set_physical_radiation_flux_multifrequency(struct part *p,
-                                   const struct cosmology *cosmo,
-                                   const float frad[3 * RT_NGROUPS]) {
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+radiation_set_physical_radiation_flux_multifrequency(
+    struct part* p, const struct cosmology* cosmo,
+    const float frad[3 * RT_NGROUPS]) {
+  for (int g = 0; g < RT_NGROUPS; g++) {
     p->rt_data.conserved[g].flux[0] = frad[0 + g * 3];
     p->rt_data.conserved[g].flux[1] = frad[1 + g * 3];
     p->rt_data.conserved[g].flux[2] = frad[2 + g * 3];
-  }                                      
+  }
 }
-
 
 /**
  * @brief Initialisation of the RT density loop related particle data.
@@ -184,31 +174,31 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
   float fradmag, fox;
 
   /* To avoid radiation reaching other dimension and violating conservation */
-  for (int g = 0; g < RT_NGROUPS; g++) {  
-    if (hydro_dimension < 1.001f){
-        rpd->conserved[g].flux[1] = 0.0f;   
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    if (hydro_dimension < 1.001f) {
+      rpd->conserved[g].flux[1] = 0.0f;
     }
-    if (hydro_dimension < 2.001f){
-        rpd->conserved[g].flux[2] = 0.0f; 
+    if (hydro_dimension < 2.001f) {
+      rpd->conserved[g].flux[2] = 0.0f;
     }
   }
-
 
   for (int g = 0; g < RT_NGROUPS; g++) {
-    /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec */
-    fradmag = sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] 
-            + rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
-            rpd->conserved[g].flux[2] * rpd->conserved[g].flux[2] + FLT_MIN);
-    fox = max(1.f, fabsf(fradmag / (rpd->conserved[g].energy + FLT_MIN) / (rpd->params.cred + FLT_MIN)));
-    rpd->conserved[g].flux[0] = rpd->conserved[g].flux[0]/fox;
-    rpd->conserved[g].flux[1] = rpd->conserved[g].flux[1]/fox;
-    rpd->conserved[g].flux[2] = rpd->conserved[g].flux[2]/fox;
+    /* TK: avoid the radiation flux to violate causality. Impose a limit: F<Ec
+     */
+    fradmag =
+        sqrtf(rpd->conserved[g].flux[0] * rpd->conserved[g].flux[0] +
+              rpd->conserved[g].flux[1] * rpd->conserved[g].flux[1] +
+              rpd->conserved[g].flux[2] * rpd->conserved[g].flux[2] + FLT_MIN);
+    fox = max(1.f, fabsf(fradmag / (rpd->conserved[g].energy + FLT_MIN) /
+                         (rpd->params.cred + FLT_MIN)));
+    rpd->conserved[g].flux[0] = rpd->conserved[g].flux[0] / fox;
+    rpd->conserved[g].flux[1] = rpd->conserved[g].flux[1] / fox;
+    rpd->conserved[g].flux[2] = rpd->conserved[g].flux[2] / fox;
   }
 
-
-
-  for (int g = 0; g < RT_NGROUPS; g++) { 
-    rpd->viscosity[g].divf = 0.0f;  
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    rpd->viscosity[g].divf = 0.0f;
     rpd->diffusion[g].graduradc[0] = 0.0f;
     rpd->diffusion[g].graduradc[1] = 0.0f;
     rpd->diffusion[g].graduradc[2] = 0.0f;
@@ -226,10 +216,7 @@ __attribute__((always_inline)) INLINE static void rt_init_part(
 
   /* Update variables. */
   rpd->force.f = omega_inv;
-
 }
-
-
 
 /**
  * @brief Reset of the RT hydro particle data not related to the density.
@@ -243,7 +230,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
 
   struct rt_part_data* rpd = &p->rt_data;
 
-  for (int g = 0; g < RT_NGROUPS; g++) { 
+  for (int g = 0; g < RT_NGROUPS; g++) {
     rpd->cdt[g].energy = 0.0f;
     rpd->cdt[g].flux[0] = 0.0f;
     rpd->cdt[g].flux[1] = 0.0f;
@@ -259,7 +246,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 
   struct rt_part_data* rpd = &p->rt_data;
 
-  for (int g = 0; g < RT_NGROUPS; g++) {   
+  for (int g = 0; g < RT_NGROUPS; g++) {
     rpd->viscosity[g].alpha = 1.0f;
     rpd->diffusion[g].alpha = 1.0f;
     rpd->params.chi[g] = rt_props->chi[g];
@@ -274,11 +261,8 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
 
   rpd->dt = 1.0f;
 
-
-
   rt_init_part(p);
   rt_reset_part(p);
-
 }
 
 /**
@@ -288,8 +272,6 @@ __attribute__((always_inline)) INLINE static void rt_first_init_part(
  */
 __attribute__((always_inline)) INLINE static void rt_init_spart(
     struct spart* restrict sp) {}
-    
-
 
 /**
  * @brief Reset of the RT star particle data not related to the density.
@@ -315,7 +297,7 @@ __attribute__((always_inline)) INLINE static void rt_first_init_spart(
  */
 __attribute__((always_inline)) INLINE static void rt_split_part(struct part* p,
                                                                 double n) {
-  error("RT can't run with split particles for now.");                                                                    
+  error("RT can't run with split particles for now.");
 }
 
 /**
@@ -324,7 +306,7 @@ __attribute__((always_inline)) INLINE static void rt_split_part(struct part* p,
  * @param p The #part.
  */
 __attribute__((always_inline)) INLINE static void rt_part_has_no_neighbours(
-    struct part* p){
+    struct part* p) {
   message("WARNING: found particle without neighbours");
 };
 
@@ -430,65 +412,69 @@ __attribute__((always_inline)) INLINE static void rt_end_gradient(
   /* artificial diffusion for shock capturing */
   const float vsig_diss = rpd->params.cred;
   /* similar to Cullen & Dehnen 2010 switch */
-  float divf, divf_previous_step, urad, viscosity_alpha, diffusion_alpha; 
+  float divf, divf_previous_step, urad, viscosity_alpha, diffusion_alpha;
   float divf_dt, shockest, alphaflim, alpha_f_diss, alpha_f_diss_loc;
-  float alpha_diss_loc, alpha_diss; 
+  float alpha_diss_loc, alpha_diss;
 
   for (int g = 0; g < RT_NGROUPS; g++) {
     divf = rpd->viscosity[g].divf;
     divf_previous_step = rpd->viscosity[g].divf_previous_step;
-    urad = rpd->conserved[g].energy; 
+    urad = rpd->conserved[g].energy;
     viscosity_alpha = rpd->viscosity[g].alpha;
     diffusion_alpha = rpd->diffusion[g].alpha;
     divf_dt = (divf - divf_previous_step) / (rpd->dt + FLT_MIN);
-    shockest = - p->h * p->h / (urad + FLT_MIN) 
-                         / (vsig_diss + FLT_MIN) / (vsig_diss + FLT_MIN) * divf_dt * 200.f;                 
-    alphaflim = max(shockest,0.0f); /* should be positive or 0 */
+    shockest = -p->h * p->h / (urad + FLT_MIN) / (vsig_diss + FLT_MIN) /
+               (vsig_diss + FLT_MIN) * divf_dt * 200.f;
+    alphaflim = max(shockest, 0.0f); /* should be positive or 0 */
     alpha_f_diss = viscosity_alpha;
     alpha_f_diss_loc = 0.0f;
-
 
     /* f diffusion only operates in compression */
     if (divf < 0.0f) {
       /* limit the diffusivity to Courant time step */
       alpha_f_diss_loc = min(alphaflim, 1.0f);
-    } 
+    }
 
     if (alpha_f_diss_loc > alpha_f_diss) {
       /* Reset the value of alpha to the appropriate value */
       alpha_f_diss = alpha_f_diss_loc;
     } else {
-      /* Integrate the alpha forward in time to decay back to alpha = alpha_loc */
+      /* Integrate the alpha forward in time to decay back to alpha = alpha_loc
+       */
       alpha_f_diss =
-        alpha_f_diss_loc + (alpha_f_diss - alpha_f_diss_loc) *
-                        expf(-rpd->dt * vsig_diss * (1.f / (p->h + FLT_MIN) + rpd->params.chi[g] * p->rho));      
+          alpha_f_diss_loc +
+          (alpha_f_diss - alpha_f_diss_loc) *
+              expf(-rpd->dt * vsig_diss *
+                   (1.f / (p->h + FLT_MIN) + rpd->params.chi[g] * p->rho));
     }
 
-    /* alpha inspired by Price 2010: it should vanish where radiation energy difference is small */
-    alpha_diss_loc = 1.0f; 
+    /* alpha inspired by Price 2010: it should vanish where radiation energy
+     * difference is small */
+    alpha_diss_loc = 1.0f;
     alpha_diss = diffusion_alpha;
     if (alpha_diss_loc > alpha_diss) {
       /* Reset the value of alpha to the appropriate value */
       alpha_diss = alpha_diss_loc;
     } else {
-      /* Integrate the alpha forward in time to decay back to alpha = alpha_loc */
+      /* Integrate the alpha forward in time to decay back to alpha = alpha_loc
+       */
       alpha_diss =
-        alpha_diss_loc + (alpha_diss - alpha_diss_loc) *
-                        expf(-rpd->dt * vsig_diss * (0.01f / (p->h + FLT_MIN) + rpd->params.chi[g] * p->rho));      
+          alpha_diss_loc +
+          (alpha_diss - alpha_diss_loc) *
+              expf(-rpd->dt * vsig_diss *
+                   (0.01f / (p->h + FLT_MIN) + rpd->params.chi[g] * p->rho));
     }
 
     /* Cap the dissipation to avoid instabilities */
-    alpha_diss = min(alpha_diss,1.0f);
-    alpha_diss = max(alpha_diss,0.0f); 
+    alpha_diss = min(alpha_diss, 1.0f);
+    alpha_diss = max(alpha_diss, 0.0f);
 
-    alpha_f_diss = min(alpha_f_diss,1.0f);
-    alpha_f_diss = max(alpha_f_diss,0.0f); 
+    alpha_f_diss = min(alpha_f_diss, 1.0f);
+    alpha_f_diss = max(alpha_f_diss, 0.0f);
 
     rpd->diffusion[g].alpha = alpha_diss;
     rpd->viscosity[g].alpha = alpha_f_diss;
-
   }
-
 }
 
 /**
@@ -508,15 +494,14 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     rpd->conserved[g].flux[2] += rpd->cdt[g].flux[2] * dt;
   }
 
-
   /* add frad source term implicitly */
   float dfrac;
 
   for (int g = 0; g < RT_NGROUPS; g++) {
     dfrac = -rpd->params.chi[g] * p->rho * rpd->params.cred;
-    rpd->conserved[g].flux[0] *= expf(dfrac * dt); 
-    rpd->conserved[g].flux[1] *= expf(dfrac * dt); 
-    rpd->conserved[g].flux[2] *= expf(dfrac * dt); 
+    rpd->conserved[g].flux[0] *= expf(dfrac * dt);
+    rpd->conserved[g].flux[1] *= expf(dfrac * dt);
+    rpd->conserved[g].flux[2] *= expf(dfrac * dt);
 
     /* update urad */
     /* limiter to avoid negative urad */
@@ -535,16 +520,14 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
   rpd->dt = dt;
 
   /* To avoid radiation reaching other dimension and violating conservation */
-  for (int g = 0; g < RT_NGROUPS; g++) {  
-    if (hydro_dimension < 1.001f){
-        rpd->conserved[g].flux[1] = 0.0f;   
+  for (int g = 0; g < RT_NGROUPS; g++) {
+    if (hydro_dimension < 1.001f) {
+      rpd->conserved[g].flux[1] = 0.0f;
     }
-    if (hydro_dimension < 2.001f){
-        rpd->conserved[g].flux[2] = 0.0f; 
+    if (hydro_dimension < 2.001f) {
+      rpd->conserved[g].flux[2] = 0.0f;
     }
   }
-
-
 }
 
 /**

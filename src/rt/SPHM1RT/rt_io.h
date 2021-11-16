@@ -52,8 +52,8 @@ INLINE static int rt_read_particles(const struct part* parts,
                             parts, rt_data.conserved[phg].energy);
     sprintf(fieldname, "PhotonFluxesGroup%d", phg + 1);
     list[count++] = io_make_input_field(fieldname, FLOAT, 3, OPTIONAL,
-                                        UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS, parts,
-                                        rt_data.conserved[phg].flux);
+                                        UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS,
+                                        parts, rt_data.conserved[phg].flux);
   }
 
   return count;
@@ -109,11 +109,13 @@ INLINE static int rt_write_particles(const struct part* parts,
   int num_elements = 2;
 
   list[0] = io_make_output_field_convert_part(
-      "PhotonEnergies", FLOAT, RT_NGROUPS, UNIT_CONV_ENERGY_PER_UNIT_MASS, 0, parts,
+      "PhotonEnergies", FLOAT, RT_NGROUPS, UNIT_CONV_ENERGY_PER_UNIT_MASS, 0,
+      parts,
       /*xparts=*/NULL, rt_convert_conserved_photon_energies,
       "Photon Energies per mass (all groups)");
   list[1] = io_make_output_field_convert_part(
-      "PhotonFluxes", FLOAT, 3 * RT_NGROUPS, UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS, 0, parts,
+      "PhotonFluxes", FLOAT, 3 * RT_NGROUPS, UNIT_CONV_ENERGYFLUX_PER_UNIT_MASS,
+      0, parts,
       /*xparts=*/NULL, rt_convert_conserved_photon_fluxes,
       "Photon Fluxes per mass (all groups; x, y, and z coordinates)");
 
@@ -149,11 +151,10 @@ INLINE static void rt_write_flavour(hid_t h_grp, hid_t h_grp_columns,
 
   /* Write scheme name */
   io_write_attribute_s(h_grp, "RT Scheme", RT_IMPLEMENTATION);
-  
+
   /* Write photon group counts */
   /* ------------------------- */
   io_write_attribute_i(h_grp, "PhotonGroupNumber", RT_NGROUPS);
-
 
   /* Write photon group names now */
   /* ---------------------------- */
@@ -214,8 +215,7 @@ INLINE static void rt_write_flavour(hid_t h_grp, hid_t h_grp_columns,
   hid_t space2 = H5Screate_simple(1, dims2, NULL);
   hid_t dset2 = H5Dcreate(h_grp, "ReducedLightspeed", type2, space2,
                           H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5Dwrite(dset2, type2, H5S_ALL, H5S_ALL, H5P_DEFAULT,
-           &rtp->cred);
+  H5Dwrite(dset2, type2, H5S_ALL, H5S_ALL, H5P_DEFAULT, &rtp->cred);
 
   /* Write unit conversion factors for this data set */
   char buffer2[FIELD_BUFFER_SIZE] = {0};
@@ -247,9 +247,7 @@ INLINE static void rt_write_flavour(hid_t h_grp, hid_t h_grp_columns,
   H5Dclose(dset2);
   H5Tclose(type2);
 
-
 #endif /* HAVE_HDF5 */
-
 }
 
 #endif /* SWIFT_RT_IO_SPHM1RT_H */
