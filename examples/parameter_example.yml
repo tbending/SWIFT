@@ -686,6 +686,6 @@ GEARRT:
     star_emission_rates_LSol: [1., 1., 1., 1.]        # (Optional) constant star emission rates for each photon frequency group to use if use_constant_emission_rates is set, in units of Solar Luminosity.
 
 SPHM1RT:
-  cred: 2.99792458e10                                 # reduce the speed of light for the RT solver in the code unit
-  chi:  [0, 0, 0]                                     # (Optional) initial opacity for all gas particle
+  cred: 2.99792458e10                                 # value of reduced speed of light for the RT solver in code units
+  chi:  [0, 0, 0]                                     # (Optional) initial opacity for all gas particles
   CFL_condition: 0.1                                  # (Optional) CFL condition for RT, independent of hydro 

@@ -41,8 +41,8 @@
  * @param r Comoving distance between the two particles.
  * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
  * for ``difference'' but ignore h correction
- * @param gradi gradient of Q for particle i
- * @param gradj gradient of Q for particle j
+ * @param gradi gradient of uin for particle i
+ * @param gradj gradient of uin for particle j
  */
 __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
     const float uini, const float uinj, const float mi, const float mj,
@@ -87,15 +87,6 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
     gradj[0] = -fradprej * dx[0] * r_inv;
     gradj[1] = -fradprej * dx[1] * r_inv;
     gradj[2] = -fradprej * dx[2] * r_inv;
-  } else if (diffmode == -1) {
-    const float fradprei = mj * uinj * rho_j_inv * wj_dr;
-    const float fradprej = mi * uini * rho_i_inv * wi_dr;
-    gradi[0] = fradprei * dx[0] * r_inv;
-    gradi[1] = fradprei * dx[1] * r_inv;
-    gradi[2] = fradprei * dx[2] * r_inv;
-    gradj[0] = -fradprej * dx[0] * r_inv;
-    gradj[1] = -fradprej * dx[1] * r_inv;
-    gradj[2] = -fradprej * dx[2] * r_inv;
   } else {
     error("diffmode should be 0 or 1 or 2");
   }
@@ -109,7 +100,7 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
  * @param mi mass of particle i
  * @param mj mass of particle j
  * @param forcefi a correction factor for spatial variations of hi
- * @param forcefi a correction factor for spatial variations of hj
+ * @param forcefj a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
  * @param wi_dr derivative of kernel i
@@ -119,9 +110,10 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
  * @param dx Comoving vector separating both particles (pi - pj).
  * @param r Comoving distance between the two particles.
  * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
- * for ``difference'' but ignore h correction
- * @param gradi gradient of Q for particle i
- * @param gradj gradient of Q for particle j
+ * for ``difference'' but ignore h correction; mode=3
+ * for ``symmetric'' but ignore h correction;
+ * @param gradi gradient uin for particle i
+ * @param gradj gradient uin for particle j
  */
 __attribute__((always_inline)) INLINE static void radiation_gradient_aniso_SPH(
     const float uini, const float uinj, const float mi, const float mj,
@@ -337,7 +329,8 @@ __attribute__((always_inline)) INLINE static void radiation_divergence_SPH(
  * @param Fanisoj Ftensor j
  * @param dx Comoving vector separating both particles (pi - pj).
  * @param r Comoving distance between the two particles.
- * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
+ * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
+ * for ``difference'' but ignore h correction
  * @param divfi divergence of f for particle i
  * @param divfj divergence of f for particle j
  */

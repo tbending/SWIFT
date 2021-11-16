@@ -37,7 +37,7 @@
  *
  * @param p Pointer to the particle data.
  * @param energy The physical radiation energy.
- * 
+ *
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_comoving_radiation_energy_multifrequency(
@@ -54,7 +54,7 @@ radiation_get_comoving_radiation_energy_multifrequency(
  * @param p Pointer to the particle data.
  * @param cosmo Cosmology data structure.
  * @param energy The physical radiation energy.
- * 
+ *
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_physical_radiation_energy_multifrequency(
@@ -71,7 +71,7 @@ radiation_get_physical_radiation_energy_multifrequency(
  * @param p The particle of interest.
  * @param cosmo Cosmology data structure
  * @param energy The comoving radiation energy
- * 
+ *
  */
 __attribute__((always_inline)) INLINE static void
 radiation_set_comoving_radiation_energy_multifrequency(
@@ -516,10 +516,10 @@ __attribute__((always_inline)) INLINE static void rt_finalise_transport(
     /* limiter to avoid negative urad */
     /* negative urad will make the dissipation (diffusion) unstable) */
     if (rpd->conserved[g].energy < 0.0f) {
-      rpd->conserved[g].energy = FLT_MIN;
-      rpd->conserved[g].flux[0] = FLT_MIN;
-      rpd->conserved[g].flux[1] = FLT_MIN;
-      rpd->conserved[g].flux[2] = FLT_MIN;
+      rpd->conserved[g].energy = 0.0f;
+      rpd->conserved[g].flux[0] = 0.0f;
+      rpd->conserved[g].flux[1] = 0.0f;
+      rpd->conserved[g].flux[2] = 0.0f;
     }
 
     /* save next time step */
