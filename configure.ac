@@ -2523,10 +2523,6 @@ case "$with_rt" in
           # only works with those.
           AC_MSG_ERROR([SPHM1RT: Cannot work with non-integer photon groups])
       fi
-
-      if test "$enable_debugging_checks" = "yes"; then
-          AC_DEFINE([SWIFT_RT_DEBUG_CHECKS], [1], [additional debugging checks for RT])
-      fi
    ;;
    *)
       AC_MSG_ERROR([Unknown radiative transfer scheme: $with_rt])

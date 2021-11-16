@@ -24,8 +24,8 @@
 
 /**
  * @file src/rt/SPHM1RT/rt_properties.h
- * @brief Main header file for the 'none' radiative transfer scheme properties.
- * SPHM1RT method described in Chan+21: 2102.08404
+ * @brief Main header file for the 'SPHM1RT' radiative transfer scheme
+ * properties. SPHM1RT method described in Chan+21: 2102.08404
  */
 
 /**
@@ -39,7 +39,7 @@ struct rt_props {
   /* reduced speed of light in code unit */
   float cred;
 
-  /*! initial mean opacity */
+  /*! initial opacity */
   float chi[RT_NGROUPS];
 
   /* Are we running with hydro or star controlled injection?
@@ -80,8 +80,6 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
     const struct unit_system* us, struct swift_params* params,
     struct cosmology* cosmo) {
 
-#define rt_props_default_cfl 0.1f
-
   rtp->convert_parts_after_zeroth_step = 0;
   rtp->convert_stars_after_zeroth_step = 0;
 
@@ -101,8 +99,8 @@ __attribute__((always_inline)) INLINE static void rt_props_init(
   }
 
   /* get CFL condition */
-  const float CFL = parser_get_opt_param_float(params, "SPHM1RT:CFL_condition",
-                                               rt_props_default_cfl);
+  const float CFL =
+      parser_get_opt_param_float(params, "SPHM1RT:CFL_condition", 0.1f);
   rtp->CFL_condition = CFL;
 
   /* After initialisation, print params to screen */

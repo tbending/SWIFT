@@ -21,21 +21,28 @@
 
 /**
  * @file SPHM1RT/rt_gradients.h
- * @brief
+ * @brief Compute the gradient or divergence according to SPH
  */
 
 /**
  * @brief Compute the gradient according to SPH
  * Note that the differential is: 1/rho * grad(rho * uin)
- * @param r Comoving distance between the two particles.
- * @param qini quantity for particle i to be differentiated
- * @param qinj quantity for particle j to be differentiated
- * @param dx Comoving vector separating both particles (pi - pj).
+ * @param uini quantity for particle i to be differentiated
+ * @param uinj quantity for particle j to be differentiated
+ * @param mi mass of particle i
+ * @param mj mass of particle j
+ * @param forcefi a correction factor for spatial variations of hi
+ * @param forcefi a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
+ * @param wi_dr derivative of kernel i
+ * @param wj_dr derivative of kernel j
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @param r Comoving distance between the two particles.
+ * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
+ * for ``difference'' but ignore h correction
  * @param gradi gradient of Q for particle i
  * @param gradj gradient of Q for particle j
- * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
  */
 __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
     const float uini, const float uinj, const float mi, const float mj,
@@ -97,15 +104,24 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_SPH(
 /**
  * @brief Compute the anistropic gradient according to SPH
  * Note that the differential is: 1/rho * grad(Ftensor * rho * uin)
- * @param r Comoving distance between the two particles.
- * @param qini quantity for particle i to be differentiated
- * @param qinj quantity for particle j to be differentiated
- * @param dx Comoving vector separating both particles (pi - pj).
+ * @param uini quantity for particle i to be differentiated
+ * @param uinj quantity for particle j to be differentiated
+ * @param mi mass of particle i
+ * @param mj mass of particle j
+ * @param forcefi a correction factor for spatial variations of hi
+ * @param forcefi a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
+ * @param wi_dr derivative of kernel i
+ * @param wj_dr derivative of kernel j
+ * @param Fanisoi Ftensor i
+ * @param Fanisoj Ftensor j
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @param r Comoving distance between the two particles.
+ * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
+ * for ``difference'' but ignore h correction
  * @param gradi gradient of Q for particle i
  * @param gradj gradient of Q for particle j
- * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
  */
 __attribute__((always_inline)) INLINE static void radiation_gradient_aniso_SPH(
     const float uini, const float uinj, const float mi, const float mj,
@@ -240,15 +256,22 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_aniso_SPH(
 /**
  * @brief Compute the divergence according to SPH
  * Note that the differential is: 1/rho * div(rho * fin)
- * @param r Comoving distance between the two particles.
  * @param fini quantity for particle i to be differentiated
  * @param finj quantity for particle j to be differentiated
- * @param dx Comoving vector separating both particles (pi - pj).
+ * @param mi mass of particle i
+ * @param mj mass of particle j
+ * @param forcefi a correction factor for spatial variations of hi
+ * @param forcefi a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
+ * @param wi_dr derivative of kernel i
+ * @param wj_dr derivative of kernel j
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @param r Comoving distance between the two particles.
+ * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''; mode=2
+ * for ``difference'' but ignore h correction
  * @param divfi divergence of f for particle i
  * @param divfj divergence of f for particle j
- * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
  */
 __attribute__((always_inline)) INLINE static void radiation_divergence_SPH(
     const float *fini, const float *finj, const float mi, const float mj,
@@ -300,15 +323,23 @@ __attribute__((always_inline)) INLINE static void radiation_divergence_SPH(
 /**
  * @brief Compute the anistropic divergence according to SPH
  * Note that the differential is: 1/rho * div(Ftensor * rho * fin)
- * @param r Comoving distance between the two particles.
- * @param qini quantity for particle i to be differentiated
- * @param qinj quantity for particle j to be differentiated
- * @param dx Comoving vector separating both particles (pi - pj).
+ * @param fini quantity for particle i to be differentiated
+ * @param finj quantity for particle j to be differentiated
+ * @param mi mass of particle i
+ * @param mj mass of particle j
+ * @param forcefi a correction factor for spatial variations of hi
+ * @param forcefi a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
- * @param gradi gradient of Q for particle i
- * @param gradj gradient of Q for particle j
+ * @param wi_dr derivative of kernel i
+ * @param wj_dr derivative of kernel j
+ * @param Fanisoi Ftensor i
+ * @param Fanisoj Ftensor j
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @param r Comoving distance between the two particles.
  * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
+ * @param divfi divergence of f for particle i
+ * @param divfj divergence of f for particle j
  */
 __attribute__((always_inline)) INLINE static void
 radiation_divergence_aniso_SPH(const float *fini, const float *finj,
@@ -397,22 +428,28 @@ radiation_divergence_aniso_SPH(const float *fini, const float *finj,
     *divfj =
         -(tempi - tempj) * mi * rho_j_inv * rho_j_inv * (wi_dr + wj_dr) * 0.5f;
   } else {
-    error("diffmode should be 0 or 1 or 2");
+    error("diffmode should be 0 or 1");
   }
 }
 
 /**
  * @brief Compute the divergence according to SPH
  * Note that the differential is: 1/rho * div(rho * fin)
- * @param r Comoving distance between the two particles.
  * @param fini quantity for particle i to be differentiated
  * @param finj quantity for particle j to be differentiated
- * @param dx Comoving vector separating both particles (pi - pj).
+ * @param mi mass of particle i
+ * @param mj mass of particle j
+ * @param forcefi a correction factor for spatial variations of hi
+ * @param forcefi a correction factor for spatial variations of hj
  * @param rhoi density of particle i
  * @param rhoj density of particle j
- * @param divfi divergence of f for particle i
- * @param divfj divergence of f for particle j
- * @param diffmode mode=0 for ``difference''; mode=1 for ``symmetric''
+ * @param wi_dr derivative of kernel i
+ * @param wj_dr derivative of kernel j
+ * @param dx Comoving vector separating both particles (pi - pj).
+ * @param r Comoving distance between the two particles.
+ * @param diffmode mode=0 for ``difference''
+ * @param shearfi divergence of f for particle i
+ * @param shearfj divergence of f for particle j
  */
 __attribute__((always_inline)) INLINE static void radiation_gradient_vec_SPH(
     const float *fini, const float *finj, const float mi, const float mj,
@@ -439,7 +476,7 @@ __attribute__((always_inline)) INLINE static void radiation_gradient_vec_SPH(
       shearfj[k][2] = -facj * r_inv * drhof[2] * dx[k];
     }
   } else {
-    error("diffmode should be 0 or 1");
+    error("diffmode should be 0");
   }
 }
 
