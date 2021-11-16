@@ -87,7 +87,7 @@ __attribute__((always_inline)) INLINE static void rt_reset_part(
  *
  * @param p particle to work on
  */
-__attribute__((always_inline)) INLINE static void rt_first_init_part
+__attribute__((always_inline)) INLINE static void rt_first_init_part(
     struct part* restrict p, const struct rt_props* restrict rt_props) {
 
   /* Don't reset conserved quantities here! ICs will be overwritten */
