@@ -36,6 +36,8 @@
  * time the particle was kicked.
  *
  * @param p Pointer to the particle data.
+ * @param energy The physical radiation energy.
+ * 
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_comoving_radiation_energy_multifrequency(
@@ -50,6 +52,9 @@ radiation_get_comoving_radiation_energy_multifrequency(
  * time the particle was kicked.
  *
  * @param p Pointer to the particle data.
+ * @param cosmo Cosmology data structure.
+ * @param energy The physical radiation energy.
+ * 
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_physical_radiation_energy_multifrequency(
@@ -65,7 +70,8 @@ radiation_get_physical_radiation_energy_multifrequency(
  *
  * @param p The particle of interest.
  * @param cosmo Cosmology data structure
- * @param u The physical internal energy
+ * @param energy The comoving radiation energy
+ * 
  */
 __attribute__((always_inline)) INLINE static void
 radiation_set_comoving_radiation_energy_multifrequency(
@@ -80,7 +86,7 @@ radiation_set_comoving_radiation_energy_multifrequency(
  *
  * @param p The particle of interest.
  * @param cosmo Cosmology data structure
- * @param u The physical internal energy
+ * @param energy The physical radiation energy
  */
 __attribute__((always_inline)) INLINE static void
 radiation_set_physical_radiation_energy_multifrequency(
@@ -96,6 +102,7 @@ radiation_set_physical_radiation_energy_multifrequency(
  * time the particle was kicked.
  *
  * @param p Pointer to the particle data.
+ * @param fradtemp The comoving radiation flux
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_comoving_radiation_flux_multifrequency(
@@ -113,6 +120,8 @@ radiation_get_comoving_radiation_flux_multifrequency(
  * time the particle was kicked.
  *
  * @param p Pointer to the particle data.
+ * @param cosmo Cosmology data structure
+ * @param frad The comoving radiation flux
  */
 __attribute__((always_inline)) INLINE static void
 radiation_get_physical_radiation_flux_multifrequency(
@@ -131,7 +140,7 @@ radiation_get_physical_radiation_flux_multifrequency(
  *
  * @param p The particle of interest.
  * @param cosmo Cosmology data structure
- * @param u The physical internal energy
+ * @param frad The comoving radiation flux
  */
 __attribute__((always_inline)) INLINE static void
 radiation_set_comoving_radiation_flux_multifrequency(
@@ -148,7 +157,7 @@ radiation_set_comoving_radiation_flux_multifrequency(
  *
  * @param p The particle of interest.
  * @param cosmo Cosmology data structure
- * @param u The physical internal energy
+ * @param frad The comoving radiation flux
  */
 __attribute__((always_inline)) INLINE static void
 radiation_set_physical_radiation_flux_multifrequency(
